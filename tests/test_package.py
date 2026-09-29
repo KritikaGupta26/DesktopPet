@@ -69,6 +69,11 @@ class PackageTests(unittest.TestCase):
         self.assertNotIn('label="Test animations"', self.source)
         self.assertIn('text="Panda activities"', self.source)
 
+    def test_alert_uses_content_aware_height(self):
+        self.assertNotIn('window.geometry(f"510x270', self.source)
+        self.assertIn("window.winfo_reqheight()", self.source)
+        self.assertIn("alert_height = max(300", self.source)
+
     def test_installer_definition_exists(self):
         installer = ROOT / "installer" / "WaterPanda.iss"
         self.assertTrue(installer.exists())

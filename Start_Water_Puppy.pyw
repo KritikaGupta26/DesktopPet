@@ -2088,9 +2088,6 @@ class WaterPet:
         self.active_alert_kind = kind
         window.title("Panda Reminder")
         left, top, right, bottom = self._screen_bounds()
-        alert_x = max(left + 12, min(self.root.winfo_x() - 360, right - 522))
-        alert_y = max(top + 12, min(self.root.winfo_y() - 90, bottom - 282))
-        window.geometry(f"510x270{alert_x:+d}{alert_y:+d}")
         window.resizable(False, False)
         window.configure(bg=GLASS["window"])
         window.attributes("-topmost", True)
@@ -2167,6 +2164,22 @@ class WaterPet:
             pady=6,
             font=("Segoe UI", 9, "bold"),
         ).pack(side="left", padx=(8, 0))
+        window.update_idletasks()
+        alert_width = max(510, window.winfo_reqwidth())
+        alert_height = max(300, window.winfo_reqheight())
+        alert_width = min(alert_width, max(320, right - left - 24))
+        alert_height = min(alert_height, max(260, bottom - top - 24))
+        alert_x = max(
+            left + 12,
+            min(self.root.winfo_x() - alert_width + 150, right - alert_width - 12),
+        )
+        alert_y = max(
+            top + 12,
+            min(self.root.winfo_y() - 90, bottom - alert_height - 12),
+        )
+        window.geometry(
+            f"{alert_width}x{alert_height}{alert_x:+d}{alert_y:+d}"
+        )
         self._begin_attention()
         self._play_reminder_sound()
         window.lift()

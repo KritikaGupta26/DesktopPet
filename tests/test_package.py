@@ -50,7 +50,7 @@ class PackageTests(unittest.TestCase):
             self.assertIsNotNone(box, path.name)
             self.assertEqual(box[3], 172, path.name)
 
-    def test_walk_scale_and_ground_line_match(self):
+    def test_walk_frames_keep_original_resolution(self):
         for direction in ("left", "right"):
             for frame in range(1, 9):
                 path = ASSETS / f"panda_walk_{direction}_{frame}.png"
@@ -58,8 +58,8 @@ class PackageTests(unittest.TestCase):
                     box = image.getchannel("A").getbbox()
                 self.assertIsNotNone(box)
                 self.assertEqual(box[3], 172)
-                self.assertGreaterEqual(box[3] - box[1], 132)
-                self.assertLessEqual(box[3] - box[1], 138)
+                self.assertGreaterEqual(box[3] - box[1], 108)
+                self.assertLessEqual(box[3] - box[1], 124)
 
     def test_bamboo_hanging_is_preserved(self):
         self.assertTrue((ASSETS / "panda_action_hang.png").exists())

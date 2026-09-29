@@ -2,6 +2,8 @@ import ast
 import unittest
 from pathlib import Path
 
+from PIL import Image
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "Start_Water_Puppy.pyw"
@@ -33,6 +35,31 @@ class PackageTests(unittest.TestCase):
                 )
         for frame in range(1, 9):
             self.assertTrue((ASSETS / f"panda_bored_{frame}.png").exists())
+
+    def test_all_pose_canvases_match(self):
+        sizes = set()
+        for path in ASSETS.glob("panda_*.png"):
+            with Image.open(path) as image:
+                sizes.add(image.size)
+        self.assertEqual(sizes, {(180, 180)})
+
+    def test_all_pose_ground_lines_match(self):
+        for path in ASSETS.glob("panda_*.png"):
+            with Image.open(path) as image:
+                box = image.getchannel("A").getbbox()
+            self.assertIsNotNone(box, path.name)
+            self.assertEqual(box[3], 172, path.name)
+
+    def test_walk_scale_and_ground_line_match(self):
+        for direction in ("left", "right"):
+            for frame in range(1, 9):
+                path = ASSETS / f"panda_walk_{direction}_{frame}.png"
+                with Image.open(path) as image:
+                    box = image.getchannel("A").getbbox()
+                self.assertIsNotNone(box)
+                self.assertEqual(box[3], 172)
+                self.assertGreaterEqual(box[3] - box[1], 132)
+                self.assertLessEqual(box[3] - box[1], 138)
 
     def test_bamboo_hanging_is_preserved(self):
         self.assertTrue((ASSETS / "panda_action_hang.png").exists())

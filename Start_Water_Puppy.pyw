@@ -2693,7 +2693,7 @@ class WaterPet:
             gait = (1, 2, 3, 4, 5, 6, 7, 8)
             gait_bob = (0, 2, 3, 1, 0, 2, 3, 1)
             gait_lean = (-1, 0, 1, 1, 1, 0, -1, -1)
-            gait_index = self.frame % len(gait)
+            gait_index = (self.frame // 2) % len(gait)
             walk_frame = gait[gait_index]
             image_key = f"walk_{self.walk_direction}_{walk_frame}"
             self.canvas.create_image(

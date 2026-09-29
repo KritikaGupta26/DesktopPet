@@ -20,6 +20,10 @@ Double-click the panda to open Panda Home. The minimal panda and tray right-clic
 
 Panda Home contains water history, reminders, settings and the complete **Panda activities** page. Activities include walking, fetch, bored-on-log, kung-fu, sleep, meditation, bamboo eating, bamboo hanging, staff practice and reminder previews.
 
+## Animation consistency
+
+All 56 panda pose assets use the same 180 × 180 transparent canvas and ground line. The eight-frame walking cycle is normalized to one perceived character scale in both directions, and its playback cadence is tied to a slower two-tick gait to avoid rapid foot shuffling.
+
 ## Privacy and updates
 
 Water history, personal reminders and preferences remain local in `%LOCALAPPDATA%\WaterPuppy`. Installer upgrades replace application files without deleting `water_history.db` or `settings.json`.

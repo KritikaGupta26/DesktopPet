@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+build/
+dist/
+installer/output/
+startup_error.log
+water_puppy.pid
+settings.json
+water_history.db
+water_history.db-shm
+water_history.db-wal

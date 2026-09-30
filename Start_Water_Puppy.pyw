@@ -23,9 +23,11 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
+from PIL import Image, ImageTk
+
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 14
+APP_VERSION = 15
 REMINDER_MINUTES = 30
 TRANSPARENT_COLOR = "#00ff01"
 SMALL_WIDTH = 180
@@ -122,6 +124,14 @@ COMMON_STATES = (
     "bored_6",
     "bored_7",
     "bored_8",
+    "hula_1",
+    "hula_2",
+    "watch",
+    "water",
+    "bored_walk_right_1",
+    "bored_walk_right_2",
+    "bored_walk_left_1",
+    "bored_walk_left_2",
 )
 
 PET_ACTIONS = {
@@ -137,7 +147,7 @@ FREE_IDLE_MOODS = (
     "bow",
 )
 
-EDGE_ACTIONS = ("action_bamboo", "action_hang", "staff")
+EDGE_ACTIONS = ("bored_edge",)
 
 PET_CHATTER = {
     "panda": (
@@ -183,9 +193,9 @@ WATER_PROMPTS = (
 )
 
 MOVEMENT_PROMPTS = (
-    ("Tiny movement break", "Stand, stretch or walk for one minute"),
-    ("Panda stretch time", "Roll your shoulders and move a little"),
-    ("Uncurl with me", "A short stretch can reset your focus"),
+    ("Hula with Mochi", "Stand, circle your hips, and move for one minute"),
+    ("Tiny hoop break", "Roll your shoulders and move with your panda"),
+    ("Uncurl with me", "Hula, stretch, or walk for one playful minute"),
 )
 
 
@@ -761,19 +771,25 @@ class WaterPet:
         self.record_water(millilitres)
         self._show_chatter(f"{millilitres} ml logged from the tray ✦", seconds=4)
 
-    def _load_images(self) -> dict[str, dict[str, tk.PhotoImage]]:
+    def _load_images(self) -> dict[str, dict[str, ImageTk.PhotoImage]]:
         assets = self.app_dir / "assets"
-        loaded: dict[str, dict[str, tk.PhotoImage]] = {}
+        loaded: dict[str, dict[str, ImageTk.PhotoImage]] = {}
         for pet in PET_LABELS:
             loaded[pet] = {}
             states = COMMON_STATES + PET_ACTIONS[pet]
             for state in states:
-                loaded[pet][state] = tk.PhotoImage(
-                    file=assets / f"{pet}_{state}.png"
+                with Image.open(assets / f"{pet}_{state}.png") as opened:
+                    sprite = opened.convert("RGBA")
+                sprite.thumbnail((172, 172), Image.Resampling.LANCZOS)
+                canvas = Image.new("RGBA", (180, 180), (0, 0, 0, 0))
+                canvas.alpha_composite(
+                    sprite,
+                    ((180 - sprite.width) // 2, (180 - sprite.height) // 2),
                 )
+                loaded[pet][state] = ImageTk.PhotoImage(canvas)
         return loaded
 
-    def _image(self, state: str) -> tk.PhotoImage:
+    def _image(self, state: str) -> ImageTk.PhotoImage:
         return self.images[self.pet_type.get()][state]
 
     def _load_settings(self) -> dict[str, object]:
@@ -1401,25 +1417,18 @@ class WaterPet:
             self.next_attention_nudge = now + timedelta(seconds=interval)
 
         if self.alert_pet_label is not None and self.alert_pet_label.winfo_exists():
-            attention_phase = elapsed % 2.4
-            if self.attention_stage == 0:
-                image_key = "asking"
-            elif self.attention_stage == 1:
-                image_key = self._natural_pose("wave", attention_phase / 2.4)
+            if "personal" in self.active_alert_kind:
+                image_key = "watch"
             else:
-                image_key = self._natural_pose("jump", attention_phase / 2.4)
+                image_key = f"hula_{1 + ((self.frame // 2) % 2)}"
             self.alert_pet_label.configure(image=self._image(image_key))
         if self.alert_icon_label is not None and self.alert_icon_label.winfo_exists():
-            if "personal" in self.active_alert_kind:
-                clock_frames = ("◷", "◶", "◵", "◴")
-                icon = clock_frames[(self.frame // 2) % len(clock_frames)]
-            else:
-                icon = "↟" if (self.frame // 3) % 2 == 0 else "✦"
-            icon_size = 20 + (2 if self.attention_stage >= 2 and self.frame % 2 == 0 else 0)
-            self.alert_icon_label.configure(
-                text=icon,
-                font=("Segoe UI Symbol", icon_size, "bold"),
+            label = (
+                "PERSONAL REMINDER"
+                if "personal" in self.active_alert_kind
+                else "MOVEMENT BREAK"
             )
+            self.alert_icon_label.configure(text=label)
 
     def _pet_reaction(self) -> None:
         if self.prompt_visible or self.dragging:
@@ -2091,50 +2100,81 @@ class WaterPet:
         left, top, right, bottom = self._screen_bounds()
         window.resizable(False, False)
         window.configure(bg=GLASS["window"])
+        window.overrideredirect(True)
         window.attributes("-topmost", True)
         window.protocol("WM_DELETE_WINDOW", self._snooze_active_alert)
 
-        card = tk.Frame(
+        shell = tk.Frame(
             window,
-            bg=GLASS["surface"],
-            padx=18,
-            pady=16,
+            bg=GLASS["window"],
             highlightthickness=1,
             highlightbackground=GLASS["border"],
         )
-        card.pack(fill="both", expand=True, padx=12, pady=12)
+        shell.pack(fill="both", expand=True)
+        topbar = tk.Frame(shell, bg=GLASS["rail"], height=42)
+        topbar.pack(fill="x")
+        topbar.pack_propagate(False)
+        tk.Label(
+            topbar,
+            text="MOCHI REMINDER",
+            bg=GLASS["rail"],
+            fg=GLASS["muted"],
+            font=("Segoe UI", 8, "bold"),
+        ).pack(side="left", padx=18)
+        tk.Button(
+            topbar,
+            text="×",
+            command=self._snooze_active_alert,
+            bg=GLASS["rail"],
+            fg=GLASS["muted"],
+            activebackground=GLASS["surface_hover"],
+            activeforeground=GLASS["text"],
+            relief="flat",
+            bd=0,
+            font=("Segoe UI", 14),
+            padx=14,
+        ).pack(side="right", fill="y")
+
+        card = tk.Frame(shell, bg=GLASS["surface"], padx=18, pady=16)
+        card.pack(fill="both", expand=True)
+        artwork = tk.Frame(card, bg=GLASS["surface"], width=210, height=220)
+        artwork.pack(side="left", fill="y", padx=(0, 22))
+        artwork.pack_propagate(False)
+        initial_image = "watch" if "personal" in kind else "hula_1"
         self.alert_pet_label = tk.Label(
-            card,
-            image=self._image("asking"),
+            artwork,
+            image=self._image(initial_image),
             bg=GLASS["surface"],
         )
-        self.alert_pet_label.pack(side="left", padx=(0, 14))
+        self.alert_pet_label.place(relx=0.5, rely=0.52, anchor="center")
         content = tk.Frame(card, bg=GLASS["surface"])
         content.pack(side="left", fill="both", expand=True)
         self.alert_icon_label = tk.Label(
             content,
-            text="◷" if "personal" in kind else "↟",
-            bg=GLASS["surface"],
-            fg=GLASS["accent"],
-            font=("Segoe UI Symbol", 20, "bold"),
+            text="PERSONAL REMINDER" if "personal" in kind else "MOVEMENT BREAK",
+            bg=GLASS["accent"] if "personal" in kind else GLASS["aqua"],
+            fg="white" if "personal" in kind else GLASS["window"],
+            font=("Segoe UI", 8, "bold"),
+            padx=10,
+            pady=5,
         )
-        self.alert_icon_label.pack(anchor="w", pady=(0, 1))
+        self.alert_icon_label.pack(anchor="w", pady=(8, 12))
         tk.Label(
             content,
             text=title,
             bg=GLASS["surface"],
             fg=GLASS["text"],
-            font=("Segoe UI", 12, "bold"),
-            wraplength=220,
+            font=("Segoe UI", 16, "bold"),
+            wraplength=270,
             justify="left",
-        ).pack(anchor="w", pady=(8, 3))
+        ).pack(anchor="w", pady=(0, 7))
         tk.Label(
             content,
             text=subtitle,
             bg=GLASS["surface"],
             fg=GLASS["muted"],
-            font=("Segoe UI", 9),
-            wraplength=220,
+            font=("Segoe UI", 10),
+            wraplength=270,
             justify="left",
         ).pack(anchor="w")
         buttons = tk.Frame(content, bg=GLASS["surface"])
@@ -2166,8 +2206,8 @@ class WaterPet:
             font=("Segoe UI", 9, "bold"),
         ).pack(side="left", padx=(8, 0))
         window.update_idletasks()
-        alert_width = max(510, window.winfo_reqwidth())
-        alert_height = max(300, window.winfo_reqheight())
+        alert_width = max(570, window.winfo_reqwidth())
+        alert_height = max(318, window.winfo_reqheight())
         alert_width = min(alert_width, max(320, right - left - 24))
         alert_height = min(alert_height, max(260, bottom - top - 24))
         alert_x = max(
@@ -2184,13 +2224,7 @@ class WaterPet:
         self._begin_attention()
         self._play_reminder_sound()
         window.lift()
-        window.after(
-            80,
-            lambda: (
-                self._apply_windows_11_backdrop(window),
-                self._apply_tool_window_style(window),
-            ),
-        )
+        window.after(80, lambda: self._apply_tool_window_style(window))
 
     def _complete_active_alert(self) -> None:
         if self.active_alert_kind == "personal" and self.active_alert_id:
@@ -2704,6 +2738,18 @@ class WaterPet:
             and self.motion_mode == "walking"
         ):
             self._draw_ground_shadow()
+            if self.pending_edge_action == "bored_edge":
+                tired_frame = 1 + ((self.frame // 4) % 2)
+                tired_bob = (0, 1, 2, 1)[(self.frame // 2) % 4]
+                self.canvas.create_image(
+                    SMALL_WIDTH // 2,
+                    PET_CENTER_Y - tired_bob,
+                    image=self._image(
+                        f"bored_walk_{self.walk_direction}_{tired_frame}"
+                    ),
+                )
+                self._draw_overlays()
+                return
             gait = (1, 2, 3, 4, 5, 6, 7, 8)
             gait_bob = (0, 2, 3, 1, 0, 2, 3, 1)
             gait_lean = (-1, 0, 1, 1, 1, 0, -1, -1)
@@ -3290,33 +3336,25 @@ class WaterPet:
             fill="#323744",
             outline="",
         )
-        attention_offset_y = 0
-        attention_offset_x = 0
-        attention_image = "asking"
+        attention_offset_y = int(math.sin(self.frame * 0.28) * 2)
         attention_elapsed = (
             (datetime.now() - self.attention_started_at).total_seconds()
             if self.attention_started_at
             else 0.0
         )
-        if self.attention_stage == 1:
-            wave_progress = (attention_elapsed % 2.4) / 2.4
-            attention_image = self._natural_pose("wave", wave_progress)
-            attention_offset_x = int(math.sin(wave_progress * math.tau * 3) * 2)
-        elif self.attention_stage >= 2:
-            jump_progress = (attention_elapsed % 2.4) / 2.4
-            attention_image = self._natural_pose("jump", jump_progress)
-            if 0.18 <= jump_progress <= 0.82:
-                airborne = (jump_progress - 0.18) / 0.64
-                attention_offset_y = -int(math.sin(airborne * math.pi) * 24)
-        if attention_elapsed < 1.35:
-            self._draw_water_glass_animation(attention_elapsed)
         self.canvas.create_image(
-            90 + attention_offset_x,
+            90,
             161 + attention_offset_y,
-            image=self._image(attention_image),
+            image=self._image("water"),
         )
-        if attention_elapsed >= 1.35:
-            self._draw_water_glass_animation(attention_elapsed)
+        if int(attention_elapsed * 2) % 2 == 0:
+            self.canvas.create_text(
+                145,
+                99,
+                text="✦",
+                fill="#F6D66D",
+                font=("Segoe UI Symbol", 9, "bold"),
+            )
         self.canvas.tag_bind(
             "amount_100",
             "<Button-1>",
@@ -3337,57 +3375,6 @@ class WaterPet:
             "<Button-1>",
             self.answer_not_yet,
         )
-
-    def _draw_water_glass_animation(self, elapsed: float) -> None:
-        reveal = min(1.0, max(0.0, elapsed / 2.1))
-        x = 98 + int(38 * reveal)
-        y = 187 - int(28 * reveal)
-        wave = int(math.sin(self.frame * 0.55) * 1)
-        self.canvas.create_polygon(
-            x - 9,
-            y - 17 + wave,
-            x + 9,
-            y - 17 + wave,
-            x + 7,
-            y + 11 + wave,
-            x - 7,
-            y + 11 + wave,
-            fill="#EAF8FF",
-            outline="#5AAED8",
-            width=2,
-        )
-        water_top = y - 5 + wave
-        self.canvas.create_polygon(
-            x - 7,
-            water_top,
-            x + 7,
-            water_top,
-            x + 6,
-            y + 9 + wave,
-            x - 6,
-            y + 9 + wave,
-            fill="#72C8F0",
-            outline="",
-        )
-        self.canvas.create_arc(
-            x - 7,
-            water_top - 2,
-            x + 7,
-            water_top + 3,
-            start=0,
-            extent=180,
-            style="arc",
-            outline="#3A9FD0",
-            width=1,
-        )
-        if reveal >= 0.98:
-            self.canvas.create_text(
-                x + 15,
-                y - 19,
-                text="✦",
-                fill="#E5B84C",
-                font=("Segoe UI Symbol", 8, "bold"),
-            )
 
     def _answer_button(
         self,
@@ -3718,7 +3705,7 @@ class WaterPet:
         activities = (
             ("Walk across screen", self._test_walk_across_screen),
             ("Play fetch", self.start_fetch),
-            ("Bored on log", self._test_bored_at_edge),
+            ("Sleepy tiptoe walk", self._test_bored_at_edge),
             ("Kung-fu routine", lambda: self._play_test_animation("kungfu_combo", 5.8)),
             ("Yawn and stretch", lambda: self._play_test_animation("yawn", 5.0)),
             ("Sleep and breathe", lambda: self._play_test_animation("sleep", 9.0)),
@@ -3730,9 +3717,6 @@ class WaterPet:
             ("Somersault", lambda: self._play_test_animation("somersault", 3.8)),
             ("Nuzzle", lambda: self._play_test_animation("nuzzle", 3.5)),
             ("Victory bow", lambda: self._play_test_animation("bow", 3.5)),
-            ("Eat bamboo at edge", lambda: self._start_edge_activity("action_bamboo")),
-            ("Hang from bamboo", lambda: self._start_edge_activity("action_hang")),
-            ("Bamboo staff at edge", lambda: self._start_edge_activity("staff")),
             ("Water reminder", self.show_prompt),
             (
                 "Personal clock reminder",
@@ -3743,10 +3727,10 @@ class WaterPet:
                 ),
             ),
             (
-                "Movement reminder",
+                "Hula-hoop movement break",
                 lambda: self._show_general_alert(
-                    "Tiny movement break",
-                    "Stand, roll your shoulders, and stretch.",
+                    "Move with Mochi",
+                    "Stand up and hula, stretch, or walk for one minute.",
                     "preview_movement",
                 ),
             ),

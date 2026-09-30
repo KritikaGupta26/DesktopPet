@@ -19,8 +19,8 @@ class PackageTests(unittest.TestCase):
     def test_source_parses(self):
         self.assertIsInstance(self.tree, ast.Module)
 
-    def test_version_is_14(self):
-        self.assertIn("APP_VERSION = 14", self.source)
+    def test_version_is_15(self):
+        self.assertIn("APP_VERSION = 15", self.source)
 
     def test_panda_face_icon_exists(self):
         icon = ASSETS / "panda.ico"
@@ -36,15 +36,41 @@ class PackageTests(unittest.TestCase):
         for frame in range(1, 9):
             self.assertTrue((ASSETS / f"panda_bored_{frame}.png").exists())
 
-    def test_all_pose_canvases_match(self):
-        sizes = set()
-        for path in ASSETS.glob("panda_*.png"):
+    def test_generated_reminder_assets_are_high_resolution(self):
+        names = (
+            "hula_1",
+            "hula_2",
+            "watch",
+            "water",
+            "bored_walk_right_1",
+            "bored_walk_right_2",
+            "bored_walk_left_1",
+            "bored_walk_left_2",
+        )
+        for name in names:
+            path = ASSETS / f"panda_{name}.png"
             with Image.open(path) as image:
-                sizes.add(image.size)
-        self.assertEqual(sizes, {(180, 180)})
+                self.assertEqual(image.size, (512, 512), path.name)
+                box = image.getchannel("A").getbbox()
+            self.assertIsNotNone(box, path.name)
+            self.assertGreaterEqual(box[0], 16, path.name)
+            self.assertGreaterEqual(box[1], 16, path.name)
+            self.assertLessEqual(box[2], 496, path.name)
+            self.assertLessEqual(box[3], 496, path.name)
 
     def test_all_pose_ground_lines_match(self):
         for path in ASSETS.glob("panda_*.png"):
+            if path.name in {
+                "panda_hula_1.png",
+                "panda_hula_2.png",
+                "panda_watch.png",
+                "panda_water.png",
+                "panda_bored_walk_right_1.png",
+                "panda_bored_walk_right_2.png",
+                "panda_bored_walk_left_1.png",
+                "panda_bored_walk_left_2.png",
+            }:
+                continue
             with Image.open(path) as image:
                 box = image.getchannel("A").getbbox()
             self.assertIsNotNone(box, path.name)
@@ -61,9 +87,10 @@ class PackageTests(unittest.TestCase):
                 self.assertGreaterEqual(box[3] - box[1], 108)
                 self.assertLessEqual(box[3] - box[1], 124)
 
-    def test_bamboo_hanging_is_preserved(self):
-        self.assertTrue((ASSETS / "panda_action_hang.png").exists())
-        self.assertIn('"action_hang"', self.source)
+    def test_bamboo_edge_activities_are_not_exposed(self):
+        self.assertNotIn('"Bamboo staff at edge"', self.source)
+        self.assertNotIn('"Hang from bamboo"', self.source)
+        self.assertNotIn('"Eat bamboo at edge"', self.source)
 
     def test_old_test_menu_is_removed(self):
         self.assertNotIn('label="Test animations"', self.source)
@@ -72,18 +99,18 @@ class PackageTests(unittest.TestCase):
     def test_alert_uses_content_aware_height(self):
         self.assertNotIn('window.geometry(f"510x270', self.source)
         self.assertIn("window.winfo_reqheight()", self.source)
-        self.assertIn("alert_height = max(300", self.source)
+        self.assertIn("alert_height = max(318", self.source)
 
     def test_water_prompt_has_separate_card_layout(self):
         self.assertIn("PROMPT_WIDTH = 440", self.source)
         self.assertIn('text=f"{self.pet_name.get().upper()} · WATER CHECK"', self.source)
         self.assertIn("188,\n            105,\n            290,\n            145", self.source)
 
-    def test_wave_and_jump_use_pose_sequences(self):
-        self.assertIn('self._natural_pose("wave"', self.source)
-        self.assertIn('self._natural_pose("jump"', self.source)
-        for pose in ("asking", "wave", "bow", "stretch", "happy", "kungfu"):
-            self.assertIn(f'"{pose}"', self.source)
+    def test_reminders_use_purpose_built_poses(self):
+        self.assertIn('initial_image = "watch"', self.source)
+        self.assertIn('image_key = f"hula_', self.source)
+        self.assertIn('image=self._image("water")', self.source)
+        self.assertNotIn("_draw_water_glass_animation", self.source)
 
     def test_installer_definition_exists(self):
         installer = ROOT / "installer" / "WaterPanda.iss"

@@ -1,5 +1,5 @@
 #define MyAppName "Water Panda"
-#define MyAppVersion "14.0.0"
+#define MyAppVersion "15.0.0"
 #define MyAppPublisher "Kritika Gupta"
 #define MyAppExeName "WaterPanda.exe"
 

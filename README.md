@@ -18,7 +18,7 @@ Double-click the panda to open Panda Home. The minimal panda and tray right-clic
 - Add personal reminder
 - Exit Water Panda
 
-Panda Home contains water history, reminders, settings and the complete **Panda activities** page. Activities include walking, fetch, bored-on-log, kung-fu, sleep, meditation, bamboo eating, bamboo hanging, staff practice and reminder previews.
+Panda Home contains water history, reminders, settings and the complete **Panda activities** page. Activities include walking, fetch, a sleepy tiptoe walk, kung-fu, sleep, meditation, hula-hoop movement breaks and reminder previews.
 
 ## Animation consistency
 

@@ -74,6 +74,17 @@ class PackageTests(unittest.TestCase):
         self.assertIn("window.winfo_reqheight()", self.source)
         self.assertIn("alert_height = max(300", self.source)
 
+    def test_water_prompt_has_separate_card_layout(self):
+        self.assertIn("PROMPT_WIDTH = 440", self.source)
+        self.assertIn('text=f"{self.pet_name.get().upper()} · WATER CHECK"', self.source)
+        self.assertIn("188,\n            105,\n            290,\n            145", self.source)
+
+    def test_wave_and_jump_use_pose_sequences(self):
+        self.assertIn('self._natural_pose("wave"', self.source)
+        self.assertIn('self._natural_pose("jump"', self.source)
+        for pose in ("asking", "wave", "bow", "stretch", "happy", "kungfu"):
+            self.assertIn(f'"{pose}"', self.source)
+
     def test_installer_definition_exists(self):
         installer = ROOT / "installer" / "WaterPanda.iss"
         self.assertTrue(installer.exists())

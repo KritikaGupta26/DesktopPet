@@ -32,8 +32,8 @@ SMALL_WIDTH = 180
 SMALL_HEIGHT = 184
 PET_CENTER_Y = 105
 PET_GROUND_Y = 169
-PROMPT_WIDTH = 304
-PROMPT_HEIGHT = 285
+PROMPT_WIDTH = 440
+PROMPT_HEIGHT = 245
 ACTIVE_TICK_MILLISECONDS = 80
 IDLE_TICK_MILLISECONDS = 250
 HIDDEN_TICK_MILLISECONDS = 1000
@@ -1401,12 +1401,13 @@ class WaterPet:
             self.next_attention_nudge = now + timedelta(seconds=interval)
 
         if self.alert_pet_label is not None and self.alert_pet_label.winfo_exists():
+            attention_phase = elapsed % 2.4
             if self.attention_stage == 0:
                 image_key = "asking"
             elif self.attention_stage == 1:
-                image_key = "wave" if (self.frame // 4) % 2 == 0 else "asking"
+                image_key = self._natural_pose("wave", attention_phase / 2.4)
             else:
-                image_key = "happy" if (self.frame // 2) % 2 == 0 else "wave"
+                image_key = self._natural_pose("jump", attention_phase / 2.4)
             self.alert_pet_label.configure(image=self._image(image_key))
         if self.alert_icon_label is not None and self.alert_icon_label.winfo_exists():
             if "personal" in self.active_alert_kind:
@@ -2736,10 +2737,25 @@ class WaterPet:
                 self._draw_bored_sequence(elapsed)
                 self._draw_overlays()
                 return
-            action_image = self.current_action
-            if elapsed < 0.28 or remaining < 0.32:
-                action_image = "normal"
-                offset_y = 2 if elapsed < 0.28 else 0
+            if self.current_action in FREE_IDLE_MOODS:
+                duration = max(0.1, elapsed + max(0.0, remaining))
+                progress = min(1.0, elapsed / duration)
+                action_image = self._natural_pose(self.current_action, progress)
+                if self.current_action == "somersault" and 0.24 <= progress <= 0.72:
+                    airborne = (progress - 0.24) / 0.48
+                    offset_x = int(-8 + (airborne * 16))
+                    offset_y = -int(math.sin(airborne * math.pi) * 14)
+                elif self.current_action == "sneeze" and action_image == "sneeze":
+                    offset_x = int(math.sin(phase * 4.2) * 3)
+                elif self.current_action in ("stretch", "bow"):
+                    offset_y = -int(abs(math.sin(phase * 1.6)) * 3)
+                elif self.current_action in ("meditate", "sploot"):
+                    offset_y = int(abs(math.sin(phase * 0.7)) * 2)
+            else:
+                action_image = self.current_action
+                if elapsed < 0.28 or remaining < 0.32:
+                    action_image = "normal"
+                    offset_y = 2 if elapsed < 0.28 else 0
             if action_image == self.current_action and self.current_action == "action_hang":
                 offset_x = int(math.sin(phase) * 4)
                 offset_y = int(abs(math.sin(phase)) * 2)
@@ -2811,16 +2827,26 @@ class WaterPet:
         mood = self.idle_mood
         elapsed = max(0.0, (datetime.now() - self.idle_mood_started_at).total_seconds())
         if mood == "wave":
+            progress = min(1.0, elapsed / 2.5)
+            image_key = self._natural_pose("wave", progress)
+            sway = int(math.sin(progress * math.tau * 3) * 2)
             self.canvas.create_image(
-                SMALL_WIDTH // 2,
+                SMALL_WIDTH // 2 + sway,
                 PET_CENTER_Y + int(math.sin(phase) * 2),
-                image=self._image("wave"),
+                image=self._image(image_key),
             )
         elif mood == "nuzzle":
+            duration = max(0.1, elapsed + max(
+                0.0,
+                (self.idle_mood_until - datetime.now()).total_seconds()
+                if self.idle_mood_until
+                else 0.0,
+            ))
+            image_key = self._natural_pose("nuzzle", min(1.0, elapsed / duration))
             self.canvas.create_image(
                 SMALL_WIDTH // 2,
                 PET_CENTER_Y + int(math.sin(phase) * 2),
-                image=self._image("nuzzle"),
+                image=self._image(image_key),
             )
         elif mood == "yawn":
             if elapsed < 0.7:
@@ -2841,12 +2867,19 @@ class WaterPet:
         elif mood in ("sleep", "nap"):
             self._draw_sleep_animation(elapsed)
         elif mood == "dance":
+            duration = max(0.1, elapsed + max(
+                0.0,
+                (self.idle_mood_until - datetime.now()).total_seconds()
+                if self.idle_mood_until
+                else 0.0,
+            ))
+            progress = min(1.0, elapsed / duration)
             offset_x = int(math.sin(phase * 1.8) * 5)
             bounce = int(abs(math.sin(phase * 2.2)) * 8)
             self.canvas.create_image(
                 SMALL_WIDTH // 2 + offset_x,
                 PET_CENTER_Y - bounce,
-                image=self._image("happy"),
+                image=self._image(self._natural_pose("dance", progress)),
             )
             self.canvas.create_text(
                 91,
@@ -2858,6 +2891,13 @@ class WaterPet:
         elif mood == "kungfu_combo":
             self._draw_kungfu_combo(elapsed)
         elif mood in FREE_IDLE_MOODS:
+            duration = max(0.1, elapsed + max(
+                0.0,
+                (self.idle_mood_until - datetime.now()).total_seconds()
+                if self.idle_mood_until
+                else 0.0,
+            ))
+            progress = min(1.0, elapsed / duration)
             offset_x = 0
             offset_y = 0
             if mood == "somersault":
@@ -2874,21 +2914,10 @@ class WaterPet:
                 if self.idle_mood_until
                 else 1.0
             )
-            action_image = mood
-            if mood == "bored" and 1.2 < elapsed < 2.0:
-                action_image = "blink"
-            elif mood == "sneeze" and elapsed < 0.65:
-                action_image = "yawn_1"
-            elif mood == "sploot" and elapsed < 0.70:
-                action_image = "stretch"
-            elif mood == "meditate" and elapsed < 0.55:
-                action_image = "normal"
-            elif mood == "bow" and elapsed < 0.45:
-                action_image = "normal"
-            if elapsed < 0.25 or remaining < 0.30:
-                action_image = "normal"
+            action_image = self._natural_pose(mood, progress)
+            if elapsed < 0.18 or remaining < 0.20:
                 offset_x = 0
-                offset_y = 2 if elapsed < 0.25 else 0
+                offset_y = 2 if elapsed < 0.18 else 0
             self.canvas.create_image(
                 SMALL_WIDTH // 2 + offset_x,
                 PET_CENTER_Y + offset_y,
@@ -2918,6 +2947,104 @@ class WaterPet:
                     fill=PALETTE["sky"],
                     outline="#91BBD5",
                 )
+
+    @staticmethod
+    def _natural_pose(action: str, progress: float) -> str:
+        progress = max(0.0, min(1.0, progress))
+        sequences = {
+            "wave": (
+                (0.00, "normal"),
+                (0.10, "asking"),
+                (0.22, "wave"),
+                (0.38, "asking"),
+                (0.50, "wave"),
+                (0.66, "asking"),
+                (0.78, "wave"),
+                (0.92, "normal"),
+            ),
+            "jump": (
+                (0.00, "normal"),
+                (0.12, "bow"),
+                (0.24, "stretch"),
+                (0.36, "happy"),
+                (0.52, "kungfu"),
+                (0.66, "happy"),
+                (0.80, "stretch"),
+                (0.92, "normal"),
+            ),
+            "stretch": (
+                (0.00, "normal"),
+                (0.14, "bow"),
+                (0.28, "stretch"),
+                (0.78, "bow"),
+                (0.92, "normal"),
+            ),
+            "sneeze": (
+                (0.00, "normal"),
+                (0.16, "asking"),
+                (0.32, "yawn_1"),
+                (0.50, "sneeze"),
+                (0.72, "asking"),
+                (0.90, "normal"),
+            ),
+            "meditate": (
+                (0.00, "normal"),
+                (0.12, "bow"),
+                (0.24, "meditate"),
+                (0.80, "blink"),
+                (0.88, "meditate"),
+                (0.94, "normal"),
+            ),
+            "sploot": (
+                (0.00, "normal"),
+                (0.12, "bow"),
+                (0.24, "stretch"),
+                (0.36, "sploot"),
+                (0.80, "stretch"),
+                (0.92, "normal"),
+            ),
+            "bow": (
+                (0.00, "normal"),
+                (0.18, "asking"),
+                (0.34, "bow"),
+                (0.78, "asking"),
+                (0.90, "normal"),
+            ),
+            "somersault": (
+                (0.00, "normal"),
+                (0.10, "stretch"),
+                (0.24, "kungfu"),
+                (0.36, "somersault"),
+                (0.72, "bow"),
+                (0.88, "normal"),
+            ),
+            "nuzzle": (
+                (0.00, "normal"),
+                (0.16, "asking"),
+                (0.30, "nuzzle"),
+                (0.72, "happy"),
+                (0.88, "normal"),
+            ),
+            "dance": (
+                (0.00, "normal"),
+                (0.10, "stretch"),
+                (0.22, "happy"),
+                (0.38, "wave"),
+                (0.54, "happy"),
+                (0.70, "wave"),
+                (0.86, "happy"),
+                (0.94, "normal"),
+            ),
+        }
+        sequence = sequences.get(action)
+        if not sequence:
+            return action
+        pose = sequence[0][1]
+        for threshold, candidate in sequence:
+            if progress < threshold:
+                break
+            pose = candidate
+        return pose
 
     def _draw_sleep_animation(self, elapsed: float) -> None:
         breath_phase = elapsed * 2.0
@@ -3069,67 +3196,86 @@ class WaterPet:
 
     def _draw_prompt(self) -> None:
         self._rounded_rectangle(
-            7,
-            6,
-            297,
-            105,
-            20,
+            164,
+            10,
+            430,
+            226,
+            24,
             fill=GLASS["surface"],
             outline=GLASS["border"],
             width=1,
         )
         self.canvas.create_polygon(
-            142,
-            103,
-            162,
-            103,
-            152,
-            118,
+            165,
+            145,
+            165,
+            180,
+            140,
+            165,
             fill=GLASS["surface"],
             outline=GLASS["border"],
         )
         self.canvas.create_text(
-            152,
-            24,
-            text=f"{self.pet_name.get()} says: {self.water_prompt_text}",
-            fill=GLASS["text"],
-            font=("Segoe UI", 11, "bold"),
+            188,
+            30,
+            text=f"{self.pet_name.get().upper()} · WATER CHECK",
+            anchor="w",
+            fill=GLASS["aqua"],
+            font=("Segoe UI", 8, "bold"),
         )
         self.canvas.create_text(
-            152,
-            43,
-            text=f"Today so far  ·  {self.today_total_cache} ml",
+            188,
+            57,
+            text=self.water_prompt_text,
+            anchor="w",
+            fill=GLASS["text"],
+            font=("Segoe UI", 13, "bold"),
+            width=215,
+        )
+        self.canvas.create_text(
+            188,
+            82,
+            text=f"Today  ·  {self.today_total_cache} ml logged",
+            anchor="w",
             fill=GLASS["muted"],
-            font=("Segoe UI", 8),
+            font=("Segoe UI", 9),
         )
 
         self._answer_button(
-            14,
-            80,
+            188,
+            105,
+            290,
+            145,
             "100 ml",
             GLASS["aqua"],
             "#439D87",
             "amount_100",
         )
         self._answer_button(
-            84,
-            150,
+            302,
+            105,
+            404,
+            145,
             "200 ml",
             "#69B8E8",
             "#498FB8",
             "amount_200",
         )
         self._answer_button(
-            154,
-            220,
+            188,
+            158,
+            290,
+            198,
             "300 ml",
             GLASS["accent"],
             GLASS["accent_hover"],
             "amount_300",
         )
         self._answer_button(
-            224,
-            290,
+            302,
+            158,
+            404,
+            198,
             "Not yet",
             GLASS["surface_hover"],
             GLASS["border"],
@@ -3137,32 +3283,36 @@ class WaterPet:
         )
 
         self.canvas.create_oval(
-            100,
-            196,
-            204,
-            210,
+            30,
+            211,
+            150,
+            225,
             fill="#323744",
             outline="",
         )
-        attention_bounce = 0
+        attention_offset_y = 0
+        attention_offset_x = 0
         attention_image = "asking"
-        if self.attention_stage == 1:
-            attention_bounce = int(abs(math.sin(self.frame * 0.55)) * 5)
-            if (self.frame // 5) % 2 == 0:
-                attention_image = "wave"
-        elif self.attention_stage >= 2:
-            attention_bounce = int(abs(math.sin(self.frame * 0.9)) * 13)
-            attention_image = "happy" if (self.frame // 2) % 2 == 0 else "wave"
         attention_elapsed = (
             (datetime.now() - self.attention_started_at).total_seconds()
             if self.attention_started_at
             else 0.0
         )
+        if self.attention_stage == 1:
+            wave_progress = (attention_elapsed % 2.4) / 2.4
+            attention_image = self._natural_pose("wave", wave_progress)
+            attention_offset_x = int(math.sin(wave_progress * math.tau * 3) * 2)
+        elif self.attention_stage >= 2:
+            jump_progress = (attention_elapsed % 2.4) / 2.4
+            attention_image = self._natural_pose("jump", jump_progress)
+            if 0.18 <= jump_progress <= 0.82:
+                airborne = (jump_progress - 0.18) / 0.64
+                attention_offset_y = -int(math.sin(airborne * math.pi) * 24)
         if attention_elapsed < 1.35:
             self._draw_water_glass_animation(attention_elapsed)
         self.canvas.create_image(
-            152,
-            166 - attention_bounce,
+            90 + attention_offset_x,
+            161 + attention_offset_y,
             image=self._image(attention_image),
         )
         if attention_elapsed >= 1.35:
@@ -3190,8 +3340,8 @@ class WaterPet:
 
     def _draw_water_glass_animation(self, elapsed: float) -> None:
         reveal = min(1.0, max(0.0, elapsed / 2.1))
-        x = 158 + int(43 * reveal)
-        y = 181 - int(27 * reveal)
+        x = 98 + int(38 * reveal)
+        y = 187 - int(28 * reveal)
         wave = int(math.sin(self.frame * 0.55) * 1)
         self.canvas.create_polygon(
             x - 9,
@@ -3242,7 +3392,9 @@ class WaterPet:
     def _answer_button(
         self,
         x1: int,
+        y1: int,
         x2: int,
+        y2: int,
         label: str,
         fill: str,
         outline: str,
@@ -3251,10 +3403,10 @@ class WaterPet:
         tags = (tag, "answer_button")
         self._rounded_rectangle(
             x1,
-            57,
+            y1,
             x2,
-            91,
-            12,
+            y2,
+            14,
             fill=fill,
             outline=outline,
             width=1,
@@ -3262,10 +3414,10 @@ class WaterPet:
         )
         self.canvas.create_text(
             (x1 + x2) // 2,
-            74,
+            (y1 + y2) // 2,
             text=label,
             fill="white",
-            font=("Segoe UI", 8, "bold"),
+            font=("Segoe UI", 9, "bold"),
             tags=tags,
         )
 

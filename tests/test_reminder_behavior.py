@@ -11,11 +11,11 @@ WaterPet = MODULE['WaterPet']
 
 class ReminderBehaviorTests(unittest.TestCase):
     def test_no_dialogue_method_creates_a_window(self):
-        tree = ast.parse(SOURCE.read_text())
+        tree = ast.parse(SOURCE.read_text(encoding="utf-8"))
         methods = {'_show_general_alert', '_show_chatter_card', '_render_chatter_card', '_draw_prompt', '_draw_cloud_alert'}
         for node in ast.walk(tree):
             if isinstance(node, ast.FunctionDef) and node.name in methods:
-                self.assertNotIn('Toplevel', ast.get_source_segment(SOURCE.read_text(), node))
+                self.assertNotIn('Toplevel', ast.get_source_segment(SOURCE.read_text(encoding="utf-8"), node))
 
     def test_water_snooze_sets_ten_minutes_without_logging(self):
         pet = WaterPet.__new__(WaterPet)

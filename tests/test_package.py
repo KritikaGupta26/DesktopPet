@@ -19,6 +19,16 @@ class PackageTests(unittest.TestCase):
     def test_source_parses(self):
         self.assertIsInstance(self.tree, ast.Module)
 
+    def test_color_key_renderer_has_no_partial_alpha(self):
+        loader = next(node for node in ast.walk(self.tree)
+                      if isinstance(node, ast.FunctionDef) and node.name == "_load_images")
+        threshold = next(node for node in ast.walk(loader)
+                         if isinstance(node, ast.Lambda))
+        convert = eval(compile(ast.Expression(threshold), "alpha_threshold", "eval"))
+        self.assertEqual({convert(value) for value in range(256)}, {0, 255})
+        self.assertEqual(convert(0), 0)
+        self.assertEqual(convert(255), 255)
+
     def test_version_is_15(self):
         self.assertIn("APP_VERSION = 15", self.source)
 
@@ -38,6 +48,7 @@ class PackageTests(unittest.TestCase):
 
     def test_generated_reminder_assets_are_high_resolution(self):
         names = (
+            "idle_hd",
             "hula_1",
             "hula_2",
             "watch",
@@ -61,6 +72,7 @@ class PackageTests(unittest.TestCase):
     def test_all_pose_ground_lines_match(self):
         for path in ASSETS.glob("panda_*.png"):
             if path.name in {
+                "panda_idle_hd.png",
                 "panda_hula_1.png",
                 "panda_hula_2.png",
                 "panda_watch.png",

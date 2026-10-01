@@ -70,6 +70,7 @@ GLASS = {
 PET_LABELS = {"panda": "Panda"}
 
 COMMON_STATES = (
+    "idle_hd",
     "normal",
     "blink",
     "asking",
@@ -786,10 +787,18 @@ class WaterPet:
                     sprite,
                     ((180 - sprite.width) // 2, (180 - sprite.height) // 2),
                 )
+                # Windows color-key windows cannot display partial alpha:
+                # Tk blends translucent fur with the green key, leaving a halo.
+                # Keep opaque fur pixels and make the fringe fully transparent.
+                canvas.putalpha(canvas.getchannel("A").point(
+                    lambda alpha: 255 if alpha >= 128 else 0
+                ))
                 loaded[pet][state] = ImageTk.PhotoImage(canvas)
         return loaded
 
     def _image(self, state: str) -> ImageTk.PhotoImage:
+        if state in ("normal", "blink"):
+            state = "idle_hd"
         return self.images[self.pet_type.get()][state]
 
     def _load_settings(self) -> dict[str, object]:

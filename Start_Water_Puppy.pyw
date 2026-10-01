@@ -27,12 +27,12 @@ from PIL import Image, ImageTk
 
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 15
+APP_VERSION = 16
 REMINDER_MINUTES = 30
 TRANSPARENT_COLOR = "#00ff01"
 SMALL_WIDTH = 180
 SMALL_HEIGHT = 184
-PET_CENTER_Y = 105
+PET_CENTER_Y = 94
 PET_GROUND_Y = 169
 PROMPT_WIDTH = 440
 PROMPT_HEIGHT = 245
@@ -70,6 +70,9 @@ GLASS = {
 PET_LABELS = {"panda": "Panda"}
 
 COMMON_STATES = (
+    "water_bring",
+    "bow_hd",
+    "water_reach",
     "idle_hd",
     "normal",
     "blink",
@@ -707,6 +710,8 @@ class WaterPet:
         self.alert_icon_label: tk.Label | None = None
         self.active_alert_id: int | None = None
         self.active_alert_kind = ""
+        self.alert_title = ""
+        self.alert_subtitle = ""
         self.attention_started_at: datetime | None = None
         self.attention_stage = 0
         self.next_attention_nudge: datetime | None = None
@@ -794,11 +799,23 @@ class WaterPet:
                     lambda alpha: 255 if alpha >= 128 else 0
                 ))
                 loaded[pet][state] = ImageTk.PhotoImage(canvas)
+        with Image.open(assets / "panda_somersault.png") as opened:
+            rolling = opened.convert("RGBA")
+        rolling.thumbnail((132, 132), Image.Resampling.LANCZOS)
+        for frame in range(16):
+            sprite = rolling.rotate(-22.5 * frame, Image.Resampling.BICUBIC, expand=True)
+            sprite.thumbnail((166, 166), Image.Resampling.LANCZOS)
+            canvas = Image.new("RGBA", (180, 180))
+            canvas.alpha_composite(sprite, ((180-sprite.width)//2, (180-sprite.height)//2))
+            canvas.putalpha(canvas.getchannel("A").point(lambda a: 255 if a >= 128 else 0))
+            loaded["panda"][f"roll_{frame}"] = ImageTk.PhotoImage(canvas)
         return loaded
 
     def _image(self, state: str) -> ImageTk.PhotoImage:
         if state in ("normal", "blink"):
             state = "idle_hd"
+        elif state == "bow":
+            state = "bow_hd"
         return self.images[self.pet_type.get()][state]
 
     def _load_settings(self) -> dict[str, object]:
@@ -1322,32 +1339,14 @@ class WaterPet:
         canvas = self.chatter_canvas
         canvas.configure(width=width, height=height)
         canvas.delete("all")
-        radius = 20
-        x1, y1, x2, y2 = 3, 3, width - 3, height - 16
-        points = [
-            x1 + radius, y1, x2 - radius, y1, x2, y1, x2, y1 + radius,
-            x2, y2 - radius, x2, y2, x2 - radius, y2, x1 + radius, y2,
-            x1, y2, x1, y2 - radius, x1, y1 + radius, x1, y1,
-        ]
-        canvas.create_polygon(
-            points,
-            smooth=True,
-            splinesteps=20,
-            fill="#171A22",
-            outline="#8E7CFF",
-            width=2,
-        )
-        canvas.create_polygon(
-            (width // 2 - 10, y2 - 1, width // 2 + 10, y2 - 1, width // 2, height - 4),
-            fill="#171A22",
-            outline="#8E7CFF",
-            width=2,
-        )
+        self._cloud_shape(canvas, 14, 10, width - 14, height - 18, PALETTE["cream"], "#C8B9E8")
+        canvas.create_oval(width // 2 - 6, height - 15, width // 2 + 6, height - 3,
+                           fill=PALETTE["cream"], outline="#C8B9E8")
         canvas.create_text(
             width // 2,
             16 + ((line_height * len(lines)) // 2),
             text="\n".join(lines),
-            fill="#FAF9FF",
+            fill=PALETTE["ink"],
             font=font,
             justify="center",
             width=max_text_width,
@@ -1395,10 +1394,7 @@ class WaterPet:
         self.attention_sound_played = False
 
     def _update_attention_behavior(self, now: datetime) -> None:
-        alert_active = (
-            self.alert_window is not None
-            and self.alert_window.winfo_exists()
-        )
+        alert_active = bool(self.active_alert_kind)
         if not self.prompt_visible and not alert_active:
             if self.attention_started_at is not None:
                 self._clear_attention()
@@ -1516,7 +1512,11 @@ class WaterPet:
         self.today_total_cache += millilitres
         self.prompt_visible = False
         self._clear_attention()
-        self.state = "happy"
+        self.state = "normal"
+        self.idle_mood = "bow"
+        self.idle_mood_started_at = datetime.now()
+        self.idle_mood_until = datetime.now() + timedelta(seconds=4)
+        self._show_chatter("Thank you for taking care of yourself!", seconds=4)
         self.happy_until = datetime.now() + timedelta(seconds=6)
         self.motion_mode = "idle"
         self.current_action = None
@@ -1782,7 +1782,7 @@ class WaterPet:
         if self.reminders_paused_until and not paused:
             self.reminders_paused_until = None
 
-        if not paused and not self.prompt_visible and now >= self.next_reminder:
+        if not paused and not self.active_alert_kind and not self.prompt_visible and now >= self.next_reminder:
             self.show_prompt()
 
         if (now - self.last_schedule_check).total_seconds() >= 10:
@@ -1798,13 +1798,15 @@ class WaterPet:
             self.happy_until = None
             self.idle_until = now + timedelta(seconds=1)
 
-        self._update_inactivity_behavior(now)
+        if not self.active_alert_kind:
+            self._update_inactivity_behavior(now)
         self._update_idle_mood(now)
         self._check_cursor_reaction(now)
         self._update_attention_behavior(now)
 
         if (
             self.state == "normal"
+            and not self.active_alert_kind
             and not self.prompt_visible
             and not self.idle_mood
             and (
@@ -1859,6 +1861,7 @@ class WaterPet:
             return HIDDEN_TICK_MILLISECONDS
         if (
             self.dragging
+            or self.active_alert_kind
             or self.prompt_visible
             or self.attention_stage > 0
             or self.motion_mode in (
@@ -1936,72 +1939,12 @@ class WaterPet:
             self._show_chatter("Big yawn… you’ve gone quiet.", seconds=4)
 
     def _update_idle_mood(self, now: datetime) -> None:
+        # Only user-selected tricks or inactivity-triggered moods run here.
         if self.idle_mood and self.idle_mood_until and now >= self.idle_mood_until:
             self.idle_mood = ""
             self.idle_mood_until = None
             self.action_sequence_stage = -1
-            self.idle_until = now + timedelta(seconds=random.uniform(1.0, 3.0))
-        if (
-            self.idle_mood
-            or now < self.next_idle_mood
-            or self.prompt_visible
-            or self.dragging
-            or self.state != "normal"
-            or self.motion_mode != "idle"
-            or self.system_idle_seconds_cache >= 55
-        ):
-            return
-        mood_weights = {
-            "Calm": ("meditate", "sploot", "bored", "stretch", "nap"),
-            "Balanced": (
-                "bored",
-                "stretch",
-                "sneeze",
-                "meditate",
-                "sploot",
-                "bow",
-                "daydream",
-            ),
-            "Playful": (
-                "kungfu_combo",
-                "somersault",
-                "sneeze",
-                "bow",
-                "stretch",
-                "dance",
-            ),
-        }
-        self.idle_mood = random.choice(mood_weights[self.personality.get()])
-        if self.idle_mood == "bored":
-            self.idle_mood = ""
-            self.pending_edge_action = "bored_edge"
-            self._choose_edge_destination()
-            self.next_idle_mood = now + timedelta(seconds=random.uniform(50, 85))
-            return
-        duration = {
-            "daydream": 5.5,
-            "nap": 8.0,
-            "dance": 4.5,
-            "bored": 6.5,
-            "stretch": 4.0,
-            "sneeze": 2.8,
-            "meditate": 8.0,
-            "sploot": 7.0,
-            "bow": 3.5,
-            "kungfu_combo": 5.8,
-            "somersault": 3.8,
-        }[self.idle_mood]
-        self.idle_mood_started_at = now
-        self.action_sequence_stage = -1
-        self.idle_mood_until = now + timedelta(seconds=duration)
-        intervals = {
-            "Calm": (55, 100),
-            "Balanced": (38, 75),
-            "Playful": (24, 55),
-        }
-        self.next_idle_mood = now + timedelta(
-            seconds=random.uniform(*intervals[self.personality.get()])
-        )
+            self.idle_until = now + timedelta(seconds=75)
 
     def _check_cursor_reaction(self, now: datetime) -> None:
         if (
@@ -2058,7 +2001,7 @@ class WaterPet:
             self.next_cursor_reaction = now + timedelta(seconds=1)
 
     def _check_scheduled_reminders(self, now: datetime) -> None:
-        if self.prompt_visible or (
+        if self.active_alert_kind or self.prompt_visible or (
             self.alert_window is not None and self.alert_window.winfo_exists()
         ):
             return
@@ -2093,147 +2036,26 @@ class WaterPet:
             )
 
     def _show_general_alert(
-        self,
-        title: str,
-        subtitle: str,
-        kind: str,
+        self, title: str, subtitle: str, kind: str,
         reminder_id: int | None = None,
     ) -> None:
-        if self.alert_window is not None and self.alert_window.winfo_exists():
+        if self.active_alert_kind or self.prompt_visible:
             return
-        window = tk.Toplevel(self.root)
-        self.alert_window = window
+        self._close_chatter_card()
         self.active_alert_id = reminder_id
         self.active_alert_kind = kind
-        window.title("Panda Reminder")
-        left, top, right, bottom = self._screen_bounds()
-        window.resizable(False, False)
-        window.configure(bg=GLASS["window"])
-        window.overrideredirect(True)
-        window.attributes("-topmost", True)
-        window.protocol("WM_DELETE_WINDOW", self._snooze_active_alert)
-
-        shell = tk.Frame(
-            window,
-            bg=GLASS["window"],
-            highlightthickness=1,
-            highlightbackground=GLASS["border"],
-        )
-        shell.pack(fill="both", expand=True)
-        topbar = tk.Frame(shell, bg=GLASS["rail"], height=42)
-        topbar.pack(fill="x")
-        topbar.pack_propagate(False)
-        tk.Label(
-            topbar,
-            text="MOCHI REMINDER",
-            bg=GLASS["rail"],
-            fg=GLASS["muted"],
-            font=("Segoe UI", 8, "bold"),
-        ).pack(side="left", padx=18)
-        tk.Button(
-            topbar,
-            text="×",
-            command=self._snooze_active_alert,
-            bg=GLASS["rail"],
-            fg=GLASS["muted"],
-            activebackground=GLASS["surface_hover"],
-            activeforeground=GLASS["text"],
-            relief="flat",
-            bd=0,
-            font=("Segoe UI", 14),
-            padx=14,
-        ).pack(side="right", fill="y")
-
-        card = tk.Frame(shell, bg=GLASS["surface"], padx=18, pady=16)
-        card.pack(fill="both", expand=True)
-        artwork = tk.Frame(card, bg=GLASS["surface"], width=210, height=220)
-        artwork.pack(side="left", fill="y", padx=(0, 22))
-        artwork.pack_propagate(False)
-        initial_image = "watch" if "personal" in kind else "hula_1"
-        self.alert_pet_label = tk.Label(
-            artwork,
-            image=self._image(initial_image),
-            bg=GLASS["surface"],
-        )
-        self.alert_pet_label.place(relx=0.5, rely=0.52, anchor="center")
-        content = tk.Frame(card, bg=GLASS["surface"])
-        content.pack(side="left", fill="both", expand=True)
-        self.alert_icon_label = tk.Label(
-            content,
-            text="PERSONAL REMINDER" if "personal" in kind else "MOVEMENT BREAK",
-            bg=GLASS["accent"] if "personal" in kind else GLASS["aqua"],
-            fg="white" if "personal" in kind else GLASS["window"],
-            font=("Segoe UI", 8, "bold"),
-            padx=10,
-            pady=5,
-        )
-        self.alert_icon_label.pack(anchor="w", pady=(8, 12))
-        tk.Label(
-            content,
-            text=title,
-            bg=GLASS["surface"],
-            fg=GLASS["text"],
-            font=("Segoe UI", 16, "bold"),
-            wraplength=270,
-            justify="left",
-        ).pack(anchor="w", pady=(0, 7))
-        tk.Label(
-            content,
-            text=subtitle,
-            bg=GLASS["surface"],
-            fg=GLASS["muted"],
-            font=("Segoe UI", 10),
-            wraplength=270,
-            justify="left",
-        ).pack(anchor="w")
-        buttons = tk.Frame(content, bg=GLASS["surface"])
-        buttons.pack(anchor="w", pady=(16, 0))
-        tk.Button(
-            buttons,
-            text="Done ✓",
-            command=self._complete_active_alert,
-            bg=GLASS["accent"],
-            fg="white",
-            activebackground=GLASS["accent_hover"],
-            activeforeground="white",
-            relief="flat",
-            padx=14,
-            pady=6,
-            font=("Segoe UI", 9, "bold"),
-        ).pack(side="left")
-        tk.Button(
-            buttons,
-            text="Snooze 10 min",
-            command=self._snooze_active_alert,
-            bg=GLASS["surface_hover"],
-            fg=GLASS["text"],
-            activebackground=GLASS["border"],
-            activeforeground=GLASS["text"],
-            relief="flat",
-            padx=12,
-            pady=6,
-            font=("Segoe UI", 9, "bold"),
-        ).pack(side="left", padx=(8, 0))
-        window.update_idletasks()
-        alert_width = max(570, window.winfo_reqwidth())
-        alert_height = max(318, window.winfo_reqheight())
-        alert_width = min(alert_width, max(320, right - left - 24))
-        alert_height = min(alert_height, max(260, bottom - top - 24))
-        alert_x = max(
-            left + 12,
-            min(self.root.winfo_x() - alert_width + 150, right - alert_width - 12),
-        )
-        alert_y = max(
-            top + 12,
-            min(self.root.winfo_y() - 90, bottom - alert_height - 12),
-        )
-        window.geometry(
-            f"{alert_width}x{alert_height}{alert_x:+d}{alert_y:+d}"
-        )
+        self.alert_title = title
+        self.alert_subtitle = subtitle
+        self.motion_mode = "idle"
+        self.current_action = None
+        self.pending_edge_action = None
+        self.idle_mood = ""
+        self.state = "normal"
+        self._resize_anchored(PROMPT_WIDTH, PROMPT_HEIGHT)
         self._begin_attention()
+        self.root.deiconify()
+        self.root.lift()
         self._play_reminder_sound()
-        window.lift()
-        window.after(80, lambda: self._apply_tool_window_style(window))
 
     def _complete_active_alert(self) -> None:
         if self.active_alert_kind == "personal" and self.active_alert_id:
@@ -2272,14 +2094,13 @@ class WaterPet:
         self._refresh_reminders()
 
     def _close_active_alert(self) -> None:
-        if self.alert_window is not None and self.alert_window.winfo_exists():
-            self.alert_window.destroy()
         self.alert_window = None
         self.alert_pet_label = None
         self.alert_icon_label = None
         self.active_alert_id = None
         self.active_alert_kind = ""
         self._clear_attention()
+        self._resize_anchored(SMALL_WIDTH, SMALL_HEIGHT)
 
     def _update_particles(self) -> None:
         alive: list[dict[str, float | str]] = []
@@ -2427,24 +2248,7 @@ class WaterPet:
         if self.motion_mode == "idle":
             if now < self.idle_until:
                 return
-            action_chance = {
-                "Calm": 0.24,
-                "Balanced": 0.38,
-                "Playful": 0.52,
-            }[self.personality.get()]
-            if random.random() < action_chance:
-                if random.random() < 0.28:
-                    self.pending_edge_action = random.choice(EDGE_ACTIONS)
-                    self._choose_edge_destination()
-                else:
-                    self.current_action = random.choice(FREE_IDLE_MOODS)
-                    self.motion_mode = "action"
-                    self.action_started_at = now
-                    self.action_until = now + timedelta(
-                        seconds=random.uniform(3.0, 5.5)
-                    )
-            else:
-                self._choose_destination()
+            self._choose_destination()
             return
 
         dx = self.target_x - self.pet_x
@@ -2467,11 +2271,11 @@ class WaterPet:
                 self.motion_mode = "action"
                 self.action_started_at = now
                 self.action_until = now + timedelta(
-                    seconds=(8.5 if self.current_action == "bored_edge" else random.uniform(3.5, 5.5))
+                    seconds=(28.0 if self.current_action == "bored_edge" else random.uniform(3.5, 5.5))
                 )
             else:
                 self.motion_mode = "idle"
-                self.idle_until = now + timedelta(seconds=random.uniform(2.0, 7.0))
+                self.idle_until = now + timedelta(seconds=90)
         else:
             step_speed = self.walk_speed
             if self.motion_mode == "walking":
@@ -2678,6 +2482,9 @@ class WaterPet:
 
     def _draw(self) -> None:
         self.canvas.delete("all")
+        if self.active_alert_kind:
+            self._draw_cloud_alert()
+            return
         if self.prompt_visible:
             self._draw_prompt()
             return
@@ -2867,15 +2674,8 @@ class WaterPet:
         self._draw_overlays()
 
     def _draw_ground_shadow(self) -> None:
-        pulse = int(abs(math.sin(self.frame * 0.16)) * 2)
-        self.canvas.create_oval(
-            44 - pulse,
-            PET_GROUND_Y - 7,
-            SMALL_WIDTH - 44 + pulse,
-            PET_GROUND_Y + 3,
-            fill="#D8D1E2",
-            outline="",
-        )
+        # A painted ground line obscured the curved feet. Keep the full silhouette.
+        return
 
     def _draw_idle_mood(self) -> None:
         phase = self.frame * 0.32
@@ -3005,6 +2805,10 @@ class WaterPet:
 
     @staticmethod
     def _natural_pose(action: str, progress: float) -> str:
+        if action == "somersault":
+            if progress < 0.18 or progress > 0.88:
+                return "normal"
+            return f"roll_{min(15, int((progress - 0.18) / 0.70 * 16))}"
         progress = max(0.0, min(1.0, progress))
         sequences = {
             "wave": (
@@ -3060,9 +2864,8 @@ class WaterPet:
             ),
             "bow": (
                 (0.00, "normal"),
-                (0.18, "asking"),
-                (0.34, "bow"),
-                (0.78, "asking"),
+                (0.18, "bow"),
+                (0.78, "bow"),
                 (0.90, "normal"),
             ),
             "somersault": (
@@ -3178,7 +2981,7 @@ class WaterPet:
             )
 
     def _draw_bored_sequence(self, elapsed: float) -> None:
-        frame_times = (0.0, 0.9, 1.8, 2.8, 3.8, 5.0, 6.2, 7.4)
+        frame_times = (0.0, 3.0, 6.0, 9.0, 12.0, 16.0, 20.0, 24.0)
         frame_number = 1
         for index, start_time in enumerate(frame_times, start=1):
             if elapsed >= start_time:
@@ -3249,27 +3052,39 @@ class WaterPet:
                 ).fetchone()[0]
             )
 
+    def _cloud_shape(self, canvas, x1, y1, x2, y2, fill, outline) -> None:
+        cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
+        rx, ry = (x2 - x1) / 2, (y2 - y1) / 2
+        points = []
+        for index in range(160):
+            angle = index * math.tau / 160
+            ripple = 1 + 0.055 * math.cos(angle * 12)
+            cosine, sine = math.cos(angle), math.sin(angle)
+            points.extend((
+                cx + rx * math.copysign(abs(cosine) ** 0.55, cosine) * ripple,
+                cy + ry * math.copysign(abs(sine) ** 0.55, sine) * ripple,
+            ))
+        canvas.create_polygon(points, smooth=True, fill=fill, outline=outline, width=2)
+
+    def _draw_cloud_alert(self) -> None:
+        self._cloud_shape(self.canvas, 172, 24, 422, 211, PALETTE["cream"], "#C8B9E8")
+        self.canvas.create_oval(148, 158, 166, 176, fill=PALETTE["cream"], outline="#C8B9E8")
+        self.canvas.create_oval(136, 178, 145, 187, fill=PALETTE["cream"], outline="#C8B9E8")
+        personal = "personal" in self.active_alert_kind
+        elapsed = (datetime.now() - self.attention_started_at).total_seconds() if self.attention_started_at else 0
+        pose = "watch" if personal else f"hula_{1 + (int(elapsed * 4) % 2)}"
+        self.canvas.create_image(87, 147, image=self._image(pose))
+        self.canvas.create_text(296, 57, text=self.alert_title if personal else "Time to move!", width=206,
+                                fill=PALETTE["ink"], font=("Segoe UI", 13, "bold"), justify="center")
+        self.canvas.create_text(296, 110, text=self.alert_subtitle if personal else "Hula with me, stretch, or take a little walk.",
+                                width=200, fill=PALETTE["muted"], font=("Segoe UI", 10), justify="center")
+        self._answer_button(191, 157, 281, 191, "Done", PALETTE["purple"], PALETTE["purple_dark"], "alert_done")
+        self._answer_button(291, 157, 402, 191, "10 min later", PALETTE["teal"], "#439D87", "alert_snooze")
+        self.canvas.tag_bind("alert_done", "<Button-1>", lambda event: self._complete_active_alert())
+        self.canvas.tag_bind("alert_snooze", "<Button-1>", lambda event: self._snooze_active_alert())
+
     def _draw_prompt(self) -> None:
-        self._rounded_rectangle(
-            164,
-            10,
-            430,
-            226,
-            24,
-            fill=GLASS["surface"],
-            outline=GLASS["border"],
-            width=1,
-        )
-        self.canvas.create_polygon(
-            165,
-            145,
-            165,
-            180,
-            140,
-            165,
-            fill=GLASS["surface"],
-            outline=GLASS["border"],
-        )
+        self._cloud_shape(self.canvas, 170, 18, 419, 213, PALETTE["cream"], "#C8B9E8")
         self.canvas.create_text(
             188,
             30,
@@ -3283,7 +3098,7 @@ class WaterPet:
             57,
             text=self.water_prompt_text,
             anchor="w",
-            fill=GLASS["text"],
+            fill=PALETTE["ink"],
             font=("Segoe UI", 13, "bold"),
             width=215,
         )
@@ -3292,7 +3107,7 @@ class WaterPet:
             82,
             text=f"Today  ·  {self.today_total_cache} ml logged",
             anchor="w",
-            fill=GLASS["muted"],
+            fill=PALETTE["muted"],
             font=("Segoe UI", 9),
         )
 
@@ -3337,24 +3152,17 @@ class WaterPet:
             "not_yet",
         )
 
-        self.canvas.create_oval(
-            30,
-            211,
-            150,
-            225,
-            fill="#323744",
-            outline="",
-        )
         attention_offset_y = int(math.sin(self.frame * 0.28) * 2)
         attention_elapsed = (
             (datetime.now() - self.attention_started_at).total_seconds()
             if self.attention_started_at
             else 0.0
         )
+        water_pose = ("water_reach" if attention_elapsed < 1.0 else
+                      "water_bring" if attention_elapsed < 2.0 else "water")
         self.canvas.create_image(
-            90,
-            161 + attention_offset_y,
-            image=self._image("water"),
+            90, 144 + attention_offset_y,
+            image=self._image(water_pose),
         )
         if int(attention_elapsed * 2) % 2 == 0:
             self.canvas.create_text(
@@ -3423,16 +3231,7 @@ class WaterPet:
         fill: str,
         text_color: str,
     ) -> None:
-        self._rounded_rectangle(
-            18,
-            2,
-            SMALL_WIDTH - 18,
-            46,
-            15,
-            fill=fill,
-            outline=text_color,
-            width=1,
-        )
+        self._cloud_shape(self.canvas, 20, 5, SMALL_WIDTH - 20, 44, fill, text_color)
         self.canvas.create_text(
             SMALL_WIDTH // 2,
             24,

@@ -29,8 +29,8 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(convert(0), 0)
         self.assertEqual(convert(255), 255)
 
-    def test_version_is_15(self):
-        self.assertIn("APP_VERSION = 15", self.source)
+    def test_version_is_16(self):
+        self.assertIn("APP_VERSION = 16", self.source)
 
     def test_panda_face_icon_exists(self):
         icon = ASSETS / "panda.ico"
@@ -48,6 +48,9 @@ class PackageTests(unittest.TestCase):
 
     def test_generated_reminder_assets_are_high_resolution(self):
         names = (
+            "bow_hd",
+            "water_reach",
+            "water_bring",
             "idle_hd",
             "hula_1",
             "hula_2",
@@ -72,6 +75,9 @@ class PackageTests(unittest.TestCase):
     def test_all_pose_ground_lines_match(self):
         for path in ASSETS.glob("panda_*.png"):
             if path.name in {
+                "panda_bow_hd.png",
+                "panda_water_reach.png",
+                "panda_water_bring.png",
                 "panda_idle_hd.png",
                 "panda_hula_1.png",
                 "panda_hula_2.png",
@@ -108,10 +114,11 @@ class PackageTests(unittest.TestCase):
         self.assertNotIn('label="Test animations"', self.source)
         self.assertIn('text="Panda activities"', self.source)
 
-    def test_alert_uses_content_aware_height(self):
-        self.assertNotIn('window.geometry(f"510x270', self.source)
-        self.assertIn("window.winfo_reqheight()", self.source)
-        self.assertIn("alert_height = max(318", self.source)
+    def test_alert_uses_cloud_on_pet_window(self):
+        method = next(n for n in ast.walk(self.tree) if isinstance(n, ast.FunctionDef) and n.name == "_show_general_alert")
+        self.assertNotIn("Toplevel", ast.get_source_segment(self.source, method))
+        self.assertIn("_draw_cloud_alert", self.source)
+        self.assertIn("PET_CENTER_Y = 94", self.source)
 
     def test_water_prompt_has_separate_card_layout(self):
         self.assertIn("PROMPT_WIDTH = 440", self.source)
@@ -119,9 +126,9 @@ class PackageTests(unittest.TestCase):
         self.assertIn("188,\n            105,\n            290,\n            145", self.source)
 
     def test_reminders_use_purpose_built_poses(self):
-        self.assertIn('initial_image = "watch"', self.source)
-        self.assertIn('image_key = f"hula_', self.source)
-        self.assertIn('image=self._image("water")', self.source)
+        self.assertIn('pose = "watch" if personal', self.source)
+        self.assertIn('else f"hula_', self.source)
+        self.assertIn('image=self._image(water_pose)', self.source)
         self.assertNotIn("_draw_water_glass_animation", self.source)
 
     def test_installer_definition_exists(self):

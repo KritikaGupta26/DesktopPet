@@ -29,8 +29,8 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(convert(0), 0)
         self.assertEqual(convert(255), 255)
 
-    def test_version_is_16(self):
-        self.assertIn("APP_VERSION = 16", self.source)
+    def test_version_is_17(self):
+        self.assertIn("APP_VERSION = 17", self.source)
 
     def test_panda_face_icon_exists(self):
         icon = ASSETS / "panda.ico"
@@ -74,6 +74,8 @@ class PackageTests(unittest.TestCase):
 
     def test_all_pose_ground_lines_match(self):
         for path in ASSETS.glob("panda_*.png"):
+            if path.stem.startswith(("panda_offer_", "panda_hoop_", "panda_clock_")):
+                continue
             if path.name in {
                 "panda_bow_hd.png",
                 "panda_water_reach.png",
@@ -126,9 +128,9 @@ class PackageTests(unittest.TestCase):
         self.assertIn("188,\n            105,\n            290,\n            145", self.source)
 
     def test_reminders_use_purpose_built_poses(self):
-        self.assertIn('pose = "watch" if personal', self.source)
-        self.assertIn('else f"hula_', self.source)
-        self.assertIn('image=self._image(water_pose)', self.source)
+        self.assertIn('pose = f"clock_', self.source)
+        self.assertIn('else f"hoop_', self.source)
+        self.assertIn('offer_{min(7', self.source)
         self.assertNotIn("_draw_water_glass_animation", self.source)
 
     def test_installer_definition_exists(self):

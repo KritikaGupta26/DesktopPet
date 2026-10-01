@@ -27,7 +27,7 @@ from PIL import Image, ImageTk
 
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 16
+APP_VERSION = 17
 REMINDER_MINUTES = 30
 TRANSPARENT_COLOR = "#00ff01"
 SMALL_WIDTH = 180
@@ -35,7 +35,7 @@ SMALL_HEIGHT = 184
 PET_CENTER_Y = 94
 PET_GROUND_Y = 169
 PROMPT_WIDTH = 440
-PROMPT_HEIGHT = 245
+PROMPT_HEIGHT = 275
 ACTIVE_TICK_MILLISECONDS = 80
 IDLE_TICK_MILLISECONDS = 250
 HIDDEN_TICK_MILLISECONDS = 1000
@@ -69,7 +69,7 @@ GLASS = {
 
 PET_LABELS = {"panda": "Panda"}
 
-COMMON_STATES = (
+COMMON_STATES = tuple(f"offer_{i}" for i in range(8)) + tuple(f"hoop_{i}" for i in range(8)) + tuple(f"clock_{i}" for i in range(6)) + (
     "water_bring",
     "bow_hd",
     "water_reach",
@@ -990,11 +990,11 @@ class WaterPet:
 
     def _resize_anchored(self, width: int, height: int) -> None:
         self.root.update_idletasks()
-        right = self.root.winfo_x() + self.width
-        bottom = self.root.winfo_y() + self.height
+        left = self.root.winfo_x()
+        top = self.root.winfo_y()
         screen_left, screen_top, screen_right, screen_bottom = self._screen_bounds()
-        x = max(screen_left, min(right - width, screen_right - width))
-        y = max(screen_top, min(bottom - height, screen_bottom - height))
+        x = max(screen_left, min(left, screen_right - width))
+        y = max(screen_top, min(top, screen_bottom - height))
         self.width = width
         self.height = height
         self.canvas.configure(width=width, height=height)
@@ -1249,6 +1249,8 @@ class WaterPet:
         self._show_chatter("I’m back on sip duty!", seconds=4)
 
     def show_prompt(self) -> None:
+        if self.active_alert_kind:
+            return
         self._close_chatter_card()
         if not self.prompt_visible:
             self._resize_anchored(PROMPT_WIDTH, PROMPT_HEIGHT)
@@ -1283,102 +1285,30 @@ class WaterPet:
         self._show_chatter_card()
 
     def _show_chatter_card(self) -> None:
-        if self.prompt_visible:
+        if self.prompt_visible or self.active_alert_kind:
             return
-        if self.chatter_window is None or not self.chatter_window.winfo_exists():
-            card = tk.Toplevel(self.root)
-            self.chatter_window = card
-            card.overrideredirect(True)
-            card.attributes("-topmost", True)
-            card.configure(bg=TRANSPARENT_COLOR)
-            try:
-                card.wm_attributes("-transparentcolor", TRANSPARENT_COLOR)
-            except tk.TclError:
-                pass
-            self.chatter_canvas = tk.Canvas(
-                card,
-                bg=TRANSPARENT_COLOR,
-                highlightthickness=0,
-                bd=0,
-            )
-            self.chatter_canvas.pack(fill="both", expand=True)
-            card.after(50, lambda: self._apply_tool_window_style(card))
-        self._render_chatter_card()
-        self.chatter_window.deiconify()
-        self.chatter_window.update_idletasks()
-        self._position_chatter_card()
+        self._resize_anchored(PROMPT_WIDTH, PROMPT_HEIGHT)
 
     def _render_chatter_card(self) -> None:
-        if self.chatter_canvas is None or not self.chatter_text:
+        if not self.chatter_text:
             return
-        font = tkfont.Font(
-            family="Segoe UI Variable Display",
-            size=11,
-            weight="bold",
-        )
-        max_text_width = 270
-        words = self.chatter_text.split()
-        lines: list[str] = []
-        current = ""
-        for word in words:
-            candidate = f"{current} {word}".strip()
-            if current and font.measure(candidate) > max_text_width:
-                lines.append(current)
-                current = word
-            else:
-                current = candidate
-        if current:
-            lines.append(current)
-        if len(lines) > 3:
-            lines = lines[:3]
-            lines[-1] = textwrap.shorten(lines[-1], width=34, placeholder="…")
-        text_width = max((font.measure(line) for line in lines), default=180)
-        width = max(220, min(318, text_width + 42))
-        line_height = font.metrics("linespace")
-        height = max(76, 30 + (line_height * len(lines)) + 18)
-        canvas = self.chatter_canvas
-        canvas.configure(width=width, height=height)
-        canvas.delete("all")
-        self._cloud_shape(canvas, 14, 10, width - 14, height - 18, PALETTE["cream"], "#C8B9E8")
-        canvas.create_oval(width // 2 - 6, height - 15, width // 2 + 6, height - 3,
-                           fill=PALETTE["cream"], outline="#C8B9E8")
-        canvas.create_text(
-            width // 2,
-            16 + ((line_height * len(lines)) // 2),
-            text="\n".join(lines),
-            fill=PALETTE["ink"],
-            font=font,
-            justify="center",
-            width=max_text_width,
-        )
-        self.chatter_window.geometry(f"{width}x{height}")
+        self._cloud_shape(self.canvas, 174, 24, 422, 183, PALETTE["cream"], "#C8B9E8")
+        self.canvas.create_oval(151, 133, 165, 147, fill=PALETTE["cream"], outline="#C8B9E8")
+        self.canvas.create_oval(138, 151, 147, 160, fill=PALETTE["cream"], outline="#C8B9E8")
+        self.canvas.create_text(298, 100, text=self.chatter_text, width=205,
+                                fill=PALETTE["ink"], font=("Segoe UI", 11), justify="center")
 
     def _position_chatter_card(self) -> None:
-        if self.chatter_window is None or not self.chatter_window.winfo_exists():
-            return
-        card_width = max(220, self.chatter_window.winfo_width())
-        card_height = max(76, self.chatter_window.winfo_height())
-        left, top, right, bottom = self._screen_bounds()
-        pet_x = self.root.winfo_x()
-        pet_y = self.root.winfo_y()
-        x = pet_x + (self.width - card_width) // 2
-        x = max(left + 8, min(x, right - card_width - 8))
-        y = pet_y - card_height - 10
-        if y < top + 8:
-            y = pet_y + self.height + 10
-        y = max(top + 8, min(y, bottom - card_height - 8))
-        geometry = f"{card_width}x{card_height}{x:+d}{y:+d}"
-        if geometry != self.chatter_geometry:
-            self.chatter_window.geometry(geometry)
-            self.chatter_geometry = geometry
+        # Chatter shares the pet canvas, so dragging moves both together.
+        pass
 
     def _close_chatter_card(self) -> None:
-        if self.chatter_window is not None and self.chatter_window.winfo_exists():
-            self.chatter_window.destroy()
         self.chatter_window = None
-        self.chatter_label = None
         self.chatter_canvas = None
-        self.chatter_geometry = ""
+        self.chatter_until = None
+        self.chatter_text = ""
+        if not self.prompt_visible and not self.active_alert_kind:
+            self._resize_anchored(SMALL_WIDTH, SMALL_HEIGHT)
 
     def _begin_attention(self) -> None:
         now = datetime.now()
@@ -1516,6 +1446,7 @@ class WaterPet:
         self.idle_mood = "bow"
         self.idle_mood_started_at = datetime.now()
         self.idle_mood_until = datetime.now() + timedelta(seconds=4)
+        self._resize_anchored(SMALL_WIDTH, SMALL_HEIGHT)
         self._show_chatter("Thank you for taking care of yourself!", seconds=4)
         self.happy_until = datetime.now() + timedelta(seconds=6)
         self.motion_mode = "idle"
@@ -1536,7 +1467,6 @@ class WaterPet:
                 }
             )
         self.particles = self.particles[-32:]
-        self._resize_anchored(SMALL_WIDTH, SMALL_HEIGHT)
         self._refresh_history()
 
     def _build_reminder_tab(self, parent: ttk.Frame) -> None:
@@ -1756,6 +1686,18 @@ class WaterPet:
                 values=(title, formatted_due),
             )
 
+    def snooze_water(self, _event: tk.Event | None = None) -> None:
+        if not self.prompt_visible:
+            return
+        self.prompt_visible = False
+        self._clear_attention()
+        self.state = "normal"
+        self.motion_mode = "idle"
+        self.current_action = None
+        self.next_reminder = datetime.now() + timedelta(minutes=10)
+        self._resize_anchored(SMALL_WIDTH, SMALL_HEIGHT)
+        self._show_chatter("Okay, another sip check in 10 minutes.", seconds=4)
+
     def answer_not_yet(self, _event: tk.Event | None = None) -> None:
         if not self.prompt_visible:
             return
@@ -1808,6 +1750,7 @@ class WaterPet:
             self.state == "normal"
             and not self.active_alert_kind
             and not self.prompt_visible
+            and not self.chatter_until
             and not self.idle_mood
             and (
                 self.roam_enabled.get()
@@ -2481,6 +2424,11 @@ class WaterPet:
         return ledges
 
     def _draw(self) -> None:
+        self._draw_pet_scene()
+        if self.chatter_until and self.chatter_text and not self.prompt_visible and not self.active_alert_kind:
+            self._render_chatter_card()
+
+    def _draw_pet_scene(self) -> None:
         self.canvas.delete("all")
         if self.active_alert_kind:
             self._draw_cloud_alert()
@@ -3072,7 +3020,7 @@ class WaterPet:
         self.canvas.create_oval(136, 178, 145, 187, fill=PALETTE["cream"], outline="#C8B9E8")
         personal = "personal" in self.active_alert_kind
         elapsed = (datetime.now() - self.attention_started_at).total_seconds() if self.attention_started_at else 0
-        pose = "watch" if personal else f"hula_{1 + (int(elapsed * 4) % 2)}"
+        pose = f"clock_{min(5, int(elapsed / 0.22))}" if personal else f"hoop_{int(elapsed / 0.22) % 8}"
         self.canvas.create_image(87, 147, image=self._image(pose))
         self.canvas.create_text(296, 57, text=self.alert_title if personal else "Time to move!", width=206,
                                 fill=PALETTE["ink"], font=("Segoe UI", 13, "bold"), justify="center")
@@ -3084,13 +3032,13 @@ class WaterPet:
         self.canvas.tag_bind("alert_snooze", "<Button-1>", lambda event: self._snooze_active_alert())
 
     def _draw_prompt(self) -> None:
-        self._cloud_shape(self.canvas, 170, 18, 419, 213, PALETTE["cream"], "#C8B9E8")
+        self._cloud_shape(self.canvas, 170, 18, 419, 253, PALETTE["cream"], "#C8B9E8")
         self.canvas.create_text(
             188,
             30,
             text=f"{self.pet_name.get().upper()} · WATER CHECK",
             anchor="w",
-            fill=GLASS["aqua"],
+            fill=PALETTE["teal"],
             font=("Segoe UI", 8, "bold"),
         )
         self.canvas.create_text(
@@ -3152,26 +3100,11 @@ class WaterPet:
             "not_yet",
         )
 
-        attention_offset_y = int(math.sin(self.frame * 0.28) * 2)
-        attention_elapsed = (
-            (datetime.now() - self.attention_started_at).total_seconds()
-            if self.attention_started_at
-            else 0.0
-        )
-        water_pose = ("water_reach" if attention_elapsed < 1.0 else
-                      "water_bring" if attention_elapsed < 2.0 else "water")
-        self.canvas.create_image(
-            90, 144 + attention_offset_y,
-            image=self._image(water_pose),
-        )
-        if int(attention_elapsed * 2) % 2 == 0:
-            self.canvas.create_text(
-                145,
-                99,
-                text="✦",
-                fill="#F6D66D",
-                font=("Segoe UI Symbol", 9, "bold"),
-            )
+        self._answer_button(188, 211, 404, 242, "10 min later", PALETTE["purple"], PALETTE["purple_dark"], "water_snooze")
+        self.canvas.tag_bind("water_snooze", "<Button-1>", self.snooze_water)
+        elapsed = (datetime.now() - self.attention_started_at).total_seconds() if self.attention_started_at else 0
+        # Reveal once, then hold. Never reset the glass behind the panda.
+        self.canvas.create_image(90, 144, image=self._image(f"offer_{min(7, int(elapsed / 0.28))}"))
         self.canvas.tag_bind(
             "amount_100",
             "<Button-1>",

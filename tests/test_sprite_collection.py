@@ -107,3 +107,37 @@ class SpriteCollectionTests(unittest.TestCase):
         self.assertGreater(pet.next_hunger,datetime.now()+timedelta(minutes=119))
         # Mouse release after a feed click must not overwrite the eating pose.
         pet._end_drag(Mock());self.assertEqual(pet.motion_mode,'idle')
+
+    def test_activity_catalog_has_no_duplicate_controls_or_automatic_food(self):
+        module=runpy.run_path(str(ROOT/'Start_Water_Puppy.pyw'))
+        labels=module['ACTIVITY_LABELS'];aliases=module['ACTIVITY_ALIASES']
+        self.assertEqual(len(labels),len(set(labels.values())))
+        self.assertTrue(set(aliases).isdisjoint(labels))
+        self.assertNotIn('feed',module['ROUTINE_ACTIVITIES'])
+        self.assertNotIn('eat_bamboo',module['ROUTINE_ACTIVITIES'])
+        self.assertEqual(aliases['wiggle'],'dance')
+        self.assertEqual(aliases['greeting'],'wave')
+
+    def test_cursor_follow_moves_retargets_and_yields_to_reminders(self):
+        pet=WaterPet.__new__(WaterPet);pet.cursor_mode=Mock();pet.cursor_mode.get.return_value='Follow'
+        pet.prompt_visible=False;pet.active_alert_kind='';pet.dragging=False;pet.state='normal';pet.idle_mood='';pet.motion_mode='idle'
+        pet.pet_x=300.;pet.pet_y=300.;pet.root=Mock();pet.root.winfo_pointerxy.return_value=(900,392)
+        pet._screen_bounds=Mock(return_value=(0,0,1920,1080));pet._move_root=Mock()
+        pet._check_cursor_reaction(datetime.now())
+        self.assertGreater(pet.pet_x,300);self.assertEqual(pet.walk_direction,'right')
+        previous=pet.pet_x;pet.root.winfo_pointerxy.return_value=(10,392)
+        pet._check_cursor_reaction(datetime.now())
+        self.assertLess(pet.pet_x,previous);self.assertEqual(pet.walk_direction,'left')
+        previous=pet.pet_x;pet.prompt_visible=True;pet._check_cursor_reaction(datetime.now())
+        self.assertEqual(pet.pet_x,previous)
+        pet.prompt_visible=False;pet.root.winfo_pointerxy.return_value=(round(pet.pet_x+90),392)
+        pet._check_cursor_reaction(datetime.now())
+        self.assertEqual(pet.pet_x,previous);self.assertTrue(pet.cursor_at_rest)
+
+    def test_manual_follow_launches_motion_instead_of_a_pose(self):
+        pet=WaterPet.__new__(WaterPet);pet.prompt_visible=False;pet.active_alert_kind='';pet.dragging=False;pet.state='normal'
+        pet._close_chatter_card=Mock();pet._play_test_animation=Mock()
+        pet._play_pack_animation('cursor_follow')
+        self.assertEqual(pet.cursor_session_kind,'Follow')
+        self.assertIsNotNone(pet.cursor_session_until)
+        pet._play_test_animation.assert_not_called()

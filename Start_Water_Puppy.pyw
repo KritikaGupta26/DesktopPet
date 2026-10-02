@@ -27,11 +27,29 @@ from tkinter import filedialog, messagebox, ttk
 from PIL import Image, ImageTk
 
 
-ROUTINE_ACTIVITIES = ("ear_rub", "wash_face", "lazy_stretch", "eat_bamboo", "dance", "wiggle", "kung_fu", "peekaboo", "clap", "blow_kiss", "sit_down", "forward_roll")
-GENTLE_ACTIVITIES = ROUTINE_ACTIVITIES[:4] + ("sit_down",)
+ACTIVITY_LABELS = {
+    "feed":"Feed bamboo", "walk":"Walk", "run":"Run", "cursor_follow":"Follow cursor",
+    "cursor_avoid":"Avoid cursor", "fetch":"Fetch", "log":"Play on log", "bamboo_hang":"Hang on bamboo",
+    "kung_fu":"Kung fu", "yawn_stretch":"Yawn and stretch", "sleep":"Sleep", "lazy_stretch":"Stretch",
+    "sneeze":"Sneeze", "meditate":"Meditate", "sploot":"Sploot", "dance":"Dance",
+    "forward_roll":"Somersault", "petting":"Petting", "bow":"Bow", "water":"Water reminder",
+    "movement":"Movement break", "watch":"Personal reminder", "wave":"Wave", "ear_rub":"Rub ears",
+    "peekaboo":"Peekaboo", "clap":"Clap", "blow_kiss":"Blow a kiss",
+    "belly_scratch":"Belly scratch", "hiccup":"Hiccup", "wash_face":"Wash face", "victory":"Celebrate",
+}
+ACTIVITY_ALIASES = {
+    "side_roll":"forward_roll", "eat_bamboo":"feed", "wiggle":"dance", "greeting":"wave", "snore_sleep":"sleep",
+    "sit_on_log":"log", "balance_on_log":"log", "bored_shuffle":"log", "sit_down":"sploot",
+    "wake_up":"wave", "carry_bamboo":"feed", "water_offer":"water", "alternate_offer":"water",
+    "drink_water":"water", "alternate_hoop":"movement", "hula_hoop":"movement",
+    "chase_ball":"fetch", "catch_ball":"fetch", "happy_idle":"wave", "sad":"bow",
+}
+ROUTINE_ACTIVITIES = ("ear_rub", "wash_face", "lazy_stretch", "dance", "kung_fu", "peekaboo", "clap", "blow_kiss", "forward_roll")
+GENTLE_ACTIVITIES = ROUTINE_ACTIVITIES[:3]
+
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 23
+APP_VERSION = 24
 REMINDER_MINUTES = 30
 TRANSPARENT_COLOR = "#00ff01"
 SMALL_WIDTH = 180
@@ -640,6 +658,10 @@ class WaterPet:
             value=self.settings["hide_fullscreen"]
         )
         self.personality = tk.StringVar(value=self.settings["personality"])
+        self.cursor_mode = tk.StringVar(value=self.settings["cursor_mode"])
+        self.cursor_session_kind = ""
+        self.cursor_session_until = None
+        self.last_routine_key = ""
         self.cursor_games = tk.BooleanVar(value=self.settings["cursor_games"])
         self.sleep_enabled = tk.BooleanVar(value=self.settings["sleep_enabled"])
         self.roam_rest_seconds = tk.IntVar(value=self.settings["roam_rest_seconds"])
@@ -892,6 +914,10 @@ class WaterPet:
     def _play_pack_animation(self, key: str) -> None:
         if self.prompt_visible or self.active_alert_kind or self.dragging or self.state == "sad":
             return
+        canonical=ACTIVITY_ALIASES.get(key,key)
+        if canonical != key or key in ("cursor_follow","cursor_avoid"):
+            self._play_activity(canonical)
+            return
         metadata = self.pack_manifest[key]
         if key in ("walk", "run"):
             self._test_walk_across_screen()
@@ -908,6 +934,24 @@ class WaterPet:
             return
         seconds = max(4.0,metadata["frames"]*metadata["seconds_per_frame"]+1.0)
         self._play_test_animation("pack:" + key, seconds)
+
+    def _play_activity(self, key: str) -> None:
+        if self.prompt_visible or self.active_alert_kind or self.dragging or self.state == "sad":
+            return
+        if key == "feed":self.feed_panda()
+        elif key == "fetch":self.start_fetch()
+        elif key == "log":self._play_test_animation("bored",28)
+        elif key == "meditate":self._play_test_animation("meditate",8)
+        elif key == "water":self.show_prompt()
+        elif key in ("watch","movement"):
+            self._show_general_alert("Time to move!" if key=="movement" else "Your reminder", "Move with your panda" if key=="movement" else "Personal reminder preview", "preview_movement" if key=="movement" else "preview_personal")
+        elif key in ("cursor_follow","cursor_avoid"):
+            self._close_chatter_card()
+            self.idle_mood="";self.idle_mood_until=None;self.current_action=None
+            self.cursor_session_kind="Follow" if key=="cursor_follow" else "Avoid"
+            self.cursor_session_until=datetime.now()+timedelta(seconds=30)
+            self.motion_mode="idle";self.next_cursor_reaction=datetime.now()
+        else:self._play_pack_animation(key)
 
     def _draw_pack_animation(self, key: str, elapsed: float) -> None:
         y = PET_CENTER_Y
@@ -928,6 +972,7 @@ class WaterPet:
             "sound": True,
             "hide_fullscreen": True,
             "cursor_games": False,
+            "cursor_mode": "Off",
             "sleep_enabled": True,
             "roam_rest_seconds": 30,
             "sleep_after_minutes": 3,
@@ -995,8 +1040,17 @@ class WaterPet:
         except (ValueError,TypeError):
             defaults["hunger_minutes"] = 120
         selected = defaults.get("routine_activities",list(GENTLE_ACTIVITIES))
-        defaults["routine_activities"] = [key for key in selected if key in ROUTINE_ACTIVITIES] if isinstance(selected,list) else list(GENTLE_ACTIVITIES)
-        if defaults["auto_activity"] not in ("Manual only", "Gentle routine", "Selected routine", "Meditate", "Feed bamboo") and defaults["auto_activity"] not in {m["label"] for m in self.pack_manifest.values()}:
+        defaults["routine_activities"] = list(dict.fromkeys(ACTIVITY_ALIASES.get(key,key) for key in selected if ACTIVITY_ALIASES.get(key,key) in ROUTINE_ACTIVITIES)) if isinstance(selected,list) else list(GENTLE_ACTIVITIES)
+        if defaults.get("cursor_mode") not in ("Off","Follow","Avoid"):
+            defaults["cursor_mode"] = "Off"
+        old = defaults["auto_activity"]
+        for key,metadata in self.pack_manifest.items():
+            if metadata["label"] == old:
+                canonical=ACTIVITY_ALIASES.get(key,key)
+                defaults["auto_activity"] = ACTIVITY_LABELS[canonical] if canonical in ROUTINE_ACTIVITIES else "Manual only"
+                break
+        allowed=("Manual only","Gentle routine","Selected routine","Meditate") + tuple(ACTIVITY_LABELS[key] for key in ROUTINE_ACTIVITIES)
+        if defaults["auto_activity"] not in allowed:
             defaults["auto_activity"] = "Manual only"
         return defaults
 
@@ -1007,7 +1061,8 @@ class WaterPet:
             "wander": self.roam_enabled.get(),
             "sound": self.sound_enabled.get(),
             "hide_fullscreen": self.hide_fullscreen.get(),
-            "cursor_games": self.cursor_games.get(),
+            "cursor_games": self.cursor_mode.get() != "Off",
+            "cursor_mode": self.cursor_mode.get(),
             "sleep_enabled": self.sleep_enabled.get(),
             "roam_rest_seconds": self.roam_rest_seconds.get(),
             "sleep_after_minutes": self.sleep_after_minutes.get(),
@@ -1966,6 +2021,7 @@ class WaterPet:
             or self.attention_stage > 0
             or self.motion_mode in (
                 "walking",
+                "following",
                 "falling",
                 "action",
                 "escaping",
@@ -2039,6 +2095,9 @@ class WaterPet:
             self._show_chatter("Big yawn… you’ve gone quiet.", seconds=4)
 
     def _behavior_settings_changed(self) -> None:
+        if self.cursor_mode.get()=="Off":
+            self.cursor_session_kind="";self.cursor_session_until=None
+            if self.motion_mode=="following":self.motion_mode="idle"
         self._save_settings()
         now = datetime.now()
         self.next_idle_activity = now + timedelta(minutes=self.activity_minutes.get())
@@ -2085,20 +2144,52 @@ class WaterPet:
             pool = list(GENTLE_ACTIVITIES) if self.auto_activity.get() == "Gentle routine" else [key for key,enabled in self.routine_enabled.items() if enabled.get()]
             if pool:
                 index = getattr(self,"routine_index",0) % len(pool)
+                if len(pool)>1 and pool[index]==getattr(self,"last_routine_key",""):
+                    index=(index+1)%len(pool)
                 self.routine_index = index + 1
+                self.last_routine_key=pool[index]
                 self._play_pack_animation(pool[index])
         elif self.auto_activity.get() == "Meditate":
             self._play_test_animation("meditate", 8.0)
         elif self.auto_activity.get() == "Feed bamboo":
             self.feed_panda()
         else:
-            for key, metadata in self.pack_manifest.items():
-                if metadata["label"] == self.auto_activity.get():
-                    self._play_pack_animation(key)
+            for key,label in ACTIVITY_LABELS.items():
+                if label==self.auto_activity.get() and key in ROUTINE_ACTIVITIES:
+                    self._play_activity(key)
                     break
 
+
     def _check_cursor_reaction(self, now: datetime) -> None:
-        if not self.cursor_games.get() or not self.roam_enabled.get() or self.active_alert_kind:
+        if getattr(self,"cursor_session_until",None) and now>=self.cursor_session_until:
+            self.cursor_session_kind="";self.cursor_session_until=None
+            if self.motion_mode=="following":self.motion_mode="idle"
+        mode=getattr(self,"cursor_session_kind","") or (self.cursor_mode.get() if hasattr(self,"cursor_mode") else "Avoid" if self.cursor_games.get() else "Off")
+        if mode=="Avoid" and not getattr(self,"cursor_session_kind","") and not self.roam_enabled.get():
+            return
+        if mode=="Off" or self.active_alert_kind or self.prompt_visible or self.dragging or self.state!="normal" or self.idle_mood:
+            return
+        if mode=="Follow":
+            if self.motion_mode not in ("idle","walking","following"):
+                return
+            try:px,py=self.root.winfo_pointerxy()
+            except tk.TclError:return
+            cx,cy=self.pet_x+SMALL_WIDTH/2,self.pet_y+SMALL_HEIGHT/2
+            dx,dy=px-cx,py-cy;distance=math.hypot(dx,dy)
+            self.motion_mode="following"
+            self.cursor_at_rest=distance<=140
+            if self.cursor_at_rest:return
+            left,top,right,bottom=self._screen_bounds()
+            tx=max(left,min(px-dx/distance*140-SMALL_WIDTH/2,right-SMALL_WIDTH))
+            ty=max(top,min(py-dy/distance*140-SMALL_HEIGHT/2,bottom-SMALL_HEIGHT-42))
+            vx,vy=tx-self.pet_x,ty-self.pet_y;remaining=math.hypot(vx,vy)
+            if remaining<1:return
+            step=min(remaining,2.5)
+            self.pet_x+=vx/remaining*step;self.pet_y+=vy/remaining*step
+            self.walk_direction="right" if vx>=0 else "left"
+            self._move_root(round(self.pet_x),round(self.pet_y))
+            return
+        if not getattr(self,"cursor_session_kind","") and not self.roam_enabled.get():
             return
         if (
             now < self.next_cursor_reaction
@@ -2362,7 +2453,7 @@ class WaterPet:
             return False
 
     def _update_roaming(self, now: datetime) -> None:
-        if self.dragging:
+        if self.dragging or self.motion_mode == "following":
             return
 
         if self.motion_mode == "falling":
@@ -2658,7 +2749,7 @@ class WaterPet:
 
     def _draw_pet_scene(self) -> None:
         self.canvas.delete("all")
-        if self.motion_mode not in ("walking","escaping"):
+        if self.motion_mode not in ("walking","following","escaping"):
             self.gait_signature=None
         if self.active_alert_kind:
             self._draw_cloud_alert()
@@ -2729,9 +2820,13 @@ class WaterPet:
 
         if (
             self.state == "normal"
-            and self.motion_mode == "walking"
+            and self.motion_mode in ("walking","following")
         ):
             self._draw_ground_shadow()
+            if self.motion_mode=="following" and getattr(self,"cursor_at_rest",False):
+                self.canvas.create_image(SMALL_WIDTH//2,PET_CENTER_Y,image=self._image("normal"))
+                self._draw_overlays()
+                return
             if self.pending_edge_action == "bored_edge":
                 tired_frame = 1 + ((self.frame // 4) % 2)
                 tired_bob = (0, 1, 2, 1)[(self.frame // 2) % 4]
@@ -2858,6 +2953,9 @@ class WaterPet:
         return
 
     def _draw_idle_mood(self) -> None:
+        if self.idle_mood=="bored":
+            self._draw_bored_sequence((datetime.now()-self.idle_mood_started_at).total_seconds())
+            return
         pack_aliases={"wave":"wave","nuzzle":"petting","yawn":"yawn_stretch","sleep":"sleep",
                       "dance":"dance","kungfu_combo":"kung_fu","somersault":"forward_roll","sneeze":"sneeze",
                       "stretch":"lazy_stretch","bow":"bow","sploot":"sploot","bored":"bored_shuffle",
@@ -3614,16 +3712,17 @@ class WaterPet:
 
         ttk.Label(behavior_frame, text="Behaviour and timing", style="Hero.TLabel").pack(anchor="w")
         ttk.Label(behavior_frame, text="Reminders take priority. Activities wait until the panda is free.", style="Sub.TLabel").pack(anchor="w", pady=(4,18))
-        ttk.Checkbutton(behavior_frame, text="Play cursor chase/avoid games (off by default)", variable=self.cursor_games, command=self._behavior_settings_changed).pack(anchor="w", pady=3)
+
         ttk.Checkbutton(behavior_frame, text="Ask for bamboo when hungry", variable=self.hunger_enabled, command=self._behavior_settings_changed).pack(anchor="w",pady=3)
         ttk.Checkbutton(behavior_frame, text="Sleep when the computer is inactive", variable=self.sleep_enabled, command=self._behavior_settings_changed).pack(anchor="w", pady=3)
         for label, variable, options in (
+            ("Cursor behavior", self.cursor_mode, ("Off","Follow","Avoid")),
             ("Ask for bamboo every (minutes)", self.hunger_minutes, (15,30,60,90,120,180,240,360)),
             ("Walk frame duration (milliseconds)", self.walk_frame_ms, (100,140,180,220,260,300)),
             ("Rest between walks (seconds)", self.roam_rest_seconds, (30,60,90,180,300,600)),
             ("Yawn after inactivity (seconds)", self.yawn_after_seconds, (30,60,90,120)),
             ("Sleep after inactivity (minutes)", self.sleep_after_minutes, (2,3,5,10,30,60)),
-            ("Automatic activity", self.auto_activity, ("Gentle routine","Selected routine","Manual only","Meditate","Feed bamboo") + tuple(m["label"] for m in self.pack_manifest.values())),
+            ("Automatic activity", self.auto_activity, ("Gentle routine","Selected routine","Manual only","Meditate") + tuple(ACTIVITY_LABELS[key] for key in ROUTINE_ACTIVITIES)),
             ("Activity interval (minutes)", self.activity_minutes, (1,3,5,10,15,30,60)),
         ):
             row = ttk.Frame(behavior_frame, style="Glass.TFrame")
@@ -3636,7 +3735,7 @@ class WaterPet:
         routine_choices = ttk.Frame(behavior_frame,style="Glass.TFrame")
         routine_choices.pack(fill="x")
         for i,(key,enabled) in enumerate(self.routine_enabled.items()):
-            ttk.Checkbutton(routine_choices,text=self.pack_manifest[key]["label"],variable=enabled,command=self._behavior_settings_changed).grid(row=i//3,column=i%3,sticky="w",padx=8,pady=3)
+            ttk.Checkbutton(routine_choices,text=ACTIVITY_LABELS[key],variable=enabled,command=self._behavior_settings_changed).grid(row=i//3,column=i%3,sticky="w",padx=8,pady=3)
 
 
         ttk.Label(activities_frame, text="Panda activities", style="Hero.TLabel").pack(anchor="w")
@@ -3657,42 +3756,7 @@ class WaterPet:
         activity_grid.bind("<Configure>",lambda event: activity_canvas.configure(scrollregion=activity_canvas.bbox("all")))
         activity_canvas.bind("<Configure>",lambda event: activity_canvas.itemconfigure(activity_window,width=event.width))
         activity_canvas.bind("<MouseWheel>",lambda event: activity_canvas.yview_scroll(-int(event.delta/120),"units"))
-        activities = (
-            ("Feed bamboo", self.feed_panda),
-            ("Walk across screen", self._test_walk_across_screen),
-            ("Play fetch", self.start_fetch),
-            ("Sleepy tiptoe walk", self._test_bored_at_edge),
-            ("Kung-fu routine", lambda: self._play_test_animation("kungfu_combo", 5.8)),
-            ("Yawn and stretch", lambda: self._play_test_animation("yawn", 5.0)),
-            ("Sleep and breathe", lambda: self._play_test_animation("sleep", 9.0)),
-            ("Stretch", lambda: self._play_test_animation("stretch", 4.0)),
-            ("Sneeze", lambda: self._play_test_animation("sneeze", 2.8)),
-            ("Meditate", lambda: self._play_test_animation("meditate", 8.0)),
-            ("Sploot", lambda: self._play_test_animation("sploot", 7.0)),
-            ("Dance", lambda: self._play_test_animation("dance", 4.5)),
-            ("Somersault", lambda: self._play_test_animation("somersault", 3.8)),
-            ("Nuzzle", lambda: self._play_test_animation("nuzzle", 3.5)),
-            ("Victory bow", lambda: self._play_test_animation("bow", 3.5)),
-            ("Water reminder", self.show_prompt),
-            (
-                "Personal clock reminder",
-                lambda: self._show_general_alert(
-                    "Preview reminder",
-                    "This is how your panda delivers a personal reminder.",
-                    "preview_personal",
-                ),
-            ),
-            (
-                "Hula-hoop movement break",
-                lambda: self._show_general_alert(
-                    "Move with Mochi",
-                    "Stand up and hula, stretch, or walk for one minute.",
-                    "preview_movement",
-                ),
-            ),
-        )
-        activities += tuple((meta["label"], lambda chosen=key: self._play_pack_animation(chosen))
-                            for key, meta in self.pack_manifest.items())
+        activities = tuple((label,lambda chosen=key:self._play_activity(chosen)) for key,label in ACTIVITY_LABELS.items())
         for index, (label, callback) in enumerate(activities):
             button = ttk.Button(
                 activity_grid,

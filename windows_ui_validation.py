@@ -207,10 +207,18 @@ def run_validation(pet_type, output_path: Path) -> None:
             app.pet_y = float(top+100)
             app._move_root(round(app.pet_x), round(app.pet_y))
             app.cursor_mode.set("Follow")
+            # Keep runner inactivity from scheduling a yawn while testing pointer motion.
+            app.user_was_inactive = False
+            app.inactivity_yawn_shown = False
+            app.system_idle_seconds_cache = 0
+            app.last_system_idle_check = datetime.now()
             point = (min(right-20, left+900), min(bottom-20, top+650))
             ctypes.windll.user32.SetCursorPos(*point)
             app.root.update()
             app._close_chatter_card()
+            app.idle_mood = ""
+            app.motion_mode = "idle"
+            check("Windows pointer was positioned", app.root.winfo_pointerxy() == point)
             before = math.hypot(point[0]-app.pet_x-90, point[1]-app.pet_y-92)
             app._check_cursor_reaction(datetime.now())
             after = math.hypot(point[0]-app.pet_x-90, point[1]-app.pet_y-92)

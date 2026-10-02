@@ -171,3 +171,32 @@ class FinalReleaseRegressionTests(unittest.TestCase):
         pet=WaterPet.__new__(WaterPet);pet.reminder_title_var=Mock();pet.reminder_title_var.get.return_value=''
         pet.reminder_feedback_var=Mock();pet.add_personal_reminder()
         pet.reminder_feedback_var.set.assert_called_once_with('Enter what the panda should remind you about.')
+
+class TimeAndPaceRegressionTests(unittest.TestCase):
+    def test_offset_reminders_migrate_to_utc_and_fire_by_instant(self):
+        import tempfile
+        import sqlite3
+        from contextlib import closing
+        from datetime import timezone
+        with tempfile.TemporaryDirectory() as directory:
+            pet=WaterPet.__new__(WaterPet);pet.database_path=Path(directory)/'history.db';pet._initialize_database()
+            with closing(sqlite3.connect(pet.database_path)) as db,db:
+                db.execute("INSERT INTO personal_reminders(title,due_at,status,created_at) VALUES (?,?,?,?)",('Offset test','2026-10-02T15:30:00+04:00','scheduled','2026-10-02T10:00:00+04:00'))
+            pet._initialize_database();pet._initialize_database()
+            with closing(sqlite3.connect(pet.database_path)) as db:
+                due=db.execute('SELECT due_at FROM personal_reminders').fetchone()[0]
+            self.assertEqual(due,'2026-10-02T11:30:00+00:00')
+            pet.active_alert_kind='';pet.prompt_visible=False;pet.alert_window=None
+            pet.movement_enabled=Mock();pet.movement_enabled.get.return_value=False;pet._show_general_alert=Mock()
+            pet._check_scheduled_reminders(datetime(2026,10,2,11,0,tzinfo=timezone.utc))
+            pet._show_general_alert.assert_not_called()
+            pet._check_scheduled_reminders(datetime(2026,10,2,12,0,tzinfo=timezone.utc))
+            self.assertEqual(pet._show_general_alert.call_args.kwargs['title'],'Offset test')
+
+    def test_personality_changes_gait_and_travel_at_one_pace(self):
+        pet=WaterPet.__new__(WaterPet);pet.personality=Mock();pet.walk_frame_ms=Mock();pet.walk_frame_ms.get.return_value=180
+        values=[]
+        for personality in ('Calm','Balanced','Playful'):
+            pet.personality.get.return_value=personality;values.append(pet._walk_cycle_seconds())
+        self.assertGreater(values[0],values[1]);self.assertGreater(values[1],values[2])
+        self.assertAlmostEqual(values[1],1.44)

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ctypes
+from contextlib import closing
 import json
 import math
 import os
@@ -60,7 +61,7 @@ def run_validation(pet_type, output_path: Path) -> None:
 
     try:
         check("Windows runtime", os.name == "nt")
-        with tempfile.TemporaryDirectory(prefix="water-panda-ui-") as data_dir:
+        with tempfile.TemporaryDirectory(prefix="water-panda-ui-", ignore_cleanup_errors=True) as data_dir:
             os.environ["WATER_PANDA_DATA_DIR"] = data_dir
             app = pet_type()
             app.sound_enabled.set(False)
@@ -75,6 +76,8 @@ def run_validation(pet_type, output_path: Path) -> None:
             app._draw()
             app.root.update()
             check("Panda widget initialized", app.canvas.winfo_width() == 180)
+            report["tray_error"] = app.tray.error
+            report["tray_icon_registered"] = app.tray.icon_added
             check("Tray message loop initialized", bool(app.tray.hwnd))
             snapshot("idle")
 
@@ -85,7 +88,7 @@ def run_validation(pet_type, output_path: Path) -> None:
             check("Water cloud is drawn on the panda canvas", len(app.canvas.find_all()) > 10)
             app.record_water(200)
             app.record_water(200)
-            with sqlite3.connect(app.database_path) as db:
+            with closing(sqlite3.connect(app.database_path)) as db, db:
                 row = db.execute("SELECT COUNT(*), SUM(millilitres) FROM water_entries").fetchone()
             check("Water response logs once", row == (1, 200))
             check("Water response bows", app.idle_mood == "bow")
@@ -115,7 +118,7 @@ def run_validation(pet_type, output_path: Path) -> None:
 
             clear_action()
             now = datetime.now().astimezone()
-            with sqlite3.connect(app.database_path) as db:
+            with closing(sqlite3.connect(app.database_path)) as db, db:
                 reminder_id = db.execute("INSERT INTO personal_reminders(title,due_at,status,created_at) VALUES (?,?,?,?)",
                                          ("Meeting at 1 PM", (now-timedelta(minutes=1)).isoformat(timespec="seconds"),
                                           "scheduled", now.isoformat(timespec="seconds"))).lastrowid
@@ -124,12 +127,12 @@ def run_validation(pet_type, output_path: Path) -> None:
             app._draw()
             snapshot("watch_cloud")
             app._snooze_active_alert()
-            with sqlite3.connect(app.database_path) as db:
+            with closing(sqlite3.connect(app.database_path)) as db, db:
                 due_at, status = db.execute("SELECT due_at,status FROM personal_reminders WHERE reminder_id=?", (reminder_id,)).fetchone()
             check("Personal snooze stays scheduled", status == "scheduled" and datetime.fromisoformat(due_at) > now + timedelta(minutes=9))
             app._show_general_alert("Meeting at 1 PM", "Your reminder", "personal", reminder_id)
             app._complete_active_alert()
-            with sqlite3.connect(app.database_path) as db:
+            with closing(sqlite3.connect(app.database_path)) as db, db:
                 status = db.execute("SELECT status FROM personal_reminders WHERE reminder_id=?", (reminder_id,)).fetchone()[0]
             check("Personal reminder completes", status == "done")
 

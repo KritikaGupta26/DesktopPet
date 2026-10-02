@@ -18,9 +18,10 @@ import textwrap
 import queue
 import threading
 import traceback
+from contextlib import closing
 import tkinter as tk
 import tkinter.font as tkfont
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
@@ -28,7 +29,7 @@ from PIL import Image, ImageTk
 
 
 ACTIVITY_LABELS = {
-    "feed":"Feed bamboo", "walk":"Walk", "run":"Run", "cursor_follow":"Follow cursor",
+    "feed":"Feed bamboo", "walk":"Walk", "run":"Run", "jump":"Jump", "cursor_follow":"Follow cursor",
     "cursor_avoid":"Avoid cursor", "fetch":"Fetch", "log":"Play on log", "bamboo_hang":"Hang on bamboo",
     "kung_fu":"Kung fu", "wind_down":"Wind down",
     "sneeze":"Sneeze", "meditate":"Meditate", "sploot":"Sploot", "dance":"Dance",
@@ -322,11 +323,13 @@ class WindowsTray:
         self._wndproc = None
         self._nid = None
         self.roaming_enabled = True
+        self.error = ""
+        self.icon_added = False
 
     def start(self) -> None:
         if os.name != "nt" or self.thread is not None:
             return
-        self.thread = threading.Thread(target=self._message_loop, daemon=True)
+        self.thread = threading.Thread(target=self._safe_message_loop, daemon=True)
         self.thread.start()
         self.ready.wait(timeout=2)
 
@@ -343,6 +346,13 @@ class WindowsTray:
             return self.actions.get_nowait()
         except queue.Empty:
             return None
+
+    def _safe_message_loop(self) -> None:
+        try:
+            self._message_loop()
+        except Exception:
+            self.error = traceback.format_exc()
+            self.ready.set()
 
     def _message_loop(self) -> None:
         from ctypes import wintypes
@@ -396,6 +406,30 @@ class WindowsTray:
                 ("guidItem", ctypes.c_byte * 16),
                 ("hBalloonIcon", wintypes.HICON),
             ]
+
+        kernel32.GetModuleHandleW.argtypes = [wintypes.LPCWSTR]
+        user32.RegisterClassW.argtypes = [ctypes.POINTER(WNDCLASSW)]
+        user32.RegisterClassW.restype = wintypes.WORD
+        user32.CreateWindowExW.argtypes = [wintypes.DWORD, wintypes.LPCWSTR, wintypes.LPCWSTR, wintypes.DWORD,
+                                         ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
+                                         wintypes.HWND, wintypes.HMENU, wintypes.HINSTANCE, ctypes.c_void_p]
+        user32.DefWindowProcW.argtypes = [wintypes.HWND,wintypes.UINT,wintypes.WPARAM,wintypes.LPARAM]
+        user32.LoadImageW.argtypes = [wintypes.HINSTANCE,wintypes.LPCWSTR,wintypes.UINT,ctypes.c_int,ctypes.c_int,wintypes.UINT]
+        user32.LoadIconW.argtypes = [wintypes.HINSTANCE,ctypes.c_void_p]
+        user32.AppendMenuW.argtypes = [wintypes.HMENU,wintypes.UINT,ctypes.c_size_t,wintypes.LPCWSTR]
+        user32.TrackPopupMenu.argtypes = [wintypes.HMENU,wintypes.UINT,ctypes.c_int,ctypes.c_int,ctypes.c_int,wintypes.HWND,ctypes.c_void_p]
+        user32.TrackPopupMenu.restype = wintypes.UINT
+        user32.DestroyMenu.argtypes = [wintypes.HMENU]
+        user32.DestroyWindow.argtypes = [wintypes.HWND]
+        user32.SetForegroundWindow.argtypes = [wintypes.HWND]
+        user32.GetCursorPos.argtypes = [ctypes.POINTER(wintypes.POINT)]
+        user32.GetMessageW.argtypes = [ctypes.POINTER(wintypes.MSG),wintypes.HWND,wintypes.UINT,wintypes.UINT]
+        user32.TranslateMessage.argtypes = [ctypes.POINTER(wintypes.MSG)]
+        user32.DispatchMessageW.argtypes = [ctypes.POINTER(wintypes.MSG)]
+        user32.DispatchMessageW.restype = ctypes.c_ssize_t
+        user32.PostMessageW.argtypes = [wintypes.HWND,wintypes.UINT,wintypes.WPARAM,wintypes.LPARAM]
+        shell32.Shell_NotifyIconW.argtypes = [wintypes.DWORD,ctypes.POINTER(NOTIFYICONDATAW)]
+        shell32.Shell_NotifyIconW.restype = wintypes.BOOL
 
         command_map = {
             1001: "open",
@@ -470,6 +504,7 @@ class WindowsTray:
         )
         self.hwnd = int(hwnd or 0)
         if not self.hwnd:
+            self.error = f"CreateWindowExW failed: {kernel32.GetLastError()}"
             self.ready.set()
             return
 
@@ -492,7 +527,7 @@ class WindowsTray:
         nid.hIcon = icon
         nid.szTip = "Water Panda"
         self._nid = nid
-        shell32.Shell_NotifyIconW(self.NIM_ADD, ctypes.byref(nid))
+        self.icon_added = bool(shell32.Shell_NotifyIconW(self.NIM_ADD, ctypes.byref(nid)))
         self.ready.set()
 
         message = wintypes.MSG()
@@ -1126,7 +1161,7 @@ class WaterPet:
             pass
 
     def _initialize_database(self) -> None:
-        with sqlite3.connect(self.database_path) as connection:
+        with closing(sqlite3.connect(self.database_path)) as connection, connection:
             connection.execute("PRAGMA journal_mode = WAL")
             connection.execute("PRAGMA synchronous = NORMAL")
             connection.execute("PRAGMA busy_timeout = 3000")
@@ -1158,6 +1193,14 @@ class WaterPet:
                 ON personal_reminders(status, due_at)
                 """
             )
+            # Normalize existing offset-bearing reminders before lexical SQL ordering.
+            for reminder_id, due_at in connection.execute("SELECT reminder_id,due_at FROM personal_reminders").fetchall():
+                try:
+                    normalized = datetime.fromisoformat(due_at).astimezone(timezone.utc).isoformat(timespec="seconds")
+                except (ValueError, TypeError):
+                    continue
+                if normalized != due_at:
+                    connection.execute("UPDATE personal_reminders SET due_at=? WHERE reminder_id=?",(normalized,reminder_id))
 
     def _write_pid(self) -> None:
         try:
@@ -1674,7 +1717,7 @@ class WaterPet:
         recorded_at = datetime.now().astimezone().isoformat(
             timespec="seconds"
         )
-        with sqlite3.connect(self.database_path) as connection:
+        with closing(sqlite3.connect(self.database_path)) as connection, connection:
             connection.execute(
                 """
                 INSERT INTO water_entries (recorded_at, millilitres)
@@ -1834,7 +1877,7 @@ class WaterPet:
         ).astimezone()
         if local_due <= datetime.now().astimezone():
             raise ValueError("The reminder time must be in the future.")
-        return local_due
+        return local_due.astimezone(timezone.utc)
 
     def add_personal_reminder(self) -> None:
         title = self.reminder_title_var.get().strip()
@@ -1849,7 +1892,7 @@ class WaterPet:
         except ValueError as error:
             self.reminder_feedback_var.set(str(error))
             return
-        with sqlite3.connect(self.database_path) as connection:
+        with closing(sqlite3.connect(self.database_path)) as connection, connection:
             connection.execute(
                 """
                 INSERT INTO personal_reminders
@@ -1881,7 +1924,7 @@ class WaterPet:
             parent=self.history_window or self.root,
         ):
             return
-        with sqlite3.connect(self.database_path) as connection:
+        with closing(sqlite3.connect(self.database_path)) as connection, connection:
             connection.execute(
                 "DELETE FROM personal_reminders WHERE reminder_id = ?",
                 (reminder_id,),
@@ -1891,7 +1934,7 @@ class WaterPet:
     def _refresh_reminders(self) -> None:
         if self.reminder_tree is None or not self.reminder_tree.winfo_exists():
             return
-        with sqlite3.connect(self.database_path) as connection:
+        with closing(sqlite3.connect(self.database_path)) as connection, connection:
             rows = connection.execute(
                 """
                 SELECT reminder_id, title, due_at
@@ -2220,7 +2263,7 @@ class WaterPet:
             if remaining<1:
                 self.cursor_at_rest=True
                 return
-            step=min(remaining,(52*180/512)/(4*self.walk_frame_ms.get()/1000)*(ACTIVE_TICK_MILLISECONDS/1000))
+            step=min(remaining,(52*180/512)/(0.5*self._walk_cycle_seconds())*(ACTIVE_TICK_MILLISECONDS/1000))
             self.pet_x+=vx/remaining*step;self.pet_y+=vy/remaining*step
             self.walk_direction="right" if vx>=0 else "left"
             self._move_root(round(self.pet_x),round(self.pet_y))
@@ -2285,7 +2328,7 @@ class WaterPet:
             self.alert_window is not None and self.alert_window.winfo_exists()
         ):
             return
-        with sqlite3.connect(self.database_path) as connection:
+        with closing(sqlite3.connect(self.database_path)) as connection, connection:
             due = connection.execute(
                 """
                 SELECT reminder_id, title
@@ -2294,7 +2337,7 @@ class WaterPet:
                 ORDER BY due_at, reminder_id
                 LIMIT 1
                 """,
-                (now.astimezone().isoformat(timespec="seconds"),),
+                (now.astimezone(timezone.utc).isoformat(timespec="seconds"),),
             ).fetchone()
         if due:
             self._show_general_alert(
@@ -2340,7 +2383,7 @@ class WaterPet:
 
     def _complete_active_alert(self) -> None:
         if self.active_alert_kind == "personal" and self.active_alert_id:
-            with sqlite3.connect(self.database_path) as connection:
+            with closing(sqlite3.connect(self.database_path)) as connection, connection:
                 connection.execute(
                     "UPDATE personal_reminders SET status = 'done' WHERE reminder_id = ?",
                     (self.active_alert_id,),
@@ -2354,9 +2397,9 @@ class WaterPet:
         self._refresh_reminders()
 
     def _snooze_active_alert(self) -> None:
-        snoozed_until = datetime.now().astimezone() + timedelta(minutes=10)
+        snoozed_until = datetime.now(timezone.utc) + timedelta(minutes=10)
         if self.active_alert_kind == "personal" and self.active_alert_id:
-            with sqlite3.connect(self.database_path) as connection:
+            with closing(sqlite3.connect(self.database_path)) as connection, connection:
                 connection.execute(
                     """
                     UPDATE personal_reminders
@@ -2567,7 +2610,7 @@ class WaterPet:
                 step_speed = min(self.walk_speed, max(1.15, distance * 0.07))
             if self.motion_mode == "walking":
                 # Match window travel to the supporting foot's backward motion.
-                cycle_seconds=8*self.walk_frame_ms.get()/1000
+                cycle_seconds=self._walk_cycle_seconds()
                 step_speed=(52*180/512)/(0.5*cycle_seconds)*(ACTIVE_TICK_MILLISECONDS/1000)
                 step_speed=min(distance,step_speed)
             self.pet_x += (dx / distance) * step_speed
@@ -2777,6 +2820,11 @@ class WaterPet:
         if self.chatter_until and self.chatter_text and not self.prompt_visible and not self.active_alert_kind:
             self._render_chatter_card()
 
+    def _walk_cycle_seconds(self) -> float:
+        personality = self.personality.get() if hasattr(self,"personality") else "Balanced"
+        factor = {"Calm":0.82, "Balanced":1.0, "Playful":1.16}.get(personality,1.0)
+        return 8*self.walk_frame_ms.get()/1000/factor
+
     def _locomotion_frame(self, kind: str) -> int:
         now = time.monotonic()
         signature = (kind,self.walk_direction,self.motion_mode)
@@ -2785,7 +2833,7 @@ class WaterPet:
             self.gait_started = now
         milliseconds = self.walk_frame_ms.get() if kind == "walk" else 110
         count = len(WALK_FRAME_ORDER) if kind == "walk" else self.pack_manifest[kind]["frames"]
-        interval = milliseconds/1000 * (8/count) if kind == "walk" else milliseconds/1000
+        interval = self._walk_cycle_seconds()/count if kind == "walk" else milliseconds/1000
         return 1 + int((now-self.gait_started)/interval) % count
 
     def _draw_pet_scene(self) -> None:
@@ -3364,7 +3412,7 @@ class WaterPet:
                 )
 
     def _today_total(self) -> int:
-        with sqlite3.connect(self.database_path) as connection:
+        with closing(sqlite3.connect(self.database_path)) as connection, connection:
             return int(
                 connection.execute(
                     """
@@ -4075,7 +4123,7 @@ class WaterPet:
         ):
             return
 
-        with sqlite3.connect(self.database_path) as connection:
+        with closing(sqlite3.connect(self.database_path)) as connection, connection:
             daily_rows = connection.execute(
                 """
                 SELECT
@@ -4227,7 +4275,7 @@ class WaterPet:
             )
 
     def undo_latest_entry(self) -> None:
-        with sqlite3.connect(self.database_path) as connection:
+        with closing(sqlite3.connect(self.database_path)) as connection, connection:
             latest = connection.execute(
                 """
                 SELECT entry_id, recorded_at, millilitres
@@ -4259,7 +4307,7 @@ class WaterPet:
         self._refresh_history()
 
     def export_history(self) -> None:
-        with sqlite3.connect(self.database_path) as connection:
+        with closing(sqlite3.connect(self.database_path)) as connection, connection:
             rows = connection.execute(
                 """
                 SELECT recorded_at, millilitres

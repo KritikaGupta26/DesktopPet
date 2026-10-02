@@ -78,3 +78,25 @@ class ReminderBehaviorTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class AuditRegressionTests(unittest.TestCase):
+    def test_fullscreen_does_not_hide_active_reminder(self):
+        pet=WaterPet.__new__(WaterPet)
+        pet.hide_fullscreen=Mock();pet.hide_fullscreen.get.return_value=True
+        pet.prompt_visible=False;pet.active_alert_kind='movement';pet.was_hidden_for_fullscreen=False
+        pet.root=Mock();pet._foreground_is_fullscreen=Mock(return_value=True)
+        pet._update_fullscreen_visibility()
+        pet.root.withdraw.assert_not_called()
+
+    def test_preview_snooze_does_not_claim_a_scheduled_reminder(self):
+        pet=WaterPet.__new__(WaterPet);pet.active_alert_kind='preview_personal'
+        pet._close_active_alert=Mock();pet._show_chatter=Mock();pet._refresh_reminders=Mock()
+        pet._snooze_active_alert()
+        pet._show_chatter.assert_called_once_with('Preview closed.',seconds=4)
+
+    def test_movement_snooze_schedules_ten_minutes(self):
+        pet=WaterPet.__new__(WaterPet);pet.active_alert_kind='movement'
+        pet._close_active_alert=Mock();pet._show_chatter=Mock();pet._refresh_reminders=Mock()
+        before=datetime.now();pet._snooze_active_alert()
+        self.assertGreaterEqual(pet.next_movement_reminder,before+timedelta(minutes=10))
+        self.assertLessEqual(pet.next_movement_reminder,datetime.now()+timedelta(minutes=10))

@@ -2116,9 +2116,8 @@ class WaterPet:
             self._show_chatter("Big yawn… you’ve gone quiet.", seconds=4)
 
     def _behavior_settings_changed(self) -> None:
-        if self.cursor_mode.get()=="Off":
-            self.cursor_session_kind="";self.cursor_session_until=None
-            if self.motion_mode=="following":self.motion_mode="idle"
+        self.cursor_session_kind="";self.cursor_session_until=None
+        if self.motion_mode=="following":self.motion_mode="idle"
         self._save_settings()
         now = datetime.now()
         self.next_idle_activity = now + timedelta(minutes=self.activity_minutes.get())
@@ -2172,8 +2171,6 @@ class WaterPet:
                 self._play_activity(pool[index]) if pool[index]=="wind_down" else self._play_pack_animation(pool[index])
         elif self.auto_activity.get() == "Meditate":
             self._play_test_animation("meditate", 8.0)
-        elif self.auto_activity.get() == "Feed bamboo":
-            self.feed_panda()
         else:
             for key,label in ACTIVITY_LABELS.items():
                 if label==self.auto_activity.get() and key in ROUTINE_ACTIVITIES:
@@ -2204,7 +2201,9 @@ class WaterPet:
             tx=max(left,min(px-dx/distance*140-SMALL_WIDTH/2,right-SMALL_WIDTH))
             ty=max(top,min(py-dy/distance*140-SMALL_HEIGHT/2,bottom-SMALL_HEIGHT-42))
             vx,vy=tx-self.pet_x,ty-self.pet_y;remaining=math.hypot(vx,vy)
-            if remaining<1:return
+            if remaining<1:
+                self.cursor_at_rest=True
+                return
             step=min(remaining,2.5)
             self.pet_x+=vx/remaining*step;self.pet_y+=vy/remaining*step
             self.walk_direction="right" if vx>=0 else "left"
@@ -2354,8 +2353,9 @@ class WaterPet:
                 )
         elif self.active_alert_kind == "movement":
             self.next_movement_reminder = datetime.now() + timedelta(minutes=10)
+        preview = self.active_alert_kind.startswith("preview_")
         self._close_active_alert()
-        self._show_chatter("Okay, I’ll nudge you in 10!", seconds=4)
+        self._show_chatter("Preview closed." if preview else "Okay, I’ll nudge you in 10!", seconds=4)
         self._refresh_reminders()
 
     def _close_active_alert(self) -> None:
@@ -2382,6 +2382,7 @@ class WaterPet:
         should_hide = (
             self.hide_fullscreen.get()
             and not self.prompt_visible
+            and not self.active_alert_kind
             and self._foreground_is_fullscreen()
         )
         if should_hide and not self.was_hidden_for_fullscreen:

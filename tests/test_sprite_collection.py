@@ -141,3 +141,24 @@ class SpriteCollectionTests(unittest.TestCase):
         self.assertEqual(pet.cursor_session_kind,'Follow')
         self.assertIsNotNone(pet.cursor_session_until)
         pet._play_test_animation.assert_not_called()
+
+    def test_wind_down_sequence_and_duplicate_roll_controls(self):
+        module=runpy.run_path(str(ROOT/'Start_Water_Puppy.pyw'))
+        pose=module['wind_down_pose']
+        for elapsed,key in ((0,'yawn_stretch'),(3,'lazy_stretch'),(6,'sleep'),(24,'wake_up'),(28,'wake_up')):
+            self.assertEqual(pose(elapsed)[0],key)
+        self.assertNotIn('side_roll',module['ACTIVITY_LABELS'])
+        for key in ('sleep','lazy_stretch','yawn_stretch','snore_sleep','wake_up'):
+            self.assertEqual(module['ACTIVITY_ALIASES'][key],'wind_down')
+            self.assertNotIn(key,module['ACTIVITY_LABELS'])
+
+    def test_standing_scale_matches_walk_without_clipping(self):
+        normalize=runpy.run_path(str(ROOT/'Start_Water_Puppy.pyw'))['normalize_standing_sprite']
+        walk=Image.open(ROOT/'assets/pack_walk_0.png').getchannel('A').point(lambda a:255 if a>=128 else 0).getbbox()
+        for i in range(MANIFEST['happy_idle']['frames']):
+            image=normalize(Image.open(ROOT/f'assets/pack_happy_idle_{i}.png').convert('RGBA'))
+            box=image.getchannel('A').point(lambda a:255 if a>=128 else 0).getbbox()
+            self.assertLess(abs((box[3]-box[1])-(walk[3]-walk[1])),20)
+            self.assertLessEqual(abs(box[3]-walk[3]),2)
+            self.assertGreater(box[0],0);self.assertLess(box[2],512)
+            self.assertGreater(box[1],0);self.assertLess(box[3],512)

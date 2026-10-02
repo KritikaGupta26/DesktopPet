@@ -30,7 +30,7 @@ from PIL import Image, ImageTk
 ACTIVITY_LABELS = {
     "feed":"Feed bamboo", "walk":"Walk", "run":"Run", "cursor_follow":"Follow cursor",
     "cursor_avoid":"Avoid cursor", "fetch":"Fetch", "log":"Play on log", "bamboo_hang":"Hang on bamboo",
-    "kung_fu":"Kung fu", "yawn_stretch":"Yawn and stretch", "sleep":"Sleep", "lazy_stretch":"Stretch",
+    "kung_fu":"Kung fu", "wind_down":"Wind down",
     "sneeze":"Sneeze", "meditate":"Meditate", "sploot":"Sploot", "dance":"Dance",
     "forward_roll":"Somersault", "petting":"Petting", "bow":"Bow", "water":"Water reminder",
     "movement":"Movement break", "watch":"Personal reminder", "wave":"Wave", "ear_rub":"Rub ears",
@@ -38,14 +38,31 @@ ACTIVITY_LABELS = {
     "belly_scratch":"Belly scratch", "hiccup":"Hiccup", "wash_face":"Wash face", "victory":"Celebrate",
 }
 ACTIVITY_ALIASES = {
-    "side_roll":"forward_roll", "eat_bamboo":"feed", "wiggle":"dance", "greeting":"wave", "snore_sleep":"sleep",
+    "yawn_stretch":"wind_down", "lazy_stretch":"wind_down", "sleep":"wind_down", "side_roll":"forward_roll", "eat_bamboo":"feed", "wiggle":"dance", "greeting":"wave", "snore_sleep":"wind_down",
     "sit_on_log":"log", "balance_on_log":"log", "bored_shuffle":"log", "sit_down":"sploot",
-    "wake_up":"wave", "carry_bamboo":"feed", "water_offer":"water", "alternate_offer":"water",
+    "wake_up":"wind_down", "carry_bamboo":"feed", "water_offer":"water", "alternate_offer":"water",
     "drink_water":"water", "alternate_hoop":"movement", "hula_hoop":"movement",
     "chase_ball":"fetch", "catch_ball":"fetch", "happy_idle":"wave", "sad":"bow",
 }
-ROUTINE_ACTIVITIES = ("ear_rub", "wash_face", "lazy_stretch", "dance", "kung_fu", "peekaboo", "clap", "blow_kiss", "forward_roll")
+ROUTINE_ACTIVITIES = ("ear_rub", "wash_face", "wind_down", "dance", "kung_fu", "peekaboo", "clap", "blow_kiss", "forward_roll")
 GENTLE_ACTIVITIES = ROUTINE_ACTIVITIES[:3]
+WIND_DOWN_SEQUENCE = (("yawn_stretch", 3.0), ("lazy_stretch", 3.0), ("sleep", 18.0), ("wake_up", 4.0))
+
+def wind_down_pose(elapsed: float) -> tuple[str, float]:
+    remaining = max(0.0, elapsed)
+    for key, duration in WIND_DOWN_SEQUENCE:
+        if remaining < duration:
+            return key, remaining
+        remaining -= duration
+    return WIND_DOWN_SEQUENCE[-1][0], WIND_DOWN_SEQUENCE[-1][1]
+
+def normalize_standing_sprite(sprite: Image.Image) -> Image.Image:
+    # One scale for the entire idle row, with the same ground anchor as walking.
+    enlarged = sprite.resize((625, 625), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGBA", (512, 512))
+    canvas.alpha_composite(enlarged, ((512-625)//2, 489-round(489*625/512)))
+    return canvas
+
 
 
 APP_NAME = "WaterPuppy"
@@ -857,7 +874,10 @@ class WaterPet:
                 variants = (key, key + "_left") if key in ("walk", "run") else (key,)
                 for variant in variants:
                     with Image.open(assets / f"pack_{variant}_{i}.png") as opened:
-                        sprite = opened.convert("RGBA").resize((180,180), Image.Resampling.LANCZOS)
+                        sprite = opened.convert("RGBA")
+                    if key == "happy_idle":
+                        sprite = normalize_standing_sprite(sprite)
+                    sprite = sprite.resize((180,180), Image.Resampling.LANCZOS)
                     sprite.putalpha(sprite.getchannel("A").point(lambda a: 255 if a >= 128 else 0))
                     loaded["panda"][f"pack_{variant}_{i}"] = ImageTk.PhotoImage(sprite)
         return loaded
@@ -938,7 +958,8 @@ class WaterPet:
     def _play_activity(self, key: str) -> None:
         if self.prompt_visible or self.active_alert_kind or self.dragging or self.state == "sad":
             return
-        if key == "feed":self.feed_panda()
+        if key == "wind_down":self._play_test_animation("wind_down",sum(duration for _,duration in WIND_DOWN_SEQUENCE))
+        elif key == "feed":self.feed_panda()
         elif key == "fetch":self.start_fetch()
         elif key == "log":self._play_test_animation("bored",28)
         elif key == "meditate":self._play_test_animation("meditate",8)
@@ -2148,7 +2169,7 @@ class WaterPet:
                     index=(index+1)%len(pool)
                 self.routine_index = index + 1
                 self.last_routine_key=pool[index]
-                self._play_pack_animation(pool[index])
+                self._play_activity(pool[index]) if pool[index]=="wind_down" else self._play_pack_animation(pool[index])
         elif self.auto_activity.get() == "Meditate":
             self._play_test_animation("meditate", 8.0)
         elif self.auto_activity.get() == "Feed bamboo":
@@ -2953,6 +2974,10 @@ class WaterPet:
         return
 
     def _draw_idle_mood(self) -> None:
+        if self.idle_mood == "wind_down":
+            key, elapsed = wind_down_pose((datetime.now()-self.idle_mood_started_at).total_seconds())
+            self._draw_pack_animation(key, elapsed)
+            return
         if self.idle_mood=="bored":
             self._draw_bored_sequence((datetime.now()-self.idle_mood_started_at).total_seconds())
             return

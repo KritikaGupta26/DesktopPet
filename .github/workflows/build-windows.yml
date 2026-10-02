@@ -44,6 +44,22 @@ jobs:
           if (-not (Test-Path "dist\WaterPanda\WaterPanda.exe")) { throw "WaterPanda.exe was not created" }
           if (-not (Test-Path "dist\WaterPanda\assets\panda.ico")) { throw "Panda icon was not bundled" }
 
+      - name: Exercise packaged Windows UI
+        shell: pwsh
+        run: |
+          $outputPath = Join-Path $PWD "windows-ui-evidence"
+          $process = Start-Process -FilePath "dist\WaterPanda\WaterPanda.exe" -ArgumentList "--verify-ui", $outputPath -PassThru -Wait
+          Get-Content "$outputPath\report.json"
+          if ($process.ExitCode -ne 0) { throw "Packaged Windows UI validation failed" }
+
+      - name: Upload Windows UI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Water-Panda-Windows-UI-Evidence
+          path: windows-ui-evidence/
+          if-no-files-found: warn
+
       - name: Build installer
         shell: pwsh
         run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer\WaterPanda.iss"'

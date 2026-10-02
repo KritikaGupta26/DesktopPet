@@ -29,8 +29,8 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(convert(0), 0)
         self.assertEqual(convert(255), 255)
 
-    def test_version_is_24(self):
-        self.assertIn("APP_VERSION = 24", self.source)
+    def test_version_is_25(self):
+        self.assertIn("APP_VERSION = 25", self.source)
 
     def test_panda_face_icon_exists(self):
         icon = ASSETS / "panda.ico"
@@ -126,7 +126,7 @@ class PackageTests(unittest.TestCase):
     def test_water_prompt_has_compact_cloud_layout(self):
         self.assertIn("PROMPT_WIDTH = 360", self.source)
         self.assertIn('text="Water time?"', self.source)
-        self.assertIn("174, 6, 350, 159", self.source)
+        self.assertIn("194, 6, 350, 159", self.source)
 
     def test_reminders_use_purpose_built_poses(self):
         self.assertIn('pose = f"clock_', self.source)

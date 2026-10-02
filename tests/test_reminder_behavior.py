@@ -115,3 +115,59 @@ class AuditRegressionTests(unittest.TestCase):
         pet.chatter_until=datetime.now()+timedelta(seconds=5);pet.root=Mock()
         pet._check_cursor_reaction(datetime.now())
         pet.root.winfo_pointerxy.assert_not_called()
+
+class FinalReleaseRegressionTests(unittest.TestCase):
+    def test_not_yet_recovers_without_pause_and_without_logging(self):
+        pet=WaterPet.__new__(WaterPet);pet.prompt_visible=True
+        pet._clear_attention=Mock();pet._resize_anchored=Mock();pet._show_chatter=Mock()
+        pet.roam_rest_seconds=Mock();pet.roam_rest_seconds.get.return_value=30
+        before=datetime.now();pet.answer_not_yet();due=pet.next_reminder
+        self.assertEqual(pet.state,'sad');self.assertFalse(pet.prompt_visible)
+        self.assertGreaterEqual(due,before+timedelta(minutes=30))
+        self.assertLessEqual(due,datetime.now()+timedelta(minutes=30))
+        pet._update_water_response(before+timedelta(seconds=7))
+        self.assertEqual(pet.state,'sad')
+        pet._update_water_response(datetime.now()+timedelta(seconds=9))
+        self.assertEqual(pet.state,'normal');self.assertIsNone(pet.sad_until)
+        self.assertEqual(pet.next_reminder,due)
+        self.assertFalse(hasattr(pet,'reminders_paused_until'))
+        self.assertFalse(hasattr(pet,'database_path'))
+
+    def test_idle_detection_does_not_interrupt_a_user_sequence(self):
+        pet=WaterPet.__new__(WaterPet);pet.last_system_idle_check=datetime.now()
+        pet.system_idle_seconds_cache=1000;pet.idle_mood='wind_down'
+        pet.motion_mode='idle';pet._update_inactivity_behavior(datetime.now())
+        self.assertEqual(pet.idle_mood,'wind_down')
+
+    def test_stationary_follow_does_not_starve_selected_routines(self):
+        pet=WaterPet.__new__(WaterPet);pet.idle_mood='';pet.next_idle_activity=datetime.now()-timedelta(seconds=1)
+        pet.state='normal';pet.prompt_visible=False;pet.active_alert_kind='';pet.dragging=False
+        pet.motion_mode='following';pet.cursor_at_rest=True;pet.chatter_until=None
+        pet.activity_minutes=Mock();pet.activity_minutes.get.return_value=5
+        pet.auto_activity=Mock();pet.auto_activity.get.return_value='Selected routine'
+        enabled=Mock();enabled.get.return_value=True;pet.routine_enabled={'groom':enabled}
+        pet._play_activity=Mock();pet._update_idle_mood(datetime.now())
+        pet._play_activity.assert_called_once_with('groom')
+
+    def test_all_reminder_clouds_are_smaller_than_pet_canvas(self):
+        pet=WaterPet.__new__(WaterPet);pet.canvas=Mock();pet._cloud_shape=Mock()
+        pet._image=Mock();pet._pack_image=Mock();pet._answer_button=Mock();pet.active_alert_kind='movement'
+        pet.alert_title='Move';pet.alert_subtitle='Stretch';pet.attention_started_at=datetime.now()
+        pet._draw_cloud_alert()
+        _,x1,y1,x2,y2,*_=pet._cloud_shape.call_args.args
+        self.assertLess(x2-x1,180);self.assertLess(y2-y1,180)
+        pet.pet_name=Mock();pet.pet_name.get.return_value='Mochi';pet.water_prompt_text='Water?';pet.today_total_cache=200
+        pet._draw_prompt()
+        _,x1,y1,x2,y2,*_=pet._cloud_shape.call_args.args
+        self.assertLess(x2-x1,180);self.assertLess(y2-y1,180)
+
+    def test_dragging_a_cloud_dialog_preserves_panda_screen_anchor(self):
+        pet=WaterPet.__new__(WaterPet);pet.root=Mock();pet.root.winfo_x.return_value=100;pet.root.winfo_y.return_value=60
+        pet.width=360;pet.height=324;pet.canvas=Mock();pet._screen_bounds=Mock(return_value=(0,0,1920,1080))
+        pet._resize_anchored(180,184)
+        self.assertEqual((pet.pet_x,pet.pet_y),(100.,200.))
+
+    def test_reminder_validation_does_not_open_an_error_popup(self):
+        pet=WaterPet.__new__(WaterPet);pet.reminder_title_var=Mock();pet.reminder_title_var.get.return_value=''
+        pet.reminder_feedback_var=Mock();pet.add_personal_reminder()
+        pet.reminder_feedback_var.set.assert_called_once_with('Enter what the panda should remind you about.')

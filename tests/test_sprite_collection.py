@@ -55,8 +55,8 @@ class SpriteCollectionTests(unittest.TestCase):
         pet=WaterPet.__new__(WaterPet);pet.pack_manifest=MANIFEST
         pet.images={'panda':{f'pack_walk{suffix}_{i}':f'{suffix}:{i}' for suffix in ('','_left') for i in range(8)}}
         for i in range(8):
-            self.assertEqual(pet._image(f'walk_right_{i+1}'),f':{(0,1,2,5)[i%4]}')
-            self.assertEqual(pet._image(f'walk_left_{i+1}'),f'_left:{(0,1,2,5)[i%4]}')
+            self.assertEqual(pet._image(f'walk_right_{i+1}'),f':{(0,1,2,4,5,6)[i%6]}')
+            self.assertEqual(pet._image(f'walk_left_{i+1}'),f'_left:{(0,1,2,4,5,6)[i%6]}')
 
     def test_sleep_has_no_fragment_from_preceding_row(self):
         for i in range(6):
@@ -83,12 +83,12 @@ class SpriteCollectionTests(unittest.TestCase):
         pet.state='normal';pet.prompt_visible=False;pet.active_alert_kind='';pet.dragging=False;pet.motion_mode='idle';pet.chatter_until=None
         pet.activity_minutes=Mock();pet.activity_minutes.get.return_value=3
         pet.auto_activity=Mock();pet.auto_activity.get.return_value='Selected routine'
-        pet.routine_enabled={key:Mock() for key in ('dance','ear_rub')}
+        pet.routine_enabled={key:Mock() for key in ('dance','groom')}
         for enabled in pet.routine_enabled.values():enabled.get.return_value=True
-        pet._play_pack_animation=Mock()
+        pet._play_activity=Mock()
         for _ in range(3):
             now=datetime.now();pet.next_idle_activity=now-timedelta(seconds=1);pet._update_idle_mood(now)
-        self.assertEqual([c.args[0] for c in pet._play_pack_animation.call_args_list],['dance','ear_rub','dance'])
+        self.assertEqual([c.args[0] for c in pet._play_activity.call_args_list],['dance','groom','dance'])
 
     def test_hunger_waits_for_water_and_click_feeds_once(self):
         from datetime import timedelta
@@ -121,6 +121,7 @@ class SpriteCollectionTests(unittest.TestCase):
     def test_cursor_follow_moves_retargets_and_yields_to_reminders(self):
         pet=WaterPet.__new__(WaterPet);pet.cursor_mode=Mock();pet.cursor_mode.get.return_value='Follow'
         pet.prompt_visible=False;pet.active_alert_kind='';pet.dragging=False;pet.state='normal';pet.idle_mood='';pet.motion_mode='idle'
+        pet.walk_frame_ms=Mock();pet.walk_frame_ms.get.return_value=180
         pet.pet_x=300.;pet.pet_y=300.;pet.root=Mock();pet.root.winfo_pointerxy.return_value=(900,392)
         pet._screen_bounds=Mock(return_value=(0,0,1920,1080));pet._move_root=Mock()
         pet._check_cursor_reaction(datetime.now())
@@ -162,3 +163,31 @@ class SpriteCollectionTests(unittest.TestCase):
             self.assertLessEqual(abs(box[3]-walk[3]),2)
             self.assertGreater(box[0],0);self.assertLess(box[2],512)
             self.assertGreater(box[1],0);self.assertLess(box[3],512)
+
+    def test_legacy_routines_merge_without_losing_enabled_activity(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            pet=WaterPet.__new__(WaterPet);pet.pack_manifest=MANIFEST
+            pet.settings_path=Path(directory)/'settings.json'
+            pet.settings_path.write_text(json.dumps({'auto_activity':'Rub ears','routine_activities':['ear_rub','wash_face','sleep','lazy_stretch','eat_bamboo']}))
+            settings=pet._load_settings()
+            self.assertEqual(settings['auto_activity'],'Grooming')
+            self.assertEqual(settings['routine_activities'],['groom','wind_down'])
+
+    def test_grooming_combines_three_rows_in_one_control(self):
+        module=runpy.run_path(str(ROOT/'Start_Water_Puppy.pyw'))
+        sequence=module['GROOM_SEQUENCE'];pose=module['sequence_pose']
+        self.assertEqual([pose(sequence,t)[0] for t in (0,3,6)],['wash_face','ear_rub','belly_scratch'])
+        for key in ('wash_face','ear_rub','belly_scratch'):
+            self.assertNotIn(key,module['ACTIVITY_LABELS'])
+            self.assertEqual(module['ACTIVITY_ALIASES'][key],'groom')
+
+    def test_new_walk_retains_previous_art_and_uses_matching_mirrors(self):
+        from PIL import ImageOps,ImageChops
+        self.assertEqual(MANIFEST['walk']['selected_playback_frames'],[0,1,2,4,5,6])
+        self.assertTrue((ROOT/'artwork/walk_v25_source.png').is_file())
+        for i in range(8):
+            self.assertTrue((ROOT/f'artwork/v24_walk/pack_walk_{i}.png').is_file())
+            right=Image.open(ROOT/f'assets/pack_walk_{i}.png').convert('RGBA')
+            left=Image.open(ROOT/f'assets/pack_walk_left_{i}.png').convert('RGBA')
+            self.assertIsNone(ImageChops.difference(ImageOps.mirror(right),left).getbbox())

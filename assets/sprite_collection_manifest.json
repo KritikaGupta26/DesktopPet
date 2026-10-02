@@ -116,8 +116,18 @@
         887
       ]
     ],
-    "shared_scale": 1.1135857461024499,
-    "mirrored_frame_indices": []
+    "shared_scale": 1.0688836104513064,
+    "mirrored_frame_indices": [],
+    "generated_source": "artwork/walk_v25_source.png",
+    "previous_frames": "artwork/v24_walk",
+    "selected_playback_frames": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      6
+    ]
   },
   "run": {
     "sheet": "sprites/03_run.png",

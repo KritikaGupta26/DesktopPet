@@ -1,0 +1,199 @@
+"""Exercise the packaged application on a Windows runner using isolated data."""
+from __future__ import annotations
+
+import ctypes
+import json
+import math
+import os
+import sqlite3
+import tempfile
+import traceback
+from datetime import datetime, timedelta
+from pathlib import Path
+
+from PIL import ImageGrab
+
+
+def run_validation(pet_type, output_path: Path) -> None:
+    output_path.mkdir(parents=True, exist_ok=True)
+    report = {"platform": os.name, "checks": [], "screenshots": [], "passed": False}
+    app = None
+    previous_data = os.environ.get("WATER_PANDA_DATA_DIR")
+
+    def check(name, condition):
+        if not condition:
+            raise AssertionError(name)
+        report["checks"].append(name)
+
+    def snapshot(name, window=None):
+        target = window or app.root
+        app.root.update_idletasks()
+        target.update_idletasks()
+        bbox = (target.winfo_rootx(), target.winfo_rooty(),
+                target.winfo_rootx() + target.winfo_width(),
+                target.winfo_rooty() + target.winfo_height())
+        try:
+            image = ImageGrab.grab(bbox=bbox, all_screens=True)
+            if len(image.getcolors(maxcolors=16) or []) == 1:
+                raise RuntimeError("Capture is uniform; desktop capture unavailable")
+            filename = f"{name}.png"
+            image.save(output_path / filename)
+            report["screenshots"].append(filename)
+        except Exception as error:
+            report.setdefault("capture_warnings", []).append(str(error))
+
+    def clear_action():
+        app.prompt_visible = False
+        app.active_alert_kind = ""
+        app.active_alert_id = None
+        app.state = "normal"
+        app.sad_until = None
+        app.idle_mood = ""
+        app.idle_mood_until = None
+        app.current_action = None
+        app.pending_edge_action = None
+        app.motion_mode = "idle"
+        app.cursor_mode.set("Off")
+        app.cursor_session_kind = ""
+        app.cursor_session_until = None
+        app._close_chatter_card()
+
+    try:
+        check("Windows runtime", os.name == "nt")
+        with tempfile.TemporaryDirectory(prefix="water-panda-ui-") as data_dir:
+            os.environ["WATER_PANDA_DATA_DIR"] = data_dir
+            app = pet_type()
+            app.sound_enabled.set(False)
+            app.roam_enabled.set(False)
+            app.sleep_enabled.set(False)
+            app.movement_enabled.set(False)
+            app.next_idle_activity = datetime.now() + timedelta(hours=1)
+            app.next_reminder = datetime.now() + timedelta(hours=1)
+            app.next_hunger = datetime.now() + timedelta(hours=1)
+            app.next_chatter = datetime.now() + timedelta(hours=1)
+            clear_action()
+            app._draw()
+            app.root.update()
+            check("Panda widget initialized", app.canvas.winfo_width() == 180)
+            check("Tray message loop initialized", bool(app.tray.hwnd))
+            snapshot("idle")
+
+            app.show_prompt()
+            app.attention_started_at = datetime.now() - timedelta(seconds=5)
+            app._draw()
+            snapshot("water_cloud")
+            check("Water cloud is drawn on the panda canvas", len(app.canvas.find_all()) > 10)
+            app.record_water(200)
+            app.record_water(200)
+            with sqlite3.connect(app.database_path) as db:
+                row = db.execute("SELECT COUNT(*), SUM(millilitres) FROM water_entries").fetchone()
+            check("Water response logs once", row == (1, 200))
+            check("Water response bows", app.idle_mood == "bow")
+
+            clear_action()
+            app.show_prompt()
+            app.answer_not_yet()
+            due = app.next_reminder
+            check("Not yet starts a bounded sad reaction", app.state == "sad" and app.sad_until is not None)
+            app._update_water_response(datetime.now() + timedelta(seconds=9))
+            check("Not yet recovers without pausing water", app.state == "normal" and app.next_reminder == due)
+            clear_action()
+            app.show_prompt()
+            app.snooze_water()
+            check("Water snooze sets ten minutes", 590 < (app.next_reminder - datetime.now()).total_seconds() <= 600)
+            app.pause_reminders()
+            check("Water pause sets one hour", app.reminders_paused_until is not None)
+            app.resume_reminders()
+            check("Water resume clears pause", app.reminders_paused_until is None)
+
+            clear_action()
+            app._show_general_alert("Stand and stretch", "Move with your panda", "movement")
+            app._draw()
+            snapshot("movement_cloud")
+            app._snooze_active_alert()
+            check("Movement snooze sets ten minutes", 590 < (app.next_movement_reminder - datetime.now()).total_seconds() <= 600)
+
+            clear_action()
+            now = datetime.now().astimezone()
+            with sqlite3.connect(app.database_path) as db:
+                reminder_id = db.execute("INSERT INTO personal_reminders(title,due_at,status,created_at) VALUES (?,?,?,?)",
+                                         ("Meeting at 1 PM", (now-timedelta(minutes=1)).isoformat(timespec="seconds"),
+                                          "scheduled", now.isoformat(timespec="seconds"))).lastrowid
+            app._check_scheduled_reminders(datetime.now())
+            check("Due personal reminder displays", app.active_alert_kind == "personal" and app.active_alert_id == reminder_id)
+            app._draw()
+            snapshot("watch_cloud")
+            app._snooze_active_alert()
+            with sqlite3.connect(app.database_path) as db:
+                due_at, status = db.execute("SELECT due_at,status FROM personal_reminders WHERE reminder_id=?", (reminder_id,)).fetchone()
+            check("Personal snooze stays scheduled", status == "scheduled" and datetime.fromisoformat(due_at) > now + timedelta(minutes=9))
+            app._show_general_alert("Meeting at 1 PM", "Your reminder", "personal", reminder_id)
+            app._complete_active_alert()
+            with sqlite3.connect(app.database_path) as db:
+                status = db.execute("SELECT status FROM personal_reminders WHERE reminder_id=?", (reminder_id,)).fetchone()[0]
+            check("Personal reminder completes", status == "done")
+
+            clear_action()
+            app.show_history()
+            app.root.update()
+            check("Panda Home opens", app.history_window.winfo_exists())
+            snapshot("panda_home", app.history_window)
+            app.history_window.withdraw()
+            app.reminder_title_var.set("")
+            app.add_personal_reminder()
+            check("Reminder validation is inline", bool(app.reminder_feedback_var.get()))
+
+            from_module = __import__(pet_type.__module__)
+            # Frozen entry-point classes belong to __main__; the catalog remains there.
+            catalog = getattr(from_module, "ACTIVITY_LABELS")
+            for key in catalog:
+                clear_action()
+                app._play_activity(key)
+                app._draw()
+                app.root.update_idletasks()
+                check(f"Activity dispatch and render: {key}", True)
+
+            clear_action()
+            left, top, right, bottom = app._screen_bounds()
+            app.pet_x = float(left+20)
+            app.pet_y = float(top+100)
+            app._move_root(round(app.pet_x), round(app.pet_y))
+            app.cursor_mode.set("Follow")
+            point = (min(right-20, left+900), min(bottom-20, top+650))
+            ctypes.windll.user32.SetCursorPos(*point)
+            app.root.update()
+            app._close_chatter_card()
+            before = math.hypot(point[0]-app.pet_x-90, point[1]-app.pet_y-92)
+            app._check_cursor_reaction(datetime.now())
+            after = math.hypot(point[0]-app.pet_x-90, point[1]-app.pet_y-92)
+            check("Live Windows pointer follow moves closer", after < before)
+            app._draw()
+            snapshot("walk")
+
+            clear_action()
+            app.hungry = True
+            app.hunger_requested = True
+            app.feed_panda()
+            check("Bamboo feeding clears hunger", not app.hungry and app.idle_mood == "feed")
+            app._draw()
+            snapshot("feed")
+            app._save_settings()
+            check("Settings persist in isolated data", app.settings_path.exists())
+            report["passed"] = True
+            app.close()
+            app = None
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        if app is not None:
+            try:
+                app.close()
+            except Exception:
+                pass
+        if previous_data is None:
+            os.environ.pop("WATER_PANDA_DATA_DIR", None)
+        else:
+            os.environ["WATER_PANDA_DATA_DIR"] = previous_data
+        (output_path / "report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    if not report["passed"]:
+        raise SystemExit(1)

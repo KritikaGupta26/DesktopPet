@@ -53,10 +53,10 @@ class SpriteCollectionTests(unittest.TestCase):
 
     def test_walk_uses_requested_stride_frame_in_both_directions(self):
         pet=WaterPet.__new__(WaterPet);pet.pack_manifest=MANIFEST
-        pet.images={'panda':{f'rig_walk_{direction}_{i}':f'{suffix}:{i}' for direction,suffix in [('right',''),('left','_left')] for i in range(32)}}
+        pet.images={'panda':{f'pack_walk{suffix}_{i}':f'{suffix}:{i}' for suffix in ('','_left') for i in range(8)}}
         for i in range(8):
-            self.assertEqual(pet._image(f'walk_right_{i+1}'),f':{i}')
-            self.assertEqual(pet._image(f'walk_left_{i+1}'),f'_left:{i}')
+            self.assertEqual(pet._image(f'walk_right_{i+1}'),f':{(0,1,2,5)[i%4]}')
+            self.assertEqual(pet._image(f'walk_left_{i+1}'),f'_left:{(0,1,2,5)[i%4]}')
 
     def test_sleep_has_no_fragment_from_preceding_row(self):
         for i in range(6):
@@ -72,8 +72,8 @@ class SpriteCollectionTests(unittest.TestCase):
         pet.walk_direction='right';pet.motion_mode='walking';pet.walk_frame_ms=Mock();pet.walk_frame_ms.get.return_value=180
         with patch('time.monotonic',side_effect=[10,10.1,10.2,10.4]):
             self.assertEqual(pet._locomotion_frame('walk'),1)
-            self.assertEqual(pet._locomotion_frame('walk'),3)
-            self.assertEqual(pet._locomotion_frame('walk'),5)
+            self.assertEqual(pet._locomotion_frame('walk'),1)
+            self.assertEqual(pet._locomotion_frame('walk'),1)
             pet.walk_direction='left'
             self.assertEqual(pet._locomotion_frame('walk'),1)
 
@@ -90,18 +90,20 @@ class SpriteCollectionTests(unittest.TestCase):
             now=datetime.now();pet.next_idle_activity=now-timedelta(seconds=1);pet._update_idle_mood(now)
         self.assertEqual([c.args[0] for c in pet._play_pack_animation.call_args_list],['dance','ear_rub','dance'])
 
-    def test_rig_arm_leg_opposition_and_grounded_support(self):
-        data=json.loads((ROOT/'assets/walk_rig_motion.json').read_text())
-        self.assertEqual(data['frames'],32)
-        for frame in data['motion']:
-            for side in ('near','far'):
-                values=frame[side]
-                self.assertLessEqual(values['arm_dx']*values['foot_dx'],0)
-                if values['stance']:self.assertEqual(values['foot_lift'],0)
-        self.assertTrue(any(f['near']['foot_lift']>20 for f in data['motion']))
-        for direction in ('left','right'):
-            for i in range(32):
-                with Image.open(ROOT/'assets'/f'rig_walk_{direction}_{i}.png') as image:
-                    image.load();box=image.getchannel('A').getbbox()
-                    self.assertGreaterEqual(box[0],10);self.assertGreaterEqual(box[1],10)
-                    self.assertLessEqual(box[2],502);self.assertLessEqual(box[3],502)
+    def test_hunger_waits_for_water_and_click_feeds_once(self):
+        from datetime import timedelta
+        pet=WaterPet.__new__(WaterPet);pet.hunger_enabled=Mock();pet.hunger_enabled.get.return_value=True
+        pet.next_hunger=datetime.now()-timedelta(seconds=1);pet.hungry=False;pet.hunger_requested=False
+        pet.prompt_visible=True;pet.active_alert_kind='';pet.dragging=False;pet.idle_mood='';pet.chatter_until=None;pet.state='normal';pet.motion_mode='idle'
+        pet._show_chatter=Mock();pet._update_hunger(datetime.now())
+        self.assertTrue(pet.hungry);pet._show_chatter.assert_not_called()
+        pet.prompt_visible=False;pet._update_hunger(datetime.now());pet._update_hunger(datetime.now())
+        pet._show_chatter.assert_called_once()
+        pet.hunger_minutes=Mock();pet.hunger_minutes.get.return_value=120
+        pet._play_test_animation=Mock();pet.canvas=Mock();pet.canvas.gettags.return_value=()
+        pet._start_drag(Mock())
+        self.assertFalse(pet.hungry);self.assertFalse(pet.dragging)
+        pet._play_test_animation.assert_called_once_with('feed',5.5)
+        self.assertGreater(pet.next_hunger,datetime.now()+timedelta(minutes=119))
+        # Mouse release after a feed click must not overwrite the eating pose.
+        pet._end_drag(Mock());self.assertEqual(pet.motion_mode,'idle')

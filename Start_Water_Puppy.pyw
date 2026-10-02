@@ -31,7 +31,7 @@ ROUTINE_ACTIVITIES = ("ear_rub", "wash_face", "lazy_stretch", "eat_bamboo", "dan
 GENTLE_ACTIVITIES = ROUTINE_ACTIVITIES[:4] + ("sit_down",)
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 22
+APP_VERSION = 23
 REMINDER_MINUTES = 30
 TRANSPARENT_COLOR = "#00ff01"
 SMALL_WIDTH = 180
@@ -646,6 +646,11 @@ class WaterPet:
         self.sleep_after_minutes = tk.IntVar(value=self.settings["sleep_after_minutes"])
         self.yawn_after_seconds = tk.IntVar(value=self.settings["yawn_after_seconds"])
         self.auto_activity = tk.StringVar(value=self.settings["auto_activity"])
+        self.hunger_enabled = tk.BooleanVar(value=self.settings["hunger_enabled"])
+        self.hunger_minutes = tk.IntVar(value=self.settings["hunger_minutes"])
+        self.hungry = False
+        self.hunger_requested = False
+        self.next_hunger = datetime.now() + timedelta(minutes=self.hunger_minutes.get())
         self.walk_frame_ms = tk.IntVar(value=self.settings["walk_frame_ms"])
         self.routine_enabled = {key: tk.BooleanVar(value=key in self.settings["routine_activities"]) for key in ROUTINE_ACTIVITIES}
         self.routine_index = 0
@@ -833,12 +838,6 @@ class WaterPet:
                         sprite = opened.convert("RGBA").resize((180,180), Image.Resampling.LANCZOS)
                     sprite.putalpha(sprite.getchannel("A").point(lambda a: 255 if a >= 128 else 0))
                     loaded["panda"][f"pack_{variant}_{i}"] = ImageTk.PhotoImage(sprite)
-        for direction in ("left","right"):
-            for i in range(32):
-                with Image.open(assets / f"rig_walk_{direction}_{i}.png") as opened:
-                    sprite=opened.convert("RGBA").resize((180,180),Image.Resampling.LANCZOS)
-                sprite.putalpha(sprite.getchannel("A").point(lambda a:255 if a>=128 else 0))
-                loaded["panda"][f"rig_walk_{direction}_{i}"]=ImageTk.PhotoImage(sprite)
         return loaded
 
     def _pack_image(self, key: str, elapsed: float = 0.0, index: int | None = None):
@@ -868,7 +867,10 @@ class WaterPet:
         if state.startswith(("walk_", "run_")):
             parts = state.split("_");key=parts[0]
             if key == "walk":
-                return self.images["panda"][f"rig_walk_{parts[1]}_{(int(parts[2])-1)%32}"]
+                # Use complete coordinated key poses, never assembled limb pieces.
+                index=(0,1,2,5)[(int(parts[2])-1)%4]
+                variant="walk_left" if parts[1]=="left" else "walk"
+                return self.images["panda"][f"pack_{variant}_{index}"]
             index = (int(parts[2]) - 1) % self.pack_manifest[key]["frames"]
             variant = key + "_left" if parts[1] == "left" else key
             return self.images["panda"][f"pack_{variant}_{index}"]
@@ -932,6 +934,8 @@ class WaterPet:
             "yawn_after_seconds": 60,
             "auto_activity": "Gentle routine",
             "walk_frame_ms": 180,
+            "hunger_enabled": True,
+            "hunger_minutes": 120,
             "routine_activities": list(GENTLE_ACTIVITIES),
             "activity_minutes": 5,
             "personality": "Balanced",
@@ -985,6 +989,11 @@ class WaterPet:
             defaults["walk_frame_ms"] = max(100,min(300,int(defaults.get("walk_frame_ms",180))))
         except (ValueError,TypeError):
             defaults["walk_frame_ms"] = 180
+        defaults["hunger_enabled"] = bool(defaults.get("hunger_enabled",True))
+        try:
+            defaults["hunger_minutes"] = max(15,min(360,int(defaults.get("hunger_minutes",120))))
+        except (ValueError,TypeError):
+            defaults["hunger_minutes"] = 120
         selected = defaults.get("routine_activities",list(GENTLE_ACTIVITIES))
         defaults["routine_activities"] = [key for key in selected if key in ROUTINE_ACTIVITIES] if isinstance(selected,list) else list(GENTLE_ACTIVITIES)
         if defaults["auto_activity"] not in ("Manual only", "Gentle routine", "Selected routine", "Meditate", "Feed bamboo") and defaults["auto_activity"] not in {m["label"] for m in self.pack_manifest.values()}:
@@ -1006,6 +1015,8 @@ class WaterPet:
             "auto_activity": self.auto_activity.get(),
             "activity_minutes": self.activity_minutes.get(),
             "walk_frame_ms": self.walk_frame_ms.get(),
+            "hunger_enabled": self.hunger_enabled.get(),
+            "hunger_minutes": self.hunger_minutes.get(),
             "routine_activities": [key for key,enabled in self.routine_enabled.items() if enabled.get()],
             "personality": self.personality.get(),
             "home_x": self.settings.get("home_x"),
@@ -1215,6 +1226,9 @@ class WaterPet:
     def _start_drag(self, event: tk.Event) -> None:
         if "answer_button" in self.canvas.gettags("current"):
             return
+        if self.hungry and not self.prompt_visible and not self.active_alert_kind:
+            self.feed_panda()
+            return
         self.dragging = True
         self.drag_moved = False
         self.motion_mode = "idle"
@@ -1247,6 +1261,8 @@ class WaterPet:
         self._move_root(x, y)
 
     def _end_drag(self, _event: tk.Event) -> None:
+        if not self.dragging:
+            return
         self.dragging = False
         self.pet_x = float(self.root.winfo_x())
         self.pet_y = float(self.root.winfo_y())
@@ -1877,6 +1893,7 @@ class WaterPet:
 
         if not self.active_alert_kind:
             self._update_inactivity_behavior(now)
+        self._update_hunger(now)
         self._update_idle_mood(now)
         self._check_cursor_reaction(now)
         self._update_attention_behavior(now)
@@ -2026,10 +2043,29 @@ class WaterPet:
         now = datetime.now()
         self.next_idle_activity = now + timedelta(minutes=self.activity_minutes.get())
         self.idle_until = now + timedelta(seconds=self.roam_rest_seconds.get())
+        self.next_hunger = now + timedelta(minutes=self.hunger_minutes.get())
+        if not self.hunger_enabled.get():
+            self.hungry = False
+            self.hunger_requested = False
+
+    def _update_hunger(self, now: datetime) -> None:
+        if not self.hunger_enabled.get():
+            return
+        if now >= self.next_hunger:
+            self.hungry = True
+        if not self.hungry or self.hunger_requested:
+            return
+        if self.prompt_visible or self.active_alert_kind or self.dragging or self.idle_mood or self.chatter_until or self.state != "normal" or self.motion_mode != "idle":
+            return
+        self.hunger_requested = True
+        self._show_chatter("My tummy is rumbling! Click me for bamboo?", seconds=15)
 
     def feed_panda(self) -> None:
         if self.prompt_visible or self.active_alert_kind or self.dragging or self.state == "sad":
             return
+        self.hungry = False
+        self.hunger_requested = False
+        self.next_hunger = datetime.now() + timedelta(minutes=self.hunger_minutes.get())
         self._play_test_animation("feed", 5.5)
         self._show_chatter("Crunch, crunch. Thank you for the bamboo!", seconds=5.5)
 
@@ -2039,7 +2075,7 @@ class WaterPet:
             self.idle_mood_until = None
             self.action_sequence_stage = -1
             self.idle_until = now + timedelta(seconds=self.roam_rest_seconds.get())
-        if now < self.next_idle_activity:
+        if now < self.next_idle_activity or getattr(self,"hungry",False):
             return
         if (self.state != "normal" or self.prompt_visible or self.active_alert_kind or self.dragging
                 or self.idle_mood or self.motion_mode != "idle" or self.chatter_until):
@@ -2400,7 +2436,7 @@ class WaterPet:
             if self.motion_mode == "walking":
                 # Match window travel to the supporting foot's backward motion.
                 cycle_seconds=8*self.walk_frame_ms.get()/1000
-                step_speed=(80*180/512)/(0.6*cycle_seconds)*(ACTIVE_TICK_MILLISECONDS/1000)
+                step_speed=(52*180/512)/(0.5*cycle_seconds)*(ACTIVE_TICK_MILLISECONDS/1000)
                 step_speed=min(distance,step_speed)
             self.pet_x += (dx / distance) * step_speed
             self.pet_y += (dy / distance) * step_speed
@@ -2616,7 +2652,7 @@ class WaterPet:
             self.gait_signature = signature
             self.gait_started = now
         milliseconds = self.walk_frame_ms.get() if kind == "walk" else 110
-        count = 32 if kind == "walk" else self.pack_manifest[kind]["frames"]
+        count = 4 if kind == "walk" else self.pack_manifest[kind]["frames"]
         interval = milliseconds/1000 * (8/count) if kind == "walk" else milliseconds/1000
         return 1 + int((now-self.gait_started)/interval) % count
 
@@ -3579,8 +3615,10 @@ class WaterPet:
         ttk.Label(behavior_frame, text="Behaviour and timing", style="Hero.TLabel").pack(anchor="w")
         ttk.Label(behavior_frame, text="Reminders take priority. Activities wait until the panda is free.", style="Sub.TLabel").pack(anchor="w", pady=(4,18))
         ttk.Checkbutton(behavior_frame, text="Play cursor chase/avoid games (off by default)", variable=self.cursor_games, command=self._behavior_settings_changed).pack(anchor="w", pady=3)
+        ttk.Checkbutton(behavior_frame, text="Ask for bamboo when hungry", variable=self.hunger_enabled, command=self._behavior_settings_changed).pack(anchor="w",pady=3)
         ttk.Checkbutton(behavior_frame, text="Sleep when the computer is inactive", variable=self.sleep_enabled, command=self._behavior_settings_changed).pack(anchor="w", pady=3)
         for label, variable, options in (
+            ("Ask for bamboo every (minutes)", self.hunger_minutes, (15,30,60,90,120,180,240,360)),
             ("Walk frame duration (milliseconds)", self.walk_frame_ms, (100,140,180,220,260,300)),
             ("Rest between walks (seconds)", self.roam_rest_seconds, (30,60,90,180,300,600)),
             ("Yawn after inactivity (seconds)", self.yawn_after_seconds, (30,60,90,120)),

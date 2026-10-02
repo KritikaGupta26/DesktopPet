@@ -6,6 +6,7 @@ import csv
 import ctypes
 import json
 import math
+import time
 import os
 import random
 import signal
@@ -26,8 +27,11 @@ from tkinter import filedialog, messagebox, ttk
 from PIL import Image, ImageTk
 
 
+ROUTINE_ACTIVITIES = ("ear_rub", "wash_face", "lazy_stretch", "eat_bamboo", "dance", "wiggle", "kung_fu", "peekaboo", "clap", "blow_kiss", "sit_down", "forward_roll")
+GENTLE_ACTIVITIES = ROUTINE_ACTIVITIES[:4] + ("sit_down",)
+
 APP_NAME = "WaterPuppy"
-APP_VERSION = 20
+APP_VERSION = 21
 REMINDER_MINUTES = 30
 TRANSPARENT_COLOR = "#00ff01"
 SMALL_WIDTH = 180
@@ -642,6 +646,9 @@ class WaterPet:
         self.sleep_after_minutes = tk.IntVar(value=self.settings["sleep_after_minutes"])
         self.yawn_after_seconds = tk.IntVar(value=self.settings["yawn_after_seconds"])
         self.auto_activity = tk.StringVar(value=self.settings["auto_activity"])
+        self.walk_frame_ms = tk.IntVar(value=self.settings["walk_frame_ms"])
+        self.routine_enabled = {key: tk.BooleanVar(value=key in self.settings["routine_activities"]) for key in ROUTINE_ACTIVITIES}
+        self.routine_index = 0
         self.activity_minutes = tk.IntVar(value=self.settings["activity_minutes"])
         self.next_idle_activity = datetime.now() + timedelta(minutes=self.activity_minutes.get())
         self.movement_enabled = tk.BooleanVar(
@@ -915,7 +922,9 @@ class WaterPet:
             "roam_rest_seconds": 30,
             "sleep_after_minutes": 3,
             "yawn_after_seconds": 60,
-            "auto_activity": "Manual only",
+            "auto_activity": "Gentle routine",
+            "walk_frame_ms": 180,
+            "routine_activities": list(GENTLE_ACTIVITIES),
             "activity_minutes": 5,
             "personality": "Balanced",
             "home_x": None,
@@ -964,7 +973,13 @@ class WaterPet:
                 defaults[key] = max(low, min(high, int(defaults[key])))
             except (ValueError, TypeError):
                 defaults[key] = default
-        if defaults["auto_activity"] not in ("Manual only", "Meditate", "Feed bamboo") and defaults["auto_activity"] not in {m["label"] for m in self.pack_manifest.values()}:
+        try:
+            defaults["walk_frame_ms"] = max(100,min(300,int(defaults.get("walk_frame_ms",180))))
+        except (ValueError,TypeError):
+            defaults["walk_frame_ms"] = 180
+        selected = defaults.get("routine_activities",list(GENTLE_ACTIVITIES))
+        defaults["routine_activities"] = [key for key in selected if key in ROUTINE_ACTIVITIES] if isinstance(selected,list) else list(GENTLE_ACTIVITIES)
+        if defaults["auto_activity"] not in ("Manual only", "Gentle routine", "Selected routine", "Meditate", "Feed bamboo") and defaults["auto_activity"] not in {m["label"] for m in self.pack_manifest.values()}:
             defaults["auto_activity"] = "Manual only"
         return defaults
 
@@ -982,6 +997,8 @@ class WaterPet:
             "yawn_after_seconds": self.yawn_after_seconds.get(),
             "auto_activity": self.auto_activity.get(),
             "activity_minutes": self.activity_minutes.get(),
+            "walk_frame_ms": self.walk_frame_ms.get(),
+            "routine_activities": [key for key,enabled in self.routine_enabled.items() if enabled.get()],
             "personality": self.personality.get(),
             "home_x": self.settings.get("home_x"),
             "home_y": self.settings.get("home_y"),
@@ -2020,7 +2037,13 @@ class WaterPet:
                 or self.idle_mood or self.motion_mode != "idle" or self.chatter_until):
             return
         self.next_idle_activity = now + timedelta(minutes=self.activity_minutes.get())
-        if self.auto_activity.get() == "Meditate":
+        if self.auto_activity.get() in ("Gentle routine", "Selected routine"):
+            pool = list(GENTLE_ACTIVITIES) if self.auto_activity.get() == "Gentle routine" else [key for key,enabled in self.routine_enabled.items() if enabled.get()]
+            if pool:
+                index = getattr(self,"routine_index",0) % len(pool)
+                self.routine_index = index + 1
+                self._play_pack_animation(pool[index])
+        elif self.auto_activity.get() == "Meditate":
             self._play_test_animation("meditate", 8.0)
         elif self.auto_activity.get() == "Feed bamboo":
             self.feed_panda()
@@ -2366,6 +2389,8 @@ class WaterPet:
             step_speed = self.walk_speed
             if self.motion_mode == "walking":
                 step_speed = min(self.walk_speed, max(1.15, distance * 0.07))
+            if self.motion_mode == "walking":
+                step_speed *= 80 / self.walk_frame_ms.get()
             self.pet_x += (dx / distance) * step_speed
             self.pet_y += (dy / distance) * step_speed
 
@@ -2573,6 +2598,15 @@ class WaterPet:
         if self.chatter_until and self.chatter_text and not self.prompt_visible and not self.active_alert_kind:
             self._render_chatter_card()
 
+    def _locomotion_frame(self, kind: str) -> int:
+        now = time.monotonic()
+        signature = (kind,self.walk_direction,self.motion_mode)
+        if getattr(self,"gait_signature",None) != signature:
+            self.gait_signature = signature
+            self.gait_started = now
+        milliseconds = self.walk_frame_ms.get() if kind == "walk" else 110
+        return 1 + int((now-self.gait_started)/(milliseconds/1000)) % self.pack_manifest[kind]["frames"]
+
     def _draw_pet_scene(self) -> None:
         self.canvas.delete("all")
         if self.active_alert_kind:
@@ -2620,7 +2654,7 @@ class WaterPet:
             elif self.motion_mode == "fetch_return":
                 image_key = "fetch_carry"
             else:
-                run_frame = 1 + (self.frame % 8)
+                run_frame = self._locomotion_frame("run")
                 image_key = f"run_{self.walk_direction}_{run_frame}"
             self.canvas.create_image(
                 SMALL_WIDTH // 2,
@@ -2661,7 +2695,7 @@ class WaterPet:
                 return
             # One phase drives the actual stride. The sheet already contains
             # body movement, so do not layer a second bounce over it.
-            walk_frame = 1 + (self.frame % 8)
+            walk_frame = self._locomotion_frame("walk")
             image_key = f"walk_{self.walk_direction}_{walk_frame}"
             self.canvas.create_image(
                 SMALL_WIDTH // 2,
@@ -3532,10 +3566,11 @@ class WaterPet:
         ttk.Checkbutton(behavior_frame, text="Play cursor chase/avoid games (off by default)", variable=self.cursor_games, command=self._behavior_settings_changed).pack(anchor="w", pady=3)
         ttk.Checkbutton(behavior_frame, text="Sleep when the computer is inactive", variable=self.sleep_enabled, command=self._behavior_settings_changed).pack(anchor="w", pady=3)
         for label, variable, options in (
+            ("Walk frame duration (milliseconds)", self.walk_frame_ms, (100,140,180,220,260,300)),
             ("Rest between walks (seconds)", self.roam_rest_seconds, (30,60,90,180,300,600)),
             ("Yawn after inactivity (seconds)", self.yawn_after_seconds, (30,60,90,120)),
             ("Sleep after inactivity (minutes)", self.sleep_after_minutes, (2,3,5,10,30,60)),
-            ("Automatic activity", self.auto_activity, ("Manual only","Meditate","Feed bamboo") + tuple(m["label"] for m in self.pack_manifest.values())),
+            ("Automatic activity", self.auto_activity, ("Gentle routine","Selected routine","Manual only","Meditate","Feed bamboo") + tuple(m["label"] for m in self.pack_manifest.values())),
             ("Activity interval (minutes)", self.activity_minutes, (1,3,5,10,15,30,60)),
         ):
             row = ttk.Frame(behavior_frame, style="Glass.TFrame")
@@ -3544,7 +3579,12 @@ class WaterPet:
             box = ttk.Combobox(row, textvariable=variable, values=options, state="readonly", width=16)
             box.pack(side="left")
             box.bind("<<ComboboxSelected>>", lambda _event: self._behavior_settings_changed())
-        ttk.Label(behavior_frame, text="Manual only is the default. Feeding is a playful action, not a hunger simulation.\nWater stays every 30 minutes unless paused or snoozed.", style="Sub.TLabel", wraplength=500).pack(anchor="w", pady=16)
+        ttk.Label(behavior_frame, text="Gentle routine cycles through quiet activities. Selected routine uses your choices below.\nExisting Manual only settings are preserved: select a routine to enable automatic play.", style="Sub.TLabel", wraplength=500).pack(anchor="w", pady=12)
+        routine_choices = ttk.Frame(behavior_frame,style="Glass.TFrame")
+        routine_choices.pack(fill="x")
+        for i,(key,enabled) in enumerate(self.routine_enabled.items()):
+            ttk.Checkbutton(routine_choices,text=self.pack_manifest[key]["label"],variable=enabled,command=self._behavior_settings_changed).grid(row=i//3,column=i%3,sticky="w",padx=8,pady=3)
+
 
         ttk.Label(activities_frame, text="Panda activities", style="Hero.TLabel").pack(anchor="w")
         ttk.Label(

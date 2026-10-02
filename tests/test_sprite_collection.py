@@ -65,3 +65,27 @@ class SpriteCollectionTests(unittest.TestCase):
                 # Sleeping panda is low and wide; preceding-row legs made
                 # the broken extraction taller than it was wide.
                 self.assertLess(box[3]-box[1],box[2]-box[0])
+
+    def test_stride_timing_is_elapsed_time_and_restarts_on_turn(self):
+        from unittest.mock import patch
+        pet=WaterPet.__new__(WaterPet);pet.pack_manifest=MANIFEST
+        pet.walk_direction='right';pet.motion_mode='walking';pet.walk_frame_ms=Mock();pet.walk_frame_ms.get.return_value=180
+        with patch('time.monotonic',side_effect=[10,10.1,10.2,10.4]):
+            self.assertEqual(pet._locomotion_frame('walk'),1)
+            self.assertEqual(pet._locomotion_frame('walk'),1)
+            self.assertEqual(pet._locomotion_frame('walk'),2)
+            pet.walk_direction='left'
+            self.assertEqual(pet._locomotion_frame('walk'),1)
+
+    def test_selected_routine_cycles_without_repeating_one_activity(self):
+        from datetime import timedelta
+        pet=WaterPet.__new__(WaterPet);pet.idle_mood='';pet.next_idle_activity=datetime.now()-timedelta(seconds=1)
+        pet.state='normal';pet.prompt_visible=False;pet.active_alert_kind='';pet.dragging=False;pet.motion_mode='idle';pet.chatter_until=None
+        pet.activity_minutes=Mock();pet.activity_minutes.get.return_value=3
+        pet.auto_activity=Mock();pet.auto_activity.get.return_value='Selected routine'
+        pet.routine_enabled={key:Mock() for key in ('dance','ear_rub')}
+        for enabled in pet.routine_enabled.values():enabled.get.return_value=True
+        pet._play_pack_animation=Mock()
+        for _ in range(3):
+            now=datetime.now();pet.next_idle_activity=now-timedelta(seconds=1);pet._update_idle_mood(now)
+        self.assertEqual([c.args[0] for c in pet._play_pack_animation.call_args_list],['dance','ear_rub','dance'])

@@ -3,7 +3,7 @@ import runpy
 import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 SOURCE = Path(__file__).resolve().parents[1] / 'Start_Water_Puppy.pyw'
 MODULE = runpy.run_path(str(SOURCE))
@@ -36,7 +36,9 @@ class ReminderBehaviorTests(unittest.TestCase):
         pet._answer_button = Mock()
         pet.active_alert_kind = 'movement'
         pet.attention_started_at = datetime.now()
-        pet._draw_cloud_alert()
+        with patch.object(MODULE["tkfont"], "Font") as font:
+            font.return_value.measure.side_effect = lambda text: len(text) * 8
+            pet._draw_cloud_alert()
         self.assertEqual(pet.canvas.tag_bind.call_count, 2)
         pet.pet_name = Mock()
         pet.pet_name.get.return_value = 'Mochi'
@@ -46,6 +48,33 @@ class ReminderBehaviorTests(unittest.TestCase):
         pet._draw_prompt()
         self.assertEqual(pet._image.call_args.args, ('offer_7',))
         self.assertIn('water_snooze', [call.args[0] for call in pet.canvas.tag_bind.call_args_list])
+
+    def test_cursor_games_respect_roaming_toggle(self):
+        pet = WaterPet.__new__(WaterPet)
+        pet.cursor_games = Mock(); pet.cursor_games.get.return_value = True
+        pet.roam_enabled = Mock(); pet.roam_enabled.get.return_value = False
+        pet.root = Mock()
+        pet._check_cursor_reaction(datetime.now())
+        pet.root.winfo_pointerxy.assert_not_called()
+
+    def test_automatic_activity_waits_for_reminder(self):
+        pet = WaterPet.__new__(WaterPet)
+        pet.idle_mood = ""
+        pet.next_idle_activity = datetime.now() - timedelta(seconds=1)
+        pet.state = "normal"
+        pet.prompt_visible = True
+        pet._play_test_animation = Mock()
+        pet._update_idle_mood(datetime.now())
+        pet._play_test_animation.assert_not_called()
+
+    def test_new_assets_are_full_resolution(self):
+        from PIL import Image
+        for name in ["meditate_hd"] + [f"feed_{i}" for i in range(4)]:
+            with Image.open(SOURCE.parent / "assets" / f"panda_{name}.png") as im:
+                self.assertEqual(im.size, (512,512))
+                bbox = im.getchannel("A").getbbox()
+                self.assertGreaterEqual(bbox[1],16)
+                self.assertLessEqual(bbox[3],496)
 
 if __name__ == '__main__':
     unittest.main()

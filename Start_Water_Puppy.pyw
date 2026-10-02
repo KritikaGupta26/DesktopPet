@@ -27,15 +27,15 @@ from PIL import Image, ImageTk
 
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 17
+APP_VERSION = 18
 REMINDER_MINUTES = 30
 TRANSPARENT_COLOR = "#00ff01"
 SMALL_WIDTH = 180
 SMALL_HEIGHT = 184
 PET_CENTER_Y = 94
 PET_GROUND_Y = 169
-PROMPT_WIDTH = 440
-PROMPT_HEIGHT = 275
+PROMPT_WIDTH = 500
+PROMPT_HEIGHT = 300
 ACTIVE_TICK_MILLISECONDS = 80
 IDLE_TICK_MILLISECONDS = 250
 HIDDEN_TICK_MILLISECONDS = 1000
@@ -69,7 +69,7 @@ GLASS = {
 
 PET_LABELS = {"panda": "Panda"}
 
-COMMON_STATES = tuple(f"offer_{i}" for i in range(8)) + tuple(f"hoop_{i}" for i in range(8)) + tuple(f"clock_{i}" for i in range(6)) + (
+COMMON_STATES = ("meditate_hd",) + tuple(f"feed_{i}" for i in range(4)) + tuple(f"offer_{i}" for i in range(8)) + tuple(f"hoop_{i}" for i in range(8)) + tuple(f"clock_{i}" for i in range(6)) + (
     "water_bring",
     "bow_hd",
     "water_reach",
@@ -636,6 +636,14 @@ class WaterPet:
             value=self.settings["hide_fullscreen"]
         )
         self.personality = tk.StringVar(value=self.settings["personality"])
+        self.cursor_games = tk.BooleanVar(value=self.settings["cursor_games"])
+        self.sleep_enabled = tk.BooleanVar(value=self.settings["sleep_enabled"])
+        self.roam_rest_seconds = tk.IntVar(value=self.settings["roam_rest_seconds"])
+        self.sleep_after_minutes = tk.IntVar(value=self.settings["sleep_after_minutes"])
+        self.yawn_after_seconds = tk.IntVar(value=self.settings["yawn_after_seconds"])
+        self.auto_activity = tk.StringVar(value=self.settings["auto_activity"])
+        self.activity_minutes = tk.IntVar(value=self.settings["activity_minutes"])
+        self.next_idle_activity = datetime.now() + timedelta(minutes=self.activity_minutes.get())
         self.movement_enabled = tk.BooleanVar(
             value=self.settings["movement_enabled"]
         )
@@ -814,6 +822,8 @@ class WaterPet:
     def _image(self, state: str) -> ImageTk.PhotoImage:
         if state in ("normal", "blink"):
             state = "idle_hd"
+        elif state == "meditate":
+            state = "meditate_hd"
         elif state == "bow":
             state = "bow_hd"
         return self.images[self.pet_type.get()][state]
@@ -825,6 +835,13 @@ class WaterPet:
             "wander": True,
             "sound": True,
             "hide_fullscreen": True,
+            "cursor_games": False,
+            "sleep_enabled": True,
+            "roam_rest_seconds": 30,
+            "sleep_after_minutes": 3,
+            "yawn_after_seconds": 60,
+            "auto_activity": "Manual only",
+            "activity_minutes": 5,
             "personality": "Balanced",
             "home_x": None,
             "home_y": None,
@@ -865,6 +882,15 @@ class WaterPet:
             datetime.fromisoformat(str(defaults.get("adopted_at", "")))
         except ValueError:
             defaults["adopted_at"] = datetime.now().date().isoformat()
+        defaults["cursor_games"] = bool(defaults.get("cursor_games", False))
+        defaults["sleep_enabled"] = bool(defaults.get("sleep_enabled", True))
+        for key, default, low, high in (("roam_rest_seconds",30,30,600), ("sleep_after_minutes",3,2,60), ("yawn_after_seconds",60,30,120), ("activity_minutes",5,1,60)):
+            try:
+                defaults[key] = max(low, min(high, int(defaults[key])))
+            except (ValueError, TypeError):
+                defaults[key] = default
+        if defaults["auto_activity"] not in ("Manual only", "Meditate", "Feed bamboo"):
+            defaults["auto_activity"] = "Manual only"
         return defaults
 
     def _save_settings(self) -> None:
@@ -874,6 +900,13 @@ class WaterPet:
             "wander": self.roam_enabled.get(),
             "sound": self.sound_enabled.get(),
             "hide_fullscreen": self.hide_fullscreen.get(),
+            "cursor_games": self.cursor_games.get(),
+            "sleep_enabled": self.sleep_enabled.get(),
+            "roam_rest_seconds": self.roam_rest_seconds.get(),
+            "sleep_after_minutes": self.sleep_after_minutes.get(),
+            "yawn_after_seconds": self.yawn_after_seconds.get(),
+            "auto_activity": self.auto_activity.get(),
+            "activity_minutes": self.activity_minutes.get(),
             "personality": self.personality.get(),
             "home_x": self.settings.get("home_x"),
             "home_y": self.settings.get("home_y"),
@@ -1032,7 +1065,7 @@ class WaterPet:
         self.menu.add_command(label="Exit Water Panda", command=self.close)
 
     def _play_test_animation(self, mood: str, seconds: float) -> None:
-        if self.prompt_visible:
+        if self.prompt_visible or self.active_alert_kind or self.state == "sad":
             return
         now = datetime.now()
         self.state = "normal"
@@ -1292,10 +1325,10 @@ class WaterPet:
     def _render_chatter_card(self) -> None:
         if not self.chatter_text:
             return
-        self._cloud_shape(self.canvas, 174, 24, 422, 183, PALETTE["cream"], "#C8B9E8")
+        self._cloud_shape(self.canvas, 194, 18, 492, 200, PALETTE["cream"], "#C8B9E8")
         self.canvas.create_oval(151, 133, 165, 147, fill=PALETTE["cream"], outline="#C8B9E8")
         self.canvas.create_oval(138, 151, 147, 160, fill=PALETTE["cream"], outline="#C8B9E8")
-        self.canvas.create_text(298, 100, text=self.chatter_text, width=205,
+        self.canvas.create_text(343, 104, text=self.chatter_text, width=238,
                                 fill=PALETTE["ink"], font=("Segoe UI", 11), justify="center")
 
     def _position_chatter_card(self) -> None:
@@ -1769,6 +1802,9 @@ class WaterPet:
         if (
             self.state == "normal"
             and not self.prompt_visible
+            and not self.active_alert_kind
+            and self.motion_mode == "idle"
+            and not self.idle_mood
             and now >= self.next_chatter
         ):
             self._show_chatter(self._contextual_chatter(), seconds=random.uniform(3.5, 5.0))
@@ -1860,7 +1896,7 @@ class WaterPet:
             or self.motion_mode not in ("idle", "action")
         ):
             return
-        if idle_seconds >= 180:
+        if self.sleep_enabled.get() and idle_seconds >= self.sleep_after_minutes.get() * 60:
             self.user_was_inactive = True
             if self.idle_mood != "sleep":
                 self.motion_mode = "idle"
@@ -1870,7 +1906,7 @@ class WaterPet:
                 self.action_sequence_stage = -1
             self.idle_mood_until = now + timedelta(seconds=2)
             return
-        if idle_seconds >= 60 and not self.inactivity_yawn_shown:
+        if idle_seconds >= self.yawn_after_seconds.get() and not self.inactivity_yawn_shown:
             self.user_was_inactive = True
             self.inactivity_yawn_shown = True
             self.motion_mode = "idle"
@@ -1881,15 +1917,38 @@ class WaterPet:
             self.action_sequence_stage = -1
             self._show_chatter("Big yawn… you’ve gone quiet.", seconds=4)
 
+    def _behavior_settings_changed(self) -> None:
+        self._save_settings()
+        now = datetime.now()
+        self.next_idle_activity = now + timedelta(minutes=self.activity_minutes.get())
+        self.idle_until = now + timedelta(seconds=self.roam_rest_seconds.get())
+
+    def feed_panda(self) -> None:
+        if self.prompt_visible or self.active_alert_kind or self.dragging or self.state == "sad":
+            return
+        self._play_test_animation("feed", 5.5)
+        self._show_chatter("Crunch, crunch. Thank you for the bamboo!", seconds=5.5)
+
     def _update_idle_mood(self, now: datetime) -> None:
-        # Only user-selected tricks or inactivity-triggered moods run here.
         if self.idle_mood and self.idle_mood_until and now >= self.idle_mood_until:
             self.idle_mood = ""
             self.idle_mood_until = None
             self.action_sequence_stage = -1
-            self.idle_until = now + timedelta(seconds=75)
+            self.idle_until = now + timedelta(seconds=self.roam_rest_seconds.get())
+        if now < self.next_idle_activity:
+            return
+        if (self.state != "normal" or self.prompt_visible or self.active_alert_kind or self.dragging
+                or self.idle_mood or self.motion_mode != "idle" or self.chatter_until):
+            return
+        self.next_idle_activity = now + timedelta(minutes=self.activity_minutes.get())
+        if self.auto_activity.get() == "Meditate":
+            self._play_test_animation("meditate", 8.0)
+        elif self.auto_activity.get() == "Feed bamboo":
+            self.feed_panda()
 
     def _check_cursor_reaction(self, now: datetime) -> None:
+        if not self.cursor_games.get() or not self.roam_enabled.get() or self.active_alert_kind:
+            return
         if (
             now < self.next_cursor_reaction
             or self.prompt_visible
@@ -1938,7 +1997,7 @@ class WaterPet:
             self.walk_speed = random.uniform(6.5, 8.5)
             self.motion_mode = "escaping"
             self.cursor_escape_until = now + timedelta(seconds=4)
-            self._show_chatter(random.choice(("Catch me!", "Too slow!", "Tiny panda zoomies!")), seconds=2)
+            # Do not open chatter here: it pauses movement and used to stall the escape.
             self.next_cursor_reaction = now + timedelta(seconds=4)
         else:
             self.next_cursor_reaction = now + timedelta(seconds=1)
@@ -2218,7 +2277,7 @@ class WaterPet:
                 )
             else:
                 self.motion_mode = "idle"
-                self.idle_until = now + timedelta(seconds=90)
+                self.idle_until = now + timedelta(seconds=self.roam_rest_seconds.get())
         else:
             step_speed = self.walk_speed
             if self.motion_mode == "walking":
@@ -2693,6 +2752,9 @@ class WaterPet:
             )
         elif mood == "kungfu_combo":
             self._draw_kungfu_combo(elapsed)
+        elif mood == "feed":
+            index = min(3, int(elapsed / 0.4)) if elapsed < 1.6 else 2 + (int(elapsed / 0.5) % 2)
+            self.canvas.create_image(SMALL_WIDTH // 2, PET_CENTER_Y, image=self._image(f"feed_{index}"))
         elif mood in FREE_IDLE_MOODS:
             duration = max(0.1, elapsed + max(
                 0.0,
@@ -3001,58 +3063,65 @@ class WaterPet:
             )
 
     def _cloud_shape(self, canvas, x1, y1, x2, y2, fill, outline) -> None:
-        cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
-        rx, ry = (x2 - x1) / 2, (y2 - y1) / 2
-        points = []
-        for index in range(160):
-            angle = index * math.tau / 160
-            ripple = 1 + 0.055 * math.cos(angle * 12)
-            cosine, sine = math.cos(angle), math.sin(angle)
-            points.extend((
-                cx + rx * math.copysign(abs(cosine) ** 0.55, cosine) * ripple,
-                cy + ry * math.copysign(abs(sine) ** 0.55, sine) * ripple,
-            ))
-        canvas.create_polygon(points, smooth=True, fill=fill, outline=outline, width=2)
+        # Broad rounded lobes, with all padding inside the declared bounds.
+        contour = [(0.04,0.45),(0.02,0.28),(0.13,0.20),(0.16,0.07),(0.32,0.09),
+                   (0.42,0.01),(0.59,0.06),(0.73,0.04),(0.84,0.18),(0.96,0.20),
+                   (0.98,0.39),(0.95,0.57),(0.98,0.76),(0.88,0.86),(0.78,0.96),
+                   (0.61,0.93),(0.49,0.99),(0.32,0.94),(0.18,0.96),(0.10,0.82),
+                   (0.02,0.75),(0.04,0.59)]
+        points = [v for x,y in contour for v in (x1+x*(x2-x1),y1+y*(y2-y1))]
+        canvas.create_polygon(points, smooth=True, splinesteps=24, fill=fill, outline=outline, width=1)
 
     def _draw_cloud_alert(self) -> None:
-        self._cloud_shape(self.canvas, 172, 24, 422, 211, PALETTE["cream"], "#C8B9E8")
-        self.canvas.create_oval(148, 158, 166, 176, fill=PALETTE["cream"], outline="#C8B9E8")
-        self.canvas.create_oval(136, 178, 145, 187, fill=PALETTE["cream"], outline="#C8B9E8")
+        self._cloud_shape(self.canvas, 194, 12, 492, 286, PALETTE["cream"], "#E0D4ED")
+        self.canvas.create_oval(165, 145, 180, 160, fill=PALETTE["cream"], outline="#E0D4ED")
+        self.canvas.create_oval(150, 168, 159, 177, fill=PALETTE["cream"], outline="#E0D4ED")
         personal = "personal" in self.active_alert_kind
         elapsed = (datetime.now() - self.attention_started_at).total_seconds() if self.attention_started_at else 0
         pose = f"clock_{min(5, int(elapsed / 0.22))}" if personal else f"hoop_{int(elapsed / 0.22) % 8}"
         self.canvas.create_image(87, 147, image=self._image(pose))
-        self.canvas.create_text(296, 57, text=self.alert_title if personal else "Time to move!", width=206,
-                                fill=PALETTE["ink"], font=("Segoe UI", 13, "bold"), justify="center")
-        self.canvas.create_text(296, 110, text=self.alert_subtitle if personal else "Hula with me, stretch, or take a little walk.",
-                                width=200, fill=PALETTE["muted"], font=("Segoe UI", 10), justify="center")
-        self._answer_button(191, 157, 281, 191, "Done", PALETTE["purple"], PALETTE["purple_dark"], "alert_done")
-        self._answer_button(291, 157, 402, 191, "10 min later", PALETTE["teal"], "#439D87", "alert_snooze")
+        title = self.alert_title if personal else "Time to move!"
+        title_font = tkfont.Font(family="Segoe UI", size=13, weight="bold")
+        line = ""; lines = 1
+        for word in title.split():
+            candidate = (line + " " + word).strip()
+            if title_font.measure(candidate) > 236:
+                lines += 1; line = word
+            else:
+                line = candidate
+        if lines > 3:
+            title_font.configure(size=10)
+        self.canvas.create_text(343, 48, text=title, anchor="n", width=236,
+                                fill=PALETTE["ink"], font=title_font, justify="center")
+        self.canvas.create_text(343, 155, text=self.alert_subtitle if personal else "Hula with me, stretch, or take a little walk.",
+                                width=230, fill=PALETTE["muted"], font=("Segoe UI", 10), justify="center")
+        self._answer_button(228, 210, 324, 248, "Done", PALETTE["purple"], PALETTE["purple_dark"], "alert_done")
+        self._answer_button(337, 210, 463, 248, "10 min later", PALETTE["teal"], "#439D87", "alert_snooze")
         self.canvas.tag_bind("alert_done", "<Button-1>", lambda event: self._complete_active_alert())
         self.canvas.tag_bind("alert_snooze", "<Button-1>", lambda event: self._snooze_active_alert())
 
     def _draw_prompt(self) -> None:
-        self._cloud_shape(self.canvas, 170, 18, 419, 253, PALETTE["cream"], "#C8B9E8")
+        self._cloud_shape(self.canvas, 194, 12, 492, 286, PALETTE["cream"], "#C8B9E8")
         self.canvas.create_text(
-            188,
-            30,
+            225,
+            42,
             text=f"{self.pet_name.get().upper()} · WATER CHECK",
             anchor="w",
             fill=PALETTE["teal"],
             font=("Segoe UI", 8, "bold"),
         )
         self.canvas.create_text(
-            188,
-            57,
+            225,
+            70,
             text=self.water_prompt_text,
             anchor="w",
             fill=PALETTE["ink"],
             font=("Segoe UI", 13, "bold"),
-            width=215,
+            width=238,
         )
         self.canvas.create_text(
-            188,
-            82,
+            225,
+            99,
             text=f"Today  ·  {self.today_total_cache} ml logged",
             anchor="w",
             fill=PALETTE["muted"],
@@ -3060,47 +3129,47 @@ class WaterPet:
         )
 
         self._answer_button(
-            188,
-            105,
-            290,
-            145,
+            225,
+            122,
+            335,
+            162,
             "100 ml",
             GLASS["aqua"],
             "#439D87",
             "amount_100",
         )
         self._answer_button(
-            302,
-            105,
-            404,
-            145,
+            350,
+            122,
+            460,
+            162,
             "200 ml",
             "#69B8E8",
             "#498FB8",
             "amount_200",
         )
         self._answer_button(
-            188,
-            158,
-            290,
-            198,
+            225,
+            176,
+            335,
+            216,
             "300 ml",
             GLASS["accent"],
             GLASS["accent_hover"],
             "amount_300",
         )
         self._answer_button(
-            302,
-            158,
-            404,
-            198,
+            350,
+            176,
+            460,
+            216,
             "Not yet",
             GLASS["surface_hover"],
             GLASS["border"],
             "not_yet",
         )
 
-        self._answer_button(188, 211, 404, 242, "10 min later", PALETTE["purple"], PALETTE["purple_dark"], "water_snooze")
+        self._answer_button(225, 230, 460, 262, "10 min later", PALETTE["purple"], PALETTE["purple_dark"], "water_snooze")
         self.canvas.tag_bind("water_snooze", "<Button-1>", self.snooze_water)
         elapsed = (datetime.now() - self.attention_started_at).total_seconds() if self.attention_started_at else 0
         # Reveal once, then hold. Never reset the glass behind the panda.
@@ -3338,12 +3407,13 @@ class WaterPet:
         reminder_frame = ttk.Frame(page_host, style="Glass.TFrame")
         pet_frame = ttk.Frame(page_host, style="Glass.TFrame")
         activities_frame = ttk.Frame(page_host, style="Glass.TFrame")
-        pages = [overview_frame, history_frame, reminder_frame, pet_frame, activities_frame]
+        behavior_frame = ttk.Frame(page_host, style="Glass.TFrame")
+        pages = [overview_frame, history_frame, reminder_frame, pet_frame, activities_frame, behavior_frame]
         for page in pages:
             page.place(relx=0, rely=0, relwidth=1, relheight=1)
 
         nav_buttons: list[tk.Button] = []
-        for label in ("Home", "Water history", "Reminders", "Panda settings", "Panda activities"):
+        for label in ("Home", "Water history", "Reminders", "Panda settings", "Panda activities", "Behaviour"):
             button = tk.Button(
                 rail,
                 text=label,
@@ -3419,7 +3489,7 @@ class WaterPet:
         self.name_entry.pack(anchor="w", pady=(6, 18))
         self.name_entry.bind("<FocusOut>", lambda _event: self._save_studio_settings())
         ttk.Label(pet_frame, text="Personality", style="CardTitle.TLabel").pack(anchor="w")
-        ttk.Label(pet_frame, text="Calm wanders less. Playful explores and performs more tricks.", style="CardSub.TLabel").pack(anchor="w", pady=(2, 7))
+        ttk.Label(pet_frame, text="Personality changes walking speed and chatter. Set timing in Behaviour.", style="CardSub.TLabel").pack(anchor="w", pady=(2, 7))
         personality_box = ttk.Combobox(pet_frame, textvariable=self.personality, values=("Calm", "Balanced", "Playful"), state="readonly", width=18)
         personality_box.pack(anchor="w", pady=(0, 18))
         personality_box.bind("<<ComboboxSelected>>", lambda _event: self._save_studio_settings())
@@ -3435,6 +3505,25 @@ class WaterPet:
         movement_box.bind("<<ComboboxSelected>>", lambda _event: self._movement_settings_changed())
         ttk.Label(movement_card, text="minutes").pack(side="left", padx=(5, 0))
 
+        ttk.Label(behavior_frame, text="Behaviour and timing", style="Hero.TLabel").pack(anchor="w")
+        ttk.Label(behavior_frame, text="Reminders take priority. Activities wait until the panda is free.", style="Sub.TLabel").pack(anchor="w", pady=(4,18))
+        ttk.Checkbutton(behavior_frame, text="Play cursor chase/avoid games (off by default)", variable=self.cursor_games, command=self._behavior_settings_changed).pack(anchor="w", pady=3)
+        ttk.Checkbutton(behavior_frame, text="Sleep when the computer is inactive", variable=self.sleep_enabled, command=self._behavior_settings_changed).pack(anchor="w", pady=3)
+        for label, variable, options in (
+            ("Rest between walks (seconds)", self.roam_rest_seconds, (30,60,90,180,300,600)),
+            ("Yawn after inactivity (seconds)", self.yawn_after_seconds, (30,60,90,120)),
+            ("Sleep after inactivity (minutes)", self.sleep_after_minutes, (2,3,5,10,30,60)),
+            ("Automatic activity", self.auto_activity, ("Manual only","Meditate","Feed bamboo")),
+            ("Activity interval (minutes)", self.activity_minutes, (1,3,5,10,15,30,60)),
+        ):
+            row = ttk.Frame(behavior_frame, style="Glass.TFrame")
+            row.pack(fill="x", pady=8)
+            ttk.Label(row, text=label, width=32).pack(side="left")
+            box = ttk.Combobox(row, textvariable=variable, values=options, state="readonly", width=16)
+            box.pack(side="left")
+            box.bind("<<ComboboxSelected>>", lambda _event: self._behavior_settings_changed())
+        ttk.Label(behavior_frame, text="Manual only is the default. Feeding is a playful action, not a hunger simulation.\nWater stays every 30 minutes unless paused or snoozed.", style="Sub.TLabel", wraplength=500).pack(anchor="w", pady=16)
+
         ttk.Label(activities_frame, text="Panda activities", style="Hero.TLabel").pack(anchor="w")
         ttk.Label(
             activities_frame,
@@ -3444,6 +3533,7 @@ class WaterPet:
         activity_grid = ttk.Frame(activities_frame, style="Glass.TFrame")
         activity_grid.pack(fill="both", expand=True)
         activities = (
+            ("Feed bamboo", self.feed_panda),
             ("Walk across screen", self._test_walk_across_screen),
             ("Play fetch", self.start_fetch),
             ("Sleepy tiptoe walk", self._test_bored_at_edge),
@@ -3662,7 +3752,7 @@ class WaterPet:
         ttk.Label(pet_frame, text="Personality", style="CardTitle.TLabel").pack(anchor="w")
         ttk.Label(
             pet_frame,
-            text="Calm wanders less. Playful explores and performs more tricks.",
+            text="Personality changes walking speed and chatter. Set timing in Behaviour.",
             style="CardSub.TLabel",
         ).pack(anchor="w", pady=(2, 6))
         personality_box = ttk.Combobox(

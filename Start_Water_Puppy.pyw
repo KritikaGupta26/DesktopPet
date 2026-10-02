@@ -876,6 +876,13 @@ class WaterPet:
         if self.prompt_visible or self.active_alert_kind or self.dragging or self.state == "sad":
             return
         metadata = self.pack_manifest[key]
+        if key in ("walk", "run"):
+            self._test_walk_across_screen()
+            if key == "run":
+                self.walk_speed = 7.5
+                self.motion_mode = "escaping"
+                self.cursor_escape_until = datetime.now() + timedelta(seconds=8)
+            return
         if metadata["edge_only"]:
             self._start_edge_activity("pack:" + key)
             left,top,right,bottom=self._screen_bounds()

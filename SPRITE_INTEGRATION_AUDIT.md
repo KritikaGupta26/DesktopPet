@@ -40,6 +40,6 @@ Water remains every 30 minutes, unless paused or snoozed. Personal reminders use
 
 ## UI and verification
 
-v18 replaces the cramped scalloped bubble with a wider, softer cloud. Water controls have larger spacing. Custom reminder titles are separated from the subtitle and use measured wrapping. All automatic reminder/chatter content remains on the pet canvas. Panda Home is still a manually opened settings/history window.
+v18 replaces the cramped scalloped bubble with a compact, softer cloud above and to the right of the panda. Chatter is 176 x 100 px; water is 176 x 153 px; other reminders are 176 x 166 px. Water controls use compact amount buttons. Custom reminder titles are separated from the subtitle and shortened to 70 characters for compact display; full titles stay in history. Expanding the root adds a top gutter and adjusts its position to keep the panda anchored when screen space allows. All automatic reminder/chatter content remains on the pet canvas. Panda Home is still a manually opened settings/history window.
 
 Automated checks cover snooze without logging, final water pose hold, on-canvas dialogue, asset presence, activity scheduling priority and settings validation. Windows build validation is separate from real desktop appearance testing. Different DPI settings, multi-monitor edge placement and end-user visual quality still require Windows runtime verification.

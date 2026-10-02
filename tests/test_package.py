@@ -123,10 +123,10 @@ class PackageTests(unittest.TestCase):
         self.assertIn("_draw_cloud_alert", self.source)
         self.assertIn("PET_CENTER_Y = 94", self.source)
 
-    def test_water_prompt_has_separate_card_layout(self):
-        self.assertIn("PROMPT_WIDTH = 500", self.source)
-        self.assertIn('text=f"{self.pet_name.get().upper()} · WATER CHECK"', self.source)
-        self.assertIn("225,\n            122,\n            335,\n            162", self.source)
+    def test_water_prompt_has_compact_cloud_layout(self):
+        self.assertIn("PROMPT_WIDTH = 360", self.source)
+        self.assertIn('text="Water time?"', self.source)
+        self.assertIn("174, 6, 350, 159", self.source)
 
     def test_reminders_use_purpose_built_poses(self):
         self.assertIn('pose = f"clock_', self.source)

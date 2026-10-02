@@ -34,8 +34,8 @@ SMALL_WIDTH = 180
 SMALL_HEIGHT = 184
 PET_CENTER_Y = 94
 PET_GROUND_Y = 169
-PROMPT_WIDTH = 500
-PROMPT_HEIGHT = 300
+PROMPT_WIDTH = 360
+PROMPT_HEIGHT = 324
 ACTIVE_TICK_MILLISECONDS = 80
 IDLE_TICK_MILLISECONDS = 250
 HIDDEN_TICK_MILLISECONDS = 1000
@@ -1024,7 +1024,9 @@ class WaterPet:
     def _resize_anchored(self, width: int, height: int) -> None:
         self.root.update_idletasks()
         left = self.root.winfo_x()
-        top = self.root.winfo_y()
+        old_gutter = 140 if self.width > SMALL_WIDTH else 0
+        new_gutter = 140 if width > SMALL_WIDTH else 0
+        top = self.root.winfo_y() + old_gutter - new_gutter
         screen_left, screen_top, screen_right, screen_bottom = self._screen_bounds()
         x = max(screen_left, min(left, screen_right - width))
         y = max(screen_top, min(top, screen_bottom - height))
@@ -1325,11 +1327,11 @@ class WaterPet:
     def _render_chatter_card(self) -> None:
         if not self.chatter_text:
             return
-        self._cloud_shape(self.canvas, 194, 18, 492, 200, PALETTE["cream"], "#C8B9E8")
-        self.canvas.create_oval(151, 133, 165, 147, fill=PALETTE["cream"], outline="#C8B9E8")
-        self.canvas.create_oval(138, 151, 147, 160, fill=PALETTE["cream"], outline="#C8B9E8")
-        self.canvas.create_text(343, 104, text=self.chatter_text, width=238,
-                                fill=PALETTE["ink"], font=("Segoe UI", 11), justify="center")
+        self._cloud_shape(self.canvas, 174, 12, 350, 112, PALETTE["cream"], "#E0D4ED")
+        self.canvas.create_oval(157, 123, 169, 135, fill=PALETTE["cream"], outline="#E0D4ED")
+        self.canvas.create_oval(143, 142, 151, 150, fill=PALETTE["cream"], outline="#E0D4ED")
+        self.canvas.create_text(262, 61, text=self.chatter_text, width=138,
+                                fill=PALETTE["ink"], font=("Segoe UI", 9), justify="center")
 
     def _position_chatter_card(self) -> None:
         # Chatter shares the pet canvas, so dragging moves both together.
@@ -2484,6 +2486,8 @@ class WaterPet:
 
     def _draw(self) -> None:
         self._draw_pet_scene()
+        if self.width > SMALL_WIDTH and not self.prompt_visible and not self.active_alert_kind:
+            self.canvas.move("all", 0, 140)
         if self.chatter_until and self.chatter_text and not self.prompt_visible and not self.active_alert_kind:
             self._render_chatter_card()
 
@@ -3073,127 +3077,39 @@ class WaterPet:
         canvas.create_polygon(points, smooth=True, splinesteps=24, fill=fill, outline=outline, width=1)
 
     def _draw_cloud_alert(self) -> None:
-        self._cloud_shape(self.canvas, 194, 12, 492, 286, PALETTE["cream"], "#E0D4ED")
-        self.canvas.create_oval(165, 145, 180, 160, fill=PALETTE["cream"], outline="#E0D4ED")
-        self.canvas.create_oval(150, 168, 159, 177, fill=PALETTE["cream"], outline="#E0D4ED")
+        self._cloud_shape(self.canvas, 174, 6, 350, 172, PALETTE["cream"], "#E0D4ED")
+        self.canvas.create_oval(157, 169, 169, 181, fill=PALETTE["cream"], outline="#E0D4ED")
+        self.canvas.create_oval(143, 188, 151, 196, fill=PALETTE["cream"], outline="#E0D4ED")
         personal = "personal" in self.active_alert_kind
         elapsed = (datetime.now() - self.attention_started_at).total_seconds() if self.attention_started_at else 0
         pose = f"clock_{min(5, int(elapsed / 0.22))}" if personal else f"hoop_{int(elapsed / 0.22) % 8}"
-        self.canvas.create_image(87, 147, image=self._image(pose))
-        title = self.alert_title if personal else "Time to move!"
-        title_font = tkfont.Font(family="Segoe UI", size=13, weight="bold")
-        line = ""; lines = 1
-        for word in title.split():
-            candidate = (line + " " + word).strip()
-            if title_font.measure(candidate) > 236:
-                lines += 1; line = word
-            else:
-                line = candidate
-        if lines > 3:
-            title_font.configure(size=10)
-        self.canvas.create_text(343, 48, text=title, anchor="n", width=236,
-                                fill=PALETTE["ink"], font=title_font, justify="center")
-        self.canvas.create_text(343, 155, text=self.alert_subtitle if personal else "Hula with me, stretch, or take a little walk.",
-                                width=230, fill=PALETTE["muted"], font=("Segoe UI", 10), justify="center")
-        self._answer_button(228, 210, 324, 248, "Done", PALETTE["purple"], PALETTE["purple_dark"], "alert_done")
-        self._answer_button(337, 210, 463, 248, "10 min later", PALETTE["teal"], "#439D87", "alert_snooze")
+        self.canvas.create_image(90, 234, image=self._image(pose))
+        title = textwrap.shorten(self.alert_title, width=70, placeholder="…") if personal else "Time to move!"
+        self.canvas.create_text(262, 25, text=title, anchor="n", width=138,
+                                fill=PALETTE["ink"], font=("Segoe UI", 10, "bold"), justify="center")
+        self.canvas.create_text(262, 104, text=self.alert_subtitle if personal else "Hula, stretch, or take a little walk.",
+                                width=138, fill=PALETTE["muted"], font=("Segoe UI", 8), justify="center")
+        self._answer_button(187, 134, 245, 157, "Done", PALETTE["purple"], PALETTE["purple_dark"], "alert_done")
+        self._answer_button(252, 134, 337, 157, "10 min later", PALETTE["teal"], "#439D87", "alert_snooze")
         self.canvas.tag_bind("alert_done", "<Button-1>", lambda event: self._complete_active_alert())
         self.canvas.tag_bind("alert_snooze", "<Button-1>", lambda event: self._snooze_active_alert())
 
     def _draw_prompt(self) -> None:
-        self._cloud_shape(self.canvas, 194, 12, 492, 286, PALETTE["cream"], "#C8B9E8")
-        self.canvas.create_text(
-            225,
-            42,
-            text=f"{self.pet_name.get().upper()} · WATER CHECK",
-            anchor="w",
-            fill=PALETTE["teal"],
-            font=("Segoe UI", 8, "bold"),
-        )
-        self.canvas.create_text(
-            225,
-            70,
-            text=self.water_prompt_text,
-            anchor="w",
-            fill=PALETTE["ink"],
-            font=("Segoe UI", 13, "bold"),
-            width=238,
-        )
-        self.canvas.create_text(
-            225,
-            99,
-            text=f"Today  ·  {self.today_total_cache} ml logged",
-            anchor="w",
-            fill=PALETTE["muted"],
-            font=("Segoe UI", 9),
-        )
-
-        self._answer_button(
-            225,
-            122,
-            335,
-            162,
-            "100 ml",
-            GLASS["aqua"],
-            "#439D87",
-            "amount_100",
-        )
-        self._answer_button(
-            350,
-            122,
-            460,
-            162,
-            "200 ml",
-            "#69B8E8",
-            "#498FB8",
-            "amount_200",
-        )
-        self._answer_button(
-            225,
-            176,
-            335,
-            216,
-            "300 ml",
-            GLASS["accent"],
-            GLASS["accent_hover"],
-            "amount_300",
-        )
-        self._answer_button(
-            350,
-            176,
-            460,
-            216,
-            "Not yet",
-            GLASS["surface_hover"],
-            GLASS["border"],
-            "not_yet",
-        )
-
-        self._answer_button(225, 230, 460, 262, "10 min later", PALETTE["purple"], PALETTE["purple_dark"], "water_snooze")
+        self._cloud_shape(self.canvas, 174, 6, 350, 159, PALETTE["cream"], "#E0D4ED")
+        self.canvas.create_oval(157, 164, 169, 176, fill=PALETTE["cream"], outline="#E0D4ED")
+        self.canvas.create_oval(143, 185, 151, 193, fill=PALETTE["cream"], outline="#E0D4ED")
+        self.canvas.create_text(262, 29, text="Water time?", fill=PALETTE["ink"], font=("Segoe UI", 10, "bold"))
+        self.canvas.create_text(262, 49, text=f"Today: {self.today_total_cache} ml", fill=PALETTE["muted"], font=("Segoe UI", 8))
+        for x, amount, tag, color in ((187,100,"amount_100",PALETTE["teal"]),(238,200,"amount_200","#69B8E8"),(289,300,"amount_300",PALETTE["purple"])):
+            self._answer_button(x, 66, x+45, 91, f"{amount} ml", color, color, tag)
+            self.canvas.tag_bind(tag, "<Button-1>", lambda event, ml=amount: self.record_water(ml, event))
+        self._answer_button(187, 102, 245, 127, "Not yet", "#746F86", "#746F86", "not_yet")
+        self._answer_button(252, 102, 337, 127, "10 min later", PALETTE["purple"], PALETTE["purple_dark"], "water_snooze")
+        self.canvas.tag_bind("not_yet", "<Button-1>", self.answer_not_yet)
         self.canvas.tag_bind("water_snooze", "<Button-1>", self.snooze_water)
+        self.canvas.create_text(262, 141, text="Pick an amount to log a sip", fill=PALETTE["muted"], font=("Segoe UI", 7))
         elapsed = (datetime.now() - self.attention_started_at).total_seconds() if self.attention_started_at else 0
-        # Reveal once, then hold. Never reset the glass behind the panda.
-        self.canvas.create_image(90, 144, image=self._image(f"offer_{min(7, int(elapsed / 0.28))}"))
-        self.canvas.tag_bind(
-            "amount_100",
-            "<Button-1>",
-            lambda event: self.record_water(100, event),
-        )
-        self.canvas.tag_bind(
-            "amount_200",
-            "<Button-1>",
-            lambda event: self.record_water(200, event),
-        )
-        self.canvas.tag_bind(
-            "amount_300",
-            "<Button-1>",
-            lambda event: self.record_water(300, event),
-        )
-        self.canvas.tag_bind(
-            "not_yet",
-            "<Button-1>",
-            self.answer_not_yet,
-        )
+        self.canvas.create_image(90, 234, image=self._image(f"offer_{min(7, int(elapsed / 0.28))}"))
 
     def _answer_button(
         self,
@@ -3212,7 +3128,7 @@ class WaterPet:
             y1,
             x2,
             y2,
-            14,
+            11,
             fill=fill,
             outline=outline,
             width=1,
@@ -3223,7 +3139,7 @@ class WaterPet:
             (y1 + y2) // 2,
             text=label,
             fill="white",
-            font=("Segoe UI", 9, "bold"),
+            font=("Segoe UI", 8, "bold"),
             tags=tags,
         )
 

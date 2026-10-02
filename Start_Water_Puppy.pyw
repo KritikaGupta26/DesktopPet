@@ -3694,11 +3694,12 @@ class WaterPet:
         if self.history_window is not None and self.history_window.winfo_exists():
             self._refresh_history()
             self.history_window.deiconify()
-            self.history_window.lift()
-            self.history_window.focus_force()
             if not self.prompt_visible and not self.active_alert_kind:
                 self._close_chatter_card()
                 self.root.withdraw()
+            self.history_window.update_idletasks()
+            self.history_window.lift()
+            self.history_window.focus_force()
             return
 
         window = tk.Toplevel(self.root)
@@ -3953,6 +3954,9 @@ class WaterPet:
         if not self.prompt_visible and not self.active_alert_kind:
             self._close_chatter_card()
             self.root.withdraw()
+        window.update_idletasks()
+        window.lift()
+        window.focus_force()
         window.after(80, lambda: self._apply_windows_11_backdrop(window))
         self._refresh_history()
 

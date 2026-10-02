@@ -29,7 +29,9 @@ def run_validation(pet_type, output_path: Path) -> None:
     def snapshot(name, window=None):
         target = window or app.root
         app.root.update_idletasks()
-        target.update_idletasks()
+        target.update()
+        if os.name == "nt":
+            ctypes.windll.dwmapi.DwmFlush()
         bbox = (target.winfo_rootx(), target.winfo_rooty(),
                 target.winfo_rootx() + target.winfo_width(),
                 target.winfo_rooty() + target.winfo_height())

@@ -200,3 +200,40 @@ class TimeAndPaceRegressionTests(unittest.TestCase):
             pet.personality.get.return_value=personality;values.append(pet._walk_cycle_seconds())
         self.assertGreater(values[0],values[1]);self.assertGreater(values[1],values[2])
         self.assertAlmostEqual(values[1],1.44)
+
+class ReminderPriorityRegressionTests(unittest.TestCase):
+    def test_due_personal_reminder_defers_an_open_water_offer(self):
+        import tempfile
+        import sqlite3
+        from contextlib import closing
+        from datetime import timezone
+        with tempfile.TemporaryDirectory() as directory:
+            pet=WaterPet.__new__(WaterPet);pet.database_path=Path(directory)/'history.db';pet._initialize_database()
+            now=datetime.now(timezone.utc)
+            with closing(sqlite3.connect(pet.database_path)) as db,db:
+                db.execute("INSERT INTO personal_reminders(title,due_at,status,created_at) VALUES (?,?,?,?)",('Meeting', (now-timedelta(minutes=1)).isoformat(timespec='seconds'),'scheduled',now.isoformat(timespec='seconds')))
+            pet.active_alert_kind='';pet.prompt_visible=True;pet.alert_window=None;pet._show_general_alert=Mock()
+            pet._check_scheduled_reminders(now)
+            self.assertFalse(pet.prompt_visible);self.assertTrue(pet.water_prompt_deferred)
+            self.assertEqual(pet._show_general_alert.call_args.kwargs['kind'],'personal')
+
+    def test_closing_personal_alert_resumes_deferred_water(self):
+        pet=WaterPet.__new__(WaterPet);pet.water_prompt_deferred=True;pet.alert_previous_state='normal'
+        pet._clear_attention=Mock();pet._resize_anchored=Mock();pet.show_prompt=Mock()
+        pet._close_active_alert()
+        self.assertFalse(pet.water_prompt_deferred);pet.show_prompt.assert_called_once()
+
+    def test_pausing_water_does_not_shrink_a_personal_alert(self):
+        pet=WaterPet.__new__(WaterPet);pet.active_alert_kind='personal';pet.water_prompt_deferred=True
+        pet._clear_attention=Mock();pet._resize_anchored=Mock();pet._show_chatter=Mock()
+        pet.pause_reminders()
+        pet._resize_anchored.assert_not_called();self.assertFalse(pet.water_prompt_deferred)
+
+class CloudTextRegressionTests(unittest.TestCase):
+    def test_long_titles_fit_three_lines_and_retain_full_source(self):
+        source='W'*120
+        fitted=MODULE['fit_cloud_text'](source,lambda value:len(value)*12,126,3)
+        self.assertEqual(len(fitted.splitlines()),3)
+        self.assertTrue(fitted.endswith('…'))
+        self.assertTrue(all(len(line)*12<=126 for line in fitted.splitlines()))
+        self.assertEqual(len(source),120)

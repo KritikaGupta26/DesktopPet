@@ -67,7 +67,7 @@ def prepare(archive, assets, previews):
    for i,f in enumerate(frames):
     f=f.resize((max(1,round(f.width*scale)),max(1,round(f.height*scale))),Image.Resampling.LANCZOS)
     out=Image.new('RGBA',(512,512));out.alpha_composite(f,((512-f.width)//2,492-f.height));buffer=BytesIO();out.save(buffer,format="PNG",optimize=True);destination=assets/f"pack_{key}_{i}.png";destination.write_bytes(buffer.getvalue());prepared.append(out)
-    if key in ('walk','run'):
+    if key in ('walk','run','bored_shuffle'):
      buffer=BytesIO();ImageOps.mirror(out).save(buffer,format='PNG',optimize=True);(assets/f'pack_{key}_left_{i}.png').write_bytes(buffer.getvalue())
    duration=1.0 if key in SLOW else .11 if key in ('walk','run') else .28 if key=='water_offer' else .3
    manifest[key]={'sheet':f'sprites/{sheet}.png','frames':count,'seconds_per_frame':duration,'mode':'loop' if key in LOOPS else 'once_hold','label':key.replace('_',' ').title(),'edge_only':key=='bamboo_hang','crop_rectangles':crop_records,'shared_scale':scale,'mirrored_frame_indices':[2] if key in ('wave','greeting') else []}

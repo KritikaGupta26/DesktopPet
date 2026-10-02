@@ -86,6 +86,18 @@ def run_validation(pet_type, output_path: Path) -> None:
             app._draw()
             snapshot("water_cloud")
             check("Water cloud is drawn on the panda canvas", len(app.canvas.find_all()) > 10)
+            original_scaling = float(app.root.tk.call("tk", "scaling"))
+            for percent in (100,125,150):
+                app.root.tk.call("tk", "scaling", percent/100*96/72)
+                app._draw()
+                app.root.update_idletasks()
+                for tag in ("amount_100","amount_200","amount_300","not_yet","water_snooze"):
+                    shape,text = app.canvas.find_withtag(tag)
+                    shape_box = app.canvas.bbox(shape)
+                    text_box = app.canvas.bbox(text)
+                    check(f"Water label fits at {percent}%: {tag}", text_box[0]>=shape_box[0] and text_box[2]<=shape_box[2])
+                snapshot(f"water_text_scale_{percent}")
+            app.root.tk.call("tk", "scaling", original_scaling)
             app.record_water(200)
             app.record_water(200)
             with closing(sqlite3.connect(app.database_path)) as db, db:
@@ -122,7 +134,9 @@ def run_validation(pet_type, output_path: Path) -> None:
                 reminder_id = db.execute("INSERT INTO personal_reminders(title,due_at,status,created_at) VALUES (?,?,?,?)",
                                          ("Meeting at 1 PM", (now-timedelta(minutes=1)).isoformat(timespec="seconds"),
                                           "scheduled", now.isoformat(timespec="seconds"))).lastrowid
+            app.show_prompt()
             app._check_scheduled_reminders(datetime.now())
+            check("Personal reminder preempts water without overlap", app.active_alert_kind == "personal" and not app.prompt_visible)
             check("Due personal reminder displays", app.active_alert_kind == "personal" and app.active_alert_id == reminder_id)
             app._draw()
             snapshot("watch_cloud")
@@ -130,6 +144,8 @@ def run_validation(pet_type, output_path: Path) -> None:
             with closing(sqlite3.connect(app.database_path)) as db, db:
                 due_at, status = db.execute("SELECT due_at,status FROM personal_reminders WHERE reminder_id=?", (reminder_id,)).fetchone()
             check("Personal snooze stays scheduled", status == "scheduled" and datetime.fromisoformat(due_at) > now + timedelta(minutes=9))
+            check("Deferred water offer resumes", app.prompt_visible)
+            app.answer_not_yet()
             app._show_general_alert("Meeting at 1 PM", "Your reminder", "personal", reminder_id)
             app._complete_active_alert()
             with closing(sqlite3.connect(app.database_path)) as db, db:
@@ -141,7 +157,34 @@ def run_validation(pet_type, output_path: Path) -> None:
             app.root.update()
             check("Panda Home opens", app.history_window.winfo_exists())
             snapshot("panda_home", app.history_window)
-            app.history_window.withdraw()
+            check("Panda does not cover Panda Home", not app.root.winfo_viewable())
+            for index, name in enumerate(("home", "history", "reminders", "settings", "activities", "behaviour")):
+                app.studio_notebook.select(index)
+                app.root.update_idletasks()
+                snapshot(f"page_{name}", app.history_window)
+                check(f"Panda Home navigation: {name}", True)
+            app.behavior_canvas.yview_moveto(1)
+            app.root.update_idletasks()
+            snapshot("behaviour_bottom", app.history_window)
+            check("Behaviour scroll reaches the bottom", app.behavior_canvas.yview()[1] > 0.99)
+            entry_module = __import__(pet_type.__module__)
+            picker = entry_module.filedialog.asksaveasfilename
+            csv_path = Path(data_dir)/"export.csv"
+            entry_module.filedialog.asksaveasfilename = lambda **kwargs: str(csv_path)
+            try:
+                app.export_history()
+            finally:
+                entry_module.filedialog.asksaveasfilename = picker
+            check("CSV export contains recorded intake", csv_path.exists() and "200" in csv_path.read_text(encoding="utf-8-sig"))
+            app.undo_latest_entry()
+            with closing(sqlite3.connect(app.database_path)) as db:
+                count = db.execute("SELECT COUNT(*) FROM water_entries").fetchone()[0]
+            check("Undo requires inline confirmation", count == 1 and app.undo_confirmation_id is not None)
+            app.undo_latest_entry()
+            with closing(sqlite3.connect(app.database_path)) as db:
+                count = db.execute("SELECT COUNT(*) FROM water_entries").fetchone()[0]
+            check("Confirmed undo removes exactly the latest entry", count == 0)
+            app._hide_studio()
             app.reminder_title_var.set("")
             app.add_personal_reminder()
             check("Reminder validation is inline", bool(app.reminder_feedback_var.get()))

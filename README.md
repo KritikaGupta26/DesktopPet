@@ -1,50 +1,24 @@
-# Water Panda for Windows
+# Water Panda v25 for Windows
 
-Water Panda is a local Windows desktop companion with water tracking, movement reminders, personal reminders and animated panda activities.
+A local desktop panda with water tracking, hula-hoop movement breaks, wristwatch personal reminders, bamboo feeding and configurable automatic activities.
 
-## Install
+Download Water_Panda_Setup.exe from the latest tagged GitHub release, close the old copy and install. The installer has a panda-face icon and needs no Python or administrator rights. Your local history and settings are preserved.
 
-Download `Water_Panda_Setup.exe` from the latest GitHub Actions artifact or tagged release, open it and select **Start Water Panda** when installation finishes. The installer uses a panda-face icon and does not require a separate Python installation.
+Double-click opens Panda Home. Right-click contains Home, roaming, Water now, water Pause/Resume, Add reminder and Exit. Reminder dialogue is an in-canvas cloud above the panda's right side. Home supplies all 27 activity controls, a 19-item selectable routine pool, scrollable behaviour settings, history, CSV export and inline Undo confirmation.
 
-## Controls
+**Not yet now recovers after eight seconds without requiring Pause.** It logs nothing and keeps the next water reminder 30 minutes away. Snooze is ten minutes. Water accepted at 100/200/300 ml triggers a thank-you bow.
 
-Double-click the panda to open Panda Home. The minimal panda and tray right-click menus contain:
+v25 replaces rig walking with six coherent side-profile phases, combines duplicate grooming/rest/log controls, improves compact clouds and jump clearance, fixes tray registration and local database connection handling, and prevents Panda Home being covered by the ordinary pet.
 
-- Open Panda Home
-- Enable or disable roaming
-- Ask for water now
-- Pause water reminders for one hour
-- Resume water reminders
-- Add personal reminder
-- Exit Water Panda
+See [the complete replication prompt](Water_Panda_Replication_Prompt.md) for exact features, all source sheets, settings and full setup/update/build commands. See [the point-by-point audit](Water_Panda_Final_Audit.md) for evidence and limits. Generated source poses are draft artwork; CI proves functionality, not perfect animation on every user's display.
 
-Panda Home contains water history, reminders, settings and the complete **Panda activities** page. Activities include walking, fetch, a sleepy tiptoe walk, kung-fu, sleep, meditation, hula-hoop movement breaks and reminder previews.
-
-## Animation consistency
-
-All 56 panda pose assets use the same 180 × 180 transparent canvas and ground line. The eight-frame walking cycle is normalized to one perceived character scale in both directions, and its playback cadence is tied to a slower two-tick gait to avoid rapid foot shuffling.
-
-## Privacy and updates
-
-Water history, personal reminders and preferences remain local in `%LOCALAPPDATA%\WaterPuppy`. Installer upgrades replace application files without deleting `water_history.db` or `settings.json`.
-
-## Build the installer
-
-The GitHub workflow builds on a genuine Windows runner:
-
-1. PyInstaller creates the windowed `WaterPanda.exe` application directory.
-2. Automated tests verify source, assets, icon and menu structure.
-3. Inno Setup packages `Water_Panda_Setup.exe`.
-4. Every push to `main` stores a downloadable workflow artifact.
-5. Tags such as `v14.0.0` also publish the installer as a GitHub Release.
-
-To build manually on Windows:
+Build on Windows with Python 3.12 and Inno Setup 6:
 
 ```powershell
-python -m pip install -r requirements-build.txt
-python -m unittest discover -s tests -v
-pyinstaller --noconfirm --clean WaterPanda.spec
+py -3.12 -m pip install -r requirements-build.txt
+py -3.12 -m unittest discover -s tests -v
+py -3.12 -m PyInstaller --noconfirm --clean WaterPanda.spec
 & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer\WaterPanda.iss"
 ```
 
-The completed installer is written to `installer\output\Water_Panda_Setup.exe`.
+Output: installer\output\Water_Panda_Setup.exe. Main pushes create build artifacts; version tags publish release installers after packaged Windows UI validation. There is no silent updater. Local data stays in %LOCALAPPDATA%\WaterPuppy; runtime has no external AI, email, clipboard, microphone or camera integration.

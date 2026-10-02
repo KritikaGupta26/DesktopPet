@@ -9,7 +9,8 @@ analysis = Analysis(
     [str(project_root / "Start_Water_Puppy.pyw")],
     pathex=[str(project_root)],
     binaries=[],
-    datas=[(str(project_root / "assets"), "assets")],
+    datas=[(str(path), "assets") for path in (project_root / "assets").iterdir()
+           if path.is_file() and not path.name.startswith("rig_walk_") and path.name != "walk_rig_motion.json"],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

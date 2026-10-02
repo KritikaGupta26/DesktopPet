@@ -191,3 +191,20 @@ class SpriteCollectionTests(unittest.TestCase):
             right=Image.open(ROOT/f'assets/pack_walk_{i}.png').convert('RGBA')
             left=Image.open(ROOT/f'assets/pack_walk_left_{i}.png').convert('RGBA')
             self.assertIsNone(ImageChops.difference(ImageOps.mirror(right),left).getbbox())
+
+    def test_log_activity_routes_a_slow_bored_approach_to_nearest_edge(self):
+        pet=WaterPet.__new__(WaterPet);pet.prompt_visible=False;pet.dragging=False
+        pet.pet_x=100;pet.pet_y=200;pet._choose_edge_destination=Mock()
+        pet._screen_bounds=Mock(return_value=(0,0,1920,1080))
+        pet._test_bored_at_edge()
+        self.assertEqual(pet.pending_edge_action,'bored_edge')
+        self.assertEqual(pet.target_x,0);self.assertEqual(pet.target_y,200)
+        self.assertEqual(pet.walk_direction,'left')
+        self.assertIsNotNone(pet.bored_walk_started)
+
+    def test_jump_allocates_vertical_clearance_without_a_dialog(self):
+        pet=WaterPet.__new__(WaterPet);pet.prompt_visible=False;pet.active_alert_kind='';pet.state='normal'
+        pet._close_chatter_card=Mock();pet._resize_anchored=Mock()
+        pet._play_test_animation('pack:jump',4)
+        self.assertEqual(pet.idle_mood,'pack:jump')
+        pet._resize_anchored.assert_called_once_with(180,324)

@@ -34,7 +34,7 @@ ACTIVITY_LABELS = {
     "kung_fu":"Kung fu", "wind_down":"Wind down",
     "sneeze":"Sneeze", "meditate":"Meditate", "sploot":"Sploot", "dance":"Dance",
     "forward_roll":"Somersault", "petting":"Petting", "bow":"Bow", "water":"Water reminder",
-    "movement":"Movement break", "watch":"Personal reminder", "wave":"Wave", "groom":"Grooming",
+    "movement":"Movement break", "wave":"Wave", "groom":"Grooming",
     "peekaboo":"Peekaboo", "clap":"Clap", "blow_kiss":"Blow a kiss",
     "hiccup":"Hiccup", "victory":"Celebrate",
 }
@@ -46,7 +46,7 @@ ACTIVITY_ALIASES = {
     "drink_water":"water", "alternate_hoop":"movement", "hula_hoop":"movement",
     "chase_ball":"fetch", "catch_ball":"fetch", "happy_idle":"wave", "sad":"bow",
 }
-ROUTINE_ACTIVITIES = ("groom", "wind_down", "dance", "kung_fu", "peekaboo", "clap", "blow_kiss", "forward_roll", "log")
+ROUTINE_ACTIVITIES = ("groom", "wind_down", "meditate", "log", "dance", "kung_fu", "peekaboo", "fetch", "bamboo_hang", "jump", "wave", "sploot", "petting", "bow", "clap", "blow_kiss", "sneeze", "hiccup", "victory")
 GENTLE_ACTIVITIES = ROUTINE_ACTIVITIES[:2]
 GROOM_SEQUENCE = (("wash_face", 3.0), ("ear_rub", 3.0), ("belly_scratch", 3.0))
 WIND_DOWN_SEQUENCE = (("yawn_stretch", 3.0), ("lazy_stretch", 3.0), ("sleep", 18.0), ("wake_up", 4.0))
@@ -61,6 +61,30 @@ def sequence_pose(sequence, elapsed: float) -> tuple[str, float]:
 
 def wind_down_pose(elapsed: float) -> tuple[str, float]:
     return sequence_pose(WIND_DOWN_SEQUENCE, elapsed)
+
+def fit_cloud_text(text: str, measure, width: int, max_lines: int) -> str:
+    remaining = " ".join(str(text).split())
+    lines = []
+    for line_number in range(max_lines):
+        chunk = ""
+        for character in remaining:
+            if chunk and measure(chunk + character) > width:
+                break
+            chunk += character
+        if len(chunk) == len(remaining):
+            lines.append(chunk)
+            return "\n".join(lines)
+        if line_number == max_lines-1:
+            while chunk and measure(chunk + "…") > width:
+                chunk = chunk[:-1]
+            lines.append(chunk.rstrip() + "…")
+            return "\n".join(lines)
+        space = chunk.rfind(" ")
+        if space > 0:
+            chunk = chunk[:space]
+        lines.append(chunk)
+        remaining = remaining[len(chunk):].lstrip()
+    return "\n".join(lines)
 
 def normalize_standing_sprite(sprite: Image.Image) -> Image.Image:
     # One scale for the entire idle row, with the same ground anchor as walking.
@@ -749,6 +773,7 @@ class WaterPet:
         self.water_prompt_text = random.choice(WATER_PROMPTS)
         self.frame = 0
         self.prompt_visible = False
+        self.water_prompt_deferred = False
         self.happy_until: datetime | None = None
         self.sad_until: datetime | None = None
         self.next_reminder = datetime.now() + timedelta(
@@ -821,6 +846,8 @@ class WaterPet:
         self.next_attention_nudge: datetime | None = None
         self.attention_sound_played = False
         self.reminder_tree: ttk.Treeview | None = None
+        self.history_feedback_var = tk.StringVar()
+        self.undo_confirmation_id = None
         self.reminder_feedback_var = tk.StringVar()
         self.reminder_title_var = tk.StringVar()
         self.reminder_date_var = tk.StringVar()
@@ -917,7 +944,7 @@ class WaterPet:
         self.pack_manifest = json.loads((assets / "sprite_collection_manifest.json").read_text(encoding="utf-8"))
         for key, metadata in self.pack_manifest.items():
             for i in range(metadata["frames"]):
-                variants = (key, key + "_left") if key in ("walk", "run") else (key,)
+                variants = (key, key + "_left") if key in ("walk", "run", "bored_shuffle") else (key,)
                 for variant in variants:
                     with Image.open(assets / f"pack_{variant}_{i}.png") as opened:
                         sprite = opened.convert("RGBA")
@@ -997,6 +1024,7 @@ class WaterPet:
             left,top,right,bottom=self._screen_bounds()
             self.target_x=float(left if self.pet_x < (left+right)/2 else right-SMALL_WIDTH)
             self.target_y=max(top,min(self.pet_y,bottom-SMALL_HEIGHT-42))
+            self.walk_direction="left" if self.target_x<self.pet_x else "right"
             return
         seconds = max(4.0,metadata["frames"]*metadata["seconds_per_frame"]+1.0)
         self._play_test_animation("pack:" + key, seconds)
@@ -1008,11 +1036,12 @@ class WaterPet:
         elif key == "groom":self._play_test_animation("groom",sum(duration for _,duration in GROOM_SEQUENCE))
         elif key == "feed":self.feed_panda()
         elif key == "fetch":self.start_fetch()
-        elif key == "log":self._play_test_animation("bored",28)
+        elif key == "log":self._test_bored_at_edge()
         elif key == "meditate":self._play_test_animation("meditate",20)
         elif key == "water":self.show_prompt()
-        elif key in ("watch","movement"):
-            self._show_general_alert("Time to move!" if key=="movement" else "Your reminder", "Move with your panda" if key=="movement" else "Personal reminder preview", "preview_movement" if key=="movement" else "preview_personal")
+        elif key == "watch":self.show_reminders()
+        elif key == "movement":
+            self._show_general_alert("Time to move!", "Move with your panda", "movement")
         elif key in ("cursor_follow","cursor_avoid"):
             self._close_chatter_card()
             self.idle_mood="";self.idle_mood_until=None;self.current_action=None
@@ -1204,7 +1233,7 @@ class WaterPet:
 
     def _write_pid(self) -> None:
         try:
-            (self.app_dir / "water_puppy.pid").write_text(
+            (self.settings_path.parent / "water_puppy.pid").write_text(
                 str(os.getpid()),
                 encoding="utf-8",
             )
@@ -1269,8 +1298,8 @@ class WaterPet:
     def _resize_anchored(self, width: int, height: int) -> None:
         self.root.update_idletasks()
         left = self.root.winfo_x()
-        old_gutter = 140 if self.width > SMALL_WIDTH else 0
-        new_gutter = 140 if width > SMALL_WIDTH else 0
+        old_gutter = 140 if self.height > SMALL_HEIGHT else 0
+        new_gutter = 140 if height > SMALL_HEIGHT else 0
         top = self.root.winfo_y() + old_gutter - new_gutter
         screen_left, screen_top, screen_right, screen_bottom = self._screen_bounds()
         x = max(screen_left, min(left, screen_right - width))
@@ -1322,6 +1351,9 @@ class WaterPet:
         self.idle_mood_started_at = now
         self.idle_mood_until = now + timedelta(seconds=seconds)
         self.action_sequence_stage = -1
+        if mood in ("jump","pack:jump"):
+            self._close_chatter_card()
+            self._resize_anchored(SMALL_WIDTH,PROMPT_HEIGHT)
 
     def _test_walk_across_screen(self) -> None:
         if self.prompt_visible or self.dragging:
@@ -1346,6 +1378,11 @@ class WaterPet:
         self.current_action = None
         self.pending_edge_action = "bored_edge"
         self._choose_edge_destination()
+        left,top,right,bottom=self._screen_bounds()
+        self.target_x=float(left if self.pet_x<(left+right)/2 else right-SMALL_WIDTH)
+        self.target_y=max(top,min(self.pet_y,bottom-SMALL_HEIGHT-42))
+        self.walk_direction="left" if self.target_x<self.pet_x else "right"
+        self.bored_walk_started=time.monotonic()
 
     def _bind_events(self) -> None:
         self.canvas.bind("<ButtonPress-1>", self._start_drag)
@@ -1388,7 +1425,7 @@ class WaterPet:
         ) > 5:
             self.drag_moved = True
         self.pet_x = float(x)
-        self.pet_y = float(y + (140 if self.width > SMALL_WIDTH else 0))
+        self.pet_y = float(y + (140 if self.height > SMALL_HEIGHT else 0))
         self.drag_samples.append((datetime.now(), int(x), int(y)))
         self.drag_samples = self.drag_samples[-6:]
         self._move_root(x, y)
@@ -1398,7 +1435,7 @@ class WaterPet:
             return
         self.dragging = False
         self.pet_x = float(self.root.winfo_x())
-        self.pet_y = float(self.root.winfo_y() + (140 if self.width > SMALL_WIDTH else 0))
+        self.pet_y = float(self.root.winfo_y() + (140 if self.height > SMALL_HEIGHT else 0))
         if self.drag_moved:
             self.settings["home_x"] = int(self.pet_x)
             self.settings["home_y"] = int(self.pet_y)
@@ -1465,7 +1502,7 @@ class WaterPet:
         self.motion_mode = "idle"
         self.current_action = None
         self.pet_x = float(self.root.winfo_x())
-        self.pet_y = float(self.root.winfo_y() + (140 if self.width > SMALL_WIDTH else 0))
+        self.pet_y = float(self.root.winfo_y() + (140 if self.height > SMALL_HEIGHT else 0))
         self.idle_until = datetime.now() + timedelta(seconds=1)
 
     def _settings_changed(self) -> None:
@@ -1522,11 +1559,13 @@ class WaterPet:
 
     def pause_reminders(self) -> None:
         self.reminders_paused_until = datetime.now() + timedelta(hours=1)
+        self.water_prompt_deferred = False
         self.next_reminder = self.reminders_paused_until
         self.prompt_visible = False
         self._clear_attention()
         self.state = "normal"
-        self._resize_anchored(SMALL_WIDTH, SMALL_HEIGHT)
+        if not self.active_alert_kind:
+            self._resize_anchored(SMALL_WIDTH, SMALL_HEIGHT)
         self._show_chatter("Quiet time for 1 hour 🌙", seconds=5)
 
     def resume_reminders(self) -> None:
@@ -1583,8 +1622,10 @@ class WaterPet:
         self._cloud_shape(self.canvas, 194, 12, 350, 112, PALETTE["cream"], "#E0D4ED")
         self.canvas.create_oval(179, 123, 191, 135, fill=PALETTE["cream"], outline="#E0D4ED")
         self.canvas.create_oval(167, 142, 175, 150, fill=PALETTE["cream"], outline="#E0D4ED")
-        self.canvas.create_text(272, 61, text=self.chatter_text, width=126,
-                                fill=PALETTE["ink"], font=("Segoe UI", 9), justify="center")
+        cloud_font = tkfont.Font(family="Segoe UI",size=-12)
+        message = fit_cloud_text(self.chatter_text,cloud_font.measure,126,5)
+        self.canvas.create_text(272, 61, text=message, width=126,
+                                fill=PALETTE["ink"], font=("Segoe UI", -12), justify="center")
 
     def _position_chatter_card(self) -> None:
         # Chatter shares the pet canvas, so dragging moves both together.
@@ -2037,6 +2078,7 @@ class WaterPet:
             and not self.prompt_visible
             and not self.chatter_until
             and not self.idle_mood
+            and not self._studio_is_open()
             and (
                 self.roam_enabled.get()
                 or self.motion_mode in (
@@ -2133,6 +2175,8 @@ class WaterPet:
             self.last_system_idle_check = now
             self.system_idle_seconds_cache = self._system_idle_seconds()
         idle_seconds = self.system_idle_seconds_cache
+        if self._studio_is_open():
+            return
         if self.idle_mood and self.idle_mood not in ("yawn", "sleep", "wave"):
             return
         if idle_seconds < 5:
@@ -2191,7 +2235,7 @@ class WaterPet:
             return
         if now >= self.next_hunger:
             self.hungry = True
-        if not self.hungry or self.hunger_requested:
+        if not self.hungry or self.hunger_requested or self._studio_is_open():
             return
         if self.prompt_visible or self.active_alert_kind or self.dragging or self.idle_mood or self.chatter_until or self.state != "normal" or self.motion_mode not in ("idle", "following"):
             return
@@ -2213,7 +2257,9 @@ class WaterPet:
             self.idle_mood_until = None
             self.action_sequence_stage = -1
             self.idle_until = now + timedelta(seconds=self.roam_rest_seconds.get())
-        if now < self.next_idle_activity or getattr(self,"hungry",False):
+            if not self.chatter_until and not self.prompt_visible and not self.active_alert_kind:
+                self._resize_anchored(SMALL_WIDTH,SMALL_HEIGHT)
+        if now < self.next_idle_activity or getattr(self,"hungry",False) or self._studio_is_open():
             return
         if (self.state != "normal" or self.prompt_visible or self.active_alert_kind or self.dragging
                 or self.idle_mood or (self.motion_mode != "idle" and not (self.motion_mode=="following" and getattr(self,"cursor_at_rest",False))) or self.chatter_until):
@@ -2244,7 +2290,7 @@ class WaterPet:
         mode=getattr(self,"cursor_session_kind","") or (self.cursor_mode.get() if hasattr(self,"cursor_mode") else "Avoid" if self.cursor_games.get() else "Off")
         if mode=="Avoid" and not getattr(self,"cursor_session_kind","") and not self.roam_enabled.get():
             return
-        if mode=="Off" or self.active_alert_kind or self.prompt_visible or self.dragging or self.state!="normal" or self.idle_mood or getattr(self,"chatter_until",None):
+        if mode=="Off" or self.active_alert_kind or self.prompt_visible or self.dragging or self.state!="normal" or self.idle_mood or getattr(self,"chatter_until",None) or self._studio_is_open():
             return
         if mode=="Follow":
             if self.motion_mode not in ("idle","walking","following"):
@@ -2265,7 +2311,8 @@ class WaterPet:
                 return
             step=min(remaining,(52*180/512)/(0.5*self._walk_cycle_seconds())*(ACTIVE_TICK_MILLISECONDS/1000))
             self.pet_x+=vx/remaining*step;self.pet_y+=vy/remaining*step
-            self.walk_direction="right" if vx>=0 else "left"
+            if abs(vx)>0.1:
+                self.walk_direction="right" if vx>=0 else "left"
             self._move_root(round(self.pet_x),round(self.pet_y))
             return
         if not getattr(self,"cursor_session_kind","") and not self.roam_enabled.get():
@@ -2324,7 +2371,7 @@ class WaterPet:
             self.next_cursor_reaction = now + timedelta(seconds=1)
 
     def _check_scheduled_reminders(self, now: datetime) -> None:
-        if self.active_alert_kind or self.prompt_visible or (
+        if self.active_alert_kind or (
             self.alert_window is not None and self.alert_window.winfo_exists()
         ):
             return
@@ -2340,6 +2387,9 @@ class WaterPet:
                 (now.astimezone(timezone.utc).isoformat(timespec="seconds"),),
             ).fetchone()
         if due:
+            if self.prompt_visible:
+                self.prompt_visible = False
+                self.water_prompt_deferred = True
             self._show_general_alert(
                 title=str(due[1]),
                 subtitle="Your reminder is due now",
@@ -2348,7 +2398,8 @@ class WaterPet:
             )
             return
         if (
-            self.movement_enabled.get()
+            not self.prompt_visible
+            and self.movement_enabled.get()
             and now >= self.next_movement_reminder
         ):
             movement_title, movement_subtitle = random.choice(MOVEMENT_PROMPTS)
@@ -2428,6 +2479,9 @@ class WaterPet:
         self._update_water_response(datetime.now())
         self._clear_attention()
         self._resize_anchored(SMALL_WIDTH, SMALL_HEIGHT)
+        if getattr(self,"water_prompt_deferred",False):
+            self.water_prompt_deferred = False
+            self.show_prompt()
 
     def _update_particles(self) -> None:
         alive: list[dict[str, float | str]] = []
@@ -2442,10 +2496,9 @@ class WaterPet:
 
     def _update_fullscreen_visibility(self) -> None:
         should_hide = (
-            self.hide_fullscreen.get()
-            and not self.prompt_visible
+            not self.prompt_visible
             and not self.active_alert_kind
-            and self._foreground_is_fullscreen()
+            and (self._studio_is_open() or (self.hide_fullscreen.get() and self._foreground_is_fullscreen()))
         )
         if should_hide and not self.was_hidden_for_fullscreen:
             self.root.withdraw()
@@ -2612,6 +2665,8 @@ class WaterPet:
                 # Match window travel to the supporting foot's backward motion.
                 cycle_seconds=self._walk_cycle_seconds()
                 step_speed=(52*180/512)/(0.5*cycle_seconds)*(ACTIVE_TICK_MILLISECONDS/1000)
+                if self.pending_edge_action == "bored_edge":
+                    step_speed=1.1
                 step_speed=min(distance,step_speed)
             self.pet_x += (dx / distance) * step_speed
             self.pet_y += (dy / distance) * step_speed
@@ -2815,7 +2870,7 @@ class WaterPet:
 
     def _draw(self) -> None:
         self._draw_pet_scene()
-        if self.width > SMALL_WIDTH and not self.prompt_visible and not self.active_alert_kind:
+        if self.height > SMALL_HEIGHT and not self.prompt_visible and not self.active_alert_kind:
             self.canvas.move("all", 0, 140)
         if self.chatter_until and self.chatter_text and not self.prompt_visible and not self.active_alert_kind:
             self._render_chatter_card()
@@ -2929,6 +2984,12 @@ class WaterPet:
                 return
             # One phase drives the actual stride. The sheet already contains
             # body movement, so do not layer a second bounce over it.
+            if self.pending_edge_action == "bored_edge":
+                index=(3,4,5,4)[int((time.monotonic()-self.bored_walk_started)/0.7)%4]
+                variant="bored_shuffle_left" if self.walk_direction=="left" else "bored_shuffle"
+                self.canvas.create_image(SMALL_WIDTH//2,PET_CENTER_Y,image=self.images["panda"][f"pack_{variant}_{index}"])
+                self._draw_overlays()
+                return
             walk_frame = self._locomotion_frame("walk")
             image_key = f"walk_{self.walk_direction}_{walk_frame}"
             self.canvas.create_image(
@@ -3442,11 +3503,15 @@ class WaterPet:
         elapsed = (datetime.now() - self.attention_started_at).total_seconds() if self.attention_started_at else 0
         pose = f"clock_{min(5, int(elapsed / 0.22))}" if personal else f"hoop_{int(elapsed / 0.22) % 8}"
         self.canvas.create_image(90, 234, image=self._image(pose))
-        title = textwrap.shorten(self.alert_title, width=70, placeholder="…") if personal else "Time to move!"
+        if personal:
+            title_font = tkfont.Font(family="Segoe UI",size=-13,weight="bold")
+            title = fit_cloud_text(self.alert_title,title_font.measure,126,3)
+        else:
+            title = "Time to move!"
         self.canvas.create_text(272, 25, text=title, anchor="n", width=126,
-                                fill=PALETTE["ink"], font=("Segoe UI", 10, "bold"), justify="center")
+                                fill=PALETTE["ink"], font=("Segoe UI", -13, "bold"), justify="center")
         self.canvas.create_text(272, 97, text=self.alert_subtitle if personal else "Hula, stretch, or take a little walk.",
-                                width=126, fill=PALETTE["muted"], font=("Segoe UI", 8), justify="center")
+                                width=126, fill=PALETTE["muted"], font=("Segoe UI", -11), justify="center")
         self._answer_button(204, 126, 257, 150, "Done", PALETTE["purple"], PALETTE["purple_dark"], "alert_done")
         self._answer_button(263, 126, 340, 150, "10 min later", PALETTE["teal"], "#439D87", "alert_snooze")
         self.canvas.tag_bind("alert_done", "<Button-1>", lambda event: self._complete_active_alert())
@@ -3456,8 +3521,8 @@ class WaterPet:
         self._cloud_shape(self.canvas, 194, 6, 350, 159, PALETTE["cream"], "#E0D4ED")
         self.canvas.create_oval(179, 164, 191, 176, fill=PALETTE["cream"], outline="#E0D4ED")
         self.canvas.create_oval(167, 185, 175, 193, fill=PALETTE["cream"], outline="#E0D4ED")
-        self.canvas.create_text(272, 29, text="Water time?", fill=PALETTE["ink"], font=("Segoe UI", 10, "bold"))
-        self.canvas.create_text(272, 49, text=f"Today: {self.today_total_cache} ml", fill=PALETTE["muted"], font=("Segoe UI", 8))
+        self.canvas.create_text(272, 29, text="Water time?", fill=PALETTE["ink"], font=("Segoe UI", -13, "bold"))
+        self.canvas.create_text(272, 49, text=f"Today: {self.today_total_cache} ml", fill=PALETTE["muted"], font=("Segoe UI", -11))
         for x, amount, tag, color in ((204,100,"amount_100",PALETTE["teal"]),(251,200,"amount_200","#69B8E8"),(298,300,"amount_300",PALETTE["purple"])):
             self._answer_button(x, 66, x+42, 91, f"{amount} ml", color, color, tag)
             self.canvas.tag_bind(tag, "<Button-1>", lambda event, ml=amount: self.record_water(ml, event))
@@ -3465,7 +3530,7 @@ class WaterPet:
         self._answer_button(264, 102, 340, 127, "10 min later", PALETTE["purple"], PALETTE["purple_dark"], "water_snooze")
         self.canvas.tag_bind("not_yet", "<Button-1>", self.answer_not_yet)
         self.canvas.tag_bind("water_snooze", "<Button-1>", self.snooze_water)
-        self.canvas.create_text(272, 141, text="Pick an amount to log a sip", fill=PALETTE["muted"], font=("Segoe UI", 7))
+        self.canvas.create_text(272, 141, text="Pick an amount to log a sip", fill=PALETTE["muted"], font=("Segoe UI", -10))
         elapsed = (datetime.now() - self.attention_started_at).total_seconds() if self.attention_started_at else 0
         if elapsed < 0.88:
             image = self._pack_image("jump",index=min(7,int(elapsed/0.11)))
@@ -3501,12 +3566,15 @@ class WaterPet:
             width=1,
             tags=tags,
         )
+        pixels = 11
+        while pixels > 9 and tkfont.Font(family="Segoe UI", size=-pixels, weight="bold").measure(label) > x2-x1-6:
+            pixels -= 1
         self.canvas.create_text(
             (x1 + x2) // 2,
             (y1 + y2) // 2,
             text=label,
             fill="white",
-            font=("Segoe UI", 8, "bold"),
+            font=("Segoe UI", -pixels, "bold"),
             tags=tags,
         )
 
@@ -3596,10 +3664,16 @@ class WaterPet:
         except (AttributeError, OSError, tk.TclError):
             pass
 
+    def _studio_is_open(self) -> bool:
+        window = getattr(self,"history_window",None)
+        return bool(window is not None and window.winfo_exists() and window.winfo_viewable())
+
     def _hide_studio(self) -> None:
         if self.history_window is not None and self.history_window.winfo_exists():
             self._save_studio_settings()
             self.history_window.withdraw()
+        self.was_hidden_for_fullscreen = False
+        self.root.deiconify()
 
     def _launch_home_activity(self, callback) -> None:
         if self.history_window is not None and self.history_window.winfo_exists():
@@ -3622,11 +3696,14 @@ class WaterPet:
             self.history_window.deiconify()
             self.history_window.lift()
             self.history_window.focus_force()
+            if not self.prompt_visible and not self.active_alert_kind:
+                self._close_chatter_card()
+                self.root.withdraw()
             return
 
         window = tk.Toplevel(self.root)
         self.history_window = window
-        window.title(f"{self.pet_name.get()} · Panda Home")
+        window.title(f"{self.pet_name.get()} · Panda Home v{APP_VERSION}")
         screen_width = window.winfo_screenwidth()
         screen_height = window.winfo_screenheight()
         studio_width = min(880, max(740, screen_width - 120))
@@ -3681,7 +3758,7 @@ class WaterPet:
 
         tk.Label(rail, text="●", bg=GLASS["rail"], fg=GLASS["aqua"], font=("Segoe UI", 12)).pack(anchor="w", padx=18, pady=(22, 2))
         tk.Label(rail, text="Water Panda", bg=GLASS["rail"], fg=GLASS["text"], font=("Segoe UI Variable Display", 15, "bold")).pack(anchor="w", padx=18)
-        tk.Label(rail, text="Your quiet companion", bg=GLASS["rail"], fg=GLASS["muted"], font=("Segoe UI Variable Text", 8)).pack(anchor="w", padx=18, pady=(2, 20))
+        tk.Label(rail, text=f"v{APP_VERSION} · Your quiet companion", bg=GLASS["rail"], fg=GLASS["muted"], font=("Segoe UI Variable Text", 8)).pack(anchor="w", padx=18, pady=(2, 20))
 
         page_host = tk.Frame(content, bg=GLASS["surface"])
         page_host.pack(fill="both", expand=True, padx=30, pady=26)
@@ -3690,8 +3767,18 @@ class WaterPet:
         reminder_frame = ttk.Frame(page_host, style="Glass.TFrame")
         pet_frame = ttk.Frame(page_host, style="Glass.TFrame")
         activities_frame = ttk.Frame(page_host, style="Glass.TFrame")
-        behavior_frame = ttk.Frame(page_host, style="Glass.TFrame")
-        pages = [overview_frame, history_frame, reminder_frame, pet_frame, activities_frame, behavior_frame]
+        behavior_page = ttk.Frame(page_host, style="Glass.TFrame")
+        behavior_canvas = tk.Canvas(behavior_page, bg=GLASS["surface"], highlightthickness=0)
+        behavior_scroll = ttk.Scrollbar(behavior_page, orient="vertical", command=behavior_canvas.yview)
+        behavior_canvas.configure(yscrollcommand=behavior_scroll.set)
+        behavior_scroll.pack(side="right",fill="y")
+        behavior_canvas.pack(side="left",fill="both",expand=True)
+        behavior_frame = ttk.Frame(behavior_canvas, style="Glass.TFrame")
+        behavior_window = behavior_canvas.create_window(0,0,window=behavior_frame,anchor="nw")
+        behavior_frame.bind("<Configure>",lambda event: behavior_canvas.configure(scrollregion=behavior_canvas.bbox("all")))
+        behavior_canvas.bind("<Configure>",lambda event: behavior_canvas.itemconfigure(behavior_window,width=event.width))
+        self.behavior_canvas = behavior_canvas
+        pages = [overview_frame, history_frame, reminder_frame, pet_frame, activities_frame, behavior_page]
         for page in pages:
             page.place(relx=0, rely=0, relwidth=1, relheight=1)
 
@@ -3758,8 +3845,10 @@ class WaterPet:
         self.daily_tree.pack(fill="both", expand=True, pady=(0, 14))
         history_controls = ttk.Frame(history_frame, style="Glass.TFrame")
         history_controls.pack(fill="x")
-        ttk.Button(history_controls, text="Undo latest", command=self.undo_latest_entry).pack(side="left")
+        self.undo_button = ttk.Button(history_controls, text="Undo latest", command=self.undo_latest_entry)
+        self.undo_button.pack(side="left")
         ttk.Button(history_controls, text="Export CSV", command=self.export_history).pack(side="left", padx=8)
+        ttk.Label(history_frame, textvariable=self.history_feedback_var, style="CardSub.TLabel", wraplength=500).pack(anchor="w",pady=8)
 
         ttk.Label(reminder_frame, text="Reminders", style="Hero.TLabel").pack(anchor="w")
         ttk.Label(reminder_frame, text="Personal alerts delivered by your panda.", style="Sub.TLabel").pack(anchor="w", pady=(2, 18))
@@ -3800,7 +3889,7 @@ class WaterPet:
             ("Rest between walks (seconds)", self.roam_rest_seconds, (30,60,90,180,300,600)),
             ("Yawn after inactivity (seconds)", self.yawn_after_seconds, (30,60,90,120)),
             ("Sleep after inactivity (minutes)", self.sleep_after_minutes, (2,3,5,10,30,60)),
-            ("Automatic activity", self.auto_activity, ("Gentle routine","Selected routine","Manual only","Meditate") + tuple(ACTIVITY_LABELS[key] for key in ROUTINE_ACTIVITIES)),
+            ("Automatic activity", self.auto_activity, ("Gentle routine","Selected routine","Manual only") + tuple(ACTIVITY_LABELS[key] for key in ROUTINE_ACTIVITIES)),
             ("Activity interval (minutes)", self.activity_minutes, (1,3,5,10,15,30,60)),
         ):
             row = ttk.Frame(behavior_frame, style="Glass.TFrame")
@@ -3851,7 +3940,19 @@ class WaterPet:
         for column in range(2):
             activity_grid.columnconfigure(column, weight=1)
 
+        def bind_scroll(widget, scroll_canvas):
+            def scroll(event):
+                scroll_canvas.yview_scroll(-int(event.delta/120),"units")
+                return "break"
+            widget.bind("<MouseWheel>", scroll, add="+")
+            for child in widget.winfo_children():
+                bind_scroll(child, scroll_canvas)
+        bind_scroll(behavior_frame, behavior_canvas)
+        bind_scroll(activity_grid, activity_canvas)
         switcher.select(0)
+        if not self.prompt_visible and not self.active_alert_kind:
+            self._close_chatter_card()
+            self.root.withdraw()
         window.after(80, lambda: self._apply_windows_11_backdrop(window))
         self._refresh_history()
 
@@ -4274,36 +4375,31 @@ class WaterPet:
                 font=("Segoe UI Variable Text", 8, "bold"),
             )
 
+    def _cancel_undo_confirmation(self) -> None:
+        self.undo_confirmation_id = None
+        button = getattr(self,"undo_button",None)
+        if button is not None and button.winfo_exists():
+            button.configure(text="Undo latest")
+
     def undo_latest_entry(self) -> None:
         with closing(sqlite3.connect(self.database_path)) as connection, connection:
-            latest = connection.execute(
-                """
-                SELECT entry_id, recorded_at, millilitres
-                FROM water_entries
-                ORDER BY entry_id DESC
-                LIMIT 1
-                """
-            ).fetchone()
+            latest = connection.execute("SELECT entry_id, recorded_at, millilitres FROM water_entries ORDER BY entry_id DESC LIMIT 1").fetchone()
             if latest is None:
-                messagebox.showinfo(
-                    "Water History",
-                    "There is no water entry to undo.",
-                    parent=self.history_window or self.root,
-                )
+                self.history_feedback_var.set("There is no water entry to undo.")
+                self._cancel_undo_confirmation()
                 return
-
             entry_id, timestamp, millilitres = latest
-            confirmed = messagebox.askyesno(
-                "Undo latest entry",
-                f"Remove the latest {millilitres} ml entry?\n\n{timestamp}",
-                parent=self.history_window or self.root,
-            )
-            if not confirmed:
+            if getattr(self,"undo_confirmation_id",None) != entry_id:
+                self.undo_confirmation_id = entry_id
+                self.history_feedback_var.set(f"Remove the latest {millilitres} ml entry? Click Confirm undo within 10 seconds.")
+                button = getattr(self,"undo_button",None)
+                if button is not None and button.winfo_exists():
+                    button.configure(text="Confirm undo")
+                self.root.after(10000,self._cancel_undo_confirmation)
                 return
-            connection.execute(
-                "DELETE FROM water_entries WHERE entry_id = ?",
-                (entry_id,),
-            )
+            connection.execute("DELETE FROM water_entries WHERE entry_id = ?",(entry_id,))
+        self._cancel_undo_confirmation()
+        self.history_feedback_var.set("Latest entry removed.")
         self._refresh_history()
 
     def export_history(self) -> None:
@@ -4337,14 +4433,14 @@ class WaterPet:
             writer.writerow(["Recorded At", "Millilitres"])
             writer.writerows(rows)
 
-        self._show_chatter("Water history exported.", seconds=4)
+        self.history_feedback_var.set("Water history exported.")
 
     def close(self) -> None:
         self._save_settings()
         self._close_chatter_card()
         self.tray.stop()
         try:
-            (self.app_dir / "water_puppy.pid").unlink(missing_ok=True)
+            (self.settings_path.parent / "water_puppy.pid").unlink(missing_ok=True)
         except OSError:
             pass
         self.root.destroy()

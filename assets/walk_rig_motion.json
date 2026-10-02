@@ -1,0 +1,453 @@
+{
+  "frames": 32,
+  "motion": [
+    {
+      "far": {
+        "foot_dx": -26.66666666666667,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 22.66666666666667
+      },
+      "near": {
+        "foot_dx": 40.0,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -34.0
+      }
+    },
+    {
+      "far": {
+        "foot_dx": -30.833333333333343,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 26.20833333333334
+      },
+      "near": {
+        "foot_dx": 35.833333333333336,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -30.458333333333336
+      }
+    },
+    {
+      "far": {
+        "foot_dx": -35.0,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 29.75
+      },
+      "near": {
+        "foot_dx": 31.666666666666664,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -26.916666666666664
+      }
+    },
+    {
+      "far": {
+        "foot_dx": -39.16666666666667,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 33.29166666666667
+      },
+      "near": {
+        "foot_dx": 27.5,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -23.375
+      }
+    },
+    {
+      "far": {
+        "foot_dx": -39.1015625,
+        "foot_lift": 5.462529016451596,
+        "stance": false,
+        "arm_dx": 33.236328125
+      },
+      "near": {
+        "foot_dx": 23.333333333333332,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -19.833333333333332
+      }
+    },
+    {
+      "far": {
+        "foot_dx": -35.6988525390625,
+        "foot_lift": 11.971542616047904,
+        "stance": false,
+        "arm_dx": 30.344024658203125
+      },
+      "near": {
+        "foot_dx": 19.166666666666664,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -16.291666666666664
+      }
+    },
+    {
+      "far": {
+        "foot_dx": -30.190429687499993,
+        "foot_lift": 17.763011956582076,
+        "stance": false,
+        "arm_dx": 25.661865234374993
+      },
+      "near": {
+        "foot_dx": 15.0,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -12.75
+      }
+    },
+    {
+      "far": {
+        "foot_dx": -23.034057617187496,
+        "foot_lift": 22.48981088145806,
+        "stance": false,
+        "arm_dx": 19.57894897460937
+      },
+      "near": {
+        "foot_dx": 10.833333333333332,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -9.208333333333332
+      }
+    },
+    {
+      "far": {
+        "foot_dx": -14.687499999999993,
+        "foot_lift": 25.86862691031603,
+        "stance": false,
+        "arm_dx": 12.484374999999993
+      },
+      "near": {
+        "foot_dx": 6.666666666666664,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -5.666666666666664
+      }
+    },
+    {
+      "far": {
+        "foot_dx": -5.608520507812493,
+        "foot_lift": 27.696942279013868,
+        "stance": false,
+        "arm_dx": 4.767242431640619
+      },
+      "near": {
+        "foot_dx": 2.5,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -2.125
+      }
+    },
+    {
+      "far": {
+        "foot_dx": 3.7451171875,
+        "foot_lift": 27.865172346821513,
+        "stance": false,
+        "arm_dx": -3.183349609375
+      },
+      "near": {
+        "foot_dx": -1.6666666666666714,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 1.4166666666666707
+      }
+    },
+    {
+      "far": {
+        "foot_dx": 12.9156494140625,
+        "foot_lift": 26.36323382512458,
+        "stance": false,
+        "arm_dx": -10.978302001953125
+      },
+      "near": {
+        "foot_dx": -5.833333333333336,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 4.958333333333335
+      }
+    },
+    {
+      "far": {
+        "foot_dx": 21.4453125,
+        "foot_lift": 23.28114914447127,
+        "stance": false,
+        "arm_dx": -18.228515625
+      },
+      "near": {
+        "foot_dx": -10.0,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 8.5
+      }
+    },
+    {
+      "far": {
+        "foot_dx": 28.8763427734375,
+        "foot_lift": 18.80365073571652,
+        "stance": false,
+        "arm_dx": -24.544891357421875
+      },
+      "near": {
+        "foot_dx": -14.166666666666671,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 12.04166666666667
+      }
+    },
+    {
+      "far": {
+        "foot_dx": 34.7509765625,
+        "foot_lift": 13.19910863112794,
+        "stance": false,
+        "arm_dx": -29.538330078125
+      },
+      "near": {
+        "foot_dx": -18.333333333333336,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 15.583333333333336
+      }
+    },
+    {
+      "far": {
+        "foot_dx": 38.6114501953125,
+        "foot_lift": 6.803445037291394,
+        "stance": false,
+        "arm_dx": -32.819732666015625
+      },
+      "near": {
+        "foot_dx": -22.5,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 19.125
+      }
+    },
+    {
+      "far": {
+        "foot_dx": 40.0,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -34.0
+      },
+      "near": {
+        "foot_dx": -26.66666666666667,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 22.66666666666667
+      }
+    },
+    {
+      "far": {
+        "foot_dx": 35.833333333333336,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -30.458333333333336
+      },
+      "near": {
+        "foot_dx": -30.833333333333343,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 26.20833333333334
+      }
+    },
+    {
+      "far": {
+        "foot_dx": 31.666666666666664,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -26.916666666666664
+      },
+      "near": {
+        "foot_dx": -35.0,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 29.75
+      }
+    },
+    {
+      "far": {
+        "foot_dx": 27.5,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -23.375
+      },
+      "near": {
+        "foot_dx": -39.16666666666667,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 33.29166666666667
+      }
+    },
+    {
+      "far": {
+        "foot_dx": 23.333333333333332,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -19.833333333333332
+      },
+      "near": {
+        "foot_dx": -39.1015625,
+        "foot_lift": 5.462529016451596,
+        "stance": false,
+        "arm_dx": 33.236328125
+      }
+    },
+    {
+      "far": {
+        "foot_dx": 19.166666666666664,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -16.291666666666664
+      },
+      "near": {
+        "foot_dx": -35.6988525390625,
+        "foot_lift": 11.971542616047904,
+        "stance": false,
+        "arm_dx": 30.344024658203125
+      }
+    },
+    {
+      "far": {
+        "foot_dx": 15.0,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -12.75
+      },
+      "near": {
+        "foot_dx": -30.190429687499993,
+        "foot_lift": 17.763011956582076,
+        "stance": false,
+        "arm_dx": 25.661865234374993
+      }
+    },
+    {
+      "far": {
+        "foot_dx": 10.833333333333332,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -9.208333333333332
+      },
+      "near": {
+        "foot_dx": -23.034057617187496,
+        "foot_lift": 22.48981088145806,
+        "stance": false,
+        "arm_dx": 19.57894897460937
+      }
+    },
+    {
+      "far": {
+        "foot_dx": 6.666666666666664,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -5.666666666666664
+      },
+      "near": {
+        "foot_dx": -14.687499999999993,
+        "foot_lift": 25.86862691031603,
+        "stance": false,
+        "arm_dx": 12.484374999999993
+      }
+    },
+    {
+      "far": {
+        "foot_dx": 2.5,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": -2.125
+      },
+      "near": {
+        "foot_dx": -5.608520507812493,
+        "foot_lift": 27.696942279013868,
+        "stance": false,
+        "arm_dx": 4.767242431640619
+      }
+    },
+    {
+      "far": {
+        "foot_dx": -1.6666666666666714,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 1.4166666666666707
+      },
+      "near": {
+        "foot_dx": 3.7451171875,
+        "foot_lift": 27.865172346821513,
+        "stance": false,
+        "arm_dx": -3.183349609375
+      }
+    },
+    {
+      "far": {
+        "foot_dx": -5.833333333333336,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 4.958333333333335
+      },
+      "near": {
+        "foot_dx": 12.9156494140625,
+        "foot_lift": 26.36323382512458,
+        "stance": false,
+        "arm_dx": -10.978302001953125
+      }
+    },
+    {
+      "far": {
+        "foot_dx": -10.0,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 8.5
+      },
+      "near": {
+        "foot_dx": 21.4453125,
+        "foot_lift": 23.28114914447127,
+        "stance": false,
+        "arm_dx": -18.228515625
+      }
+    },
+    {
+      "far": {
+        "foot_dx": -14.166666666666671,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 12.04166666666667
+      },
+      "near": {
+        "foot_dx": 28.8763427734375,
+        "foot_lift": 18.80365073571652,
+        "stance": false,
+        "arm_dx": -24.544891357421875
+      }
+    },
+    {
+      "far": {
+        "foot_dx": -18.333333333333336,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 15.583333333333336
+      },
+      "near": {
+        "foot_dx": 34.7509765625,
+        "foot_lift": 13.19910863112794,
+        "stance": false,
+        "arm_dx": -29.538330078125
+      }
+    },
+    {
+      "far": {
+        "foot_dx": -22.5,
+        "foot_lift": 0,
+        "stance": true,
+        "arm_dx": 19.125
+      },
+      "near": {
+        "foot_dx": 38.6114501953125,
+        "foot_lift": 6.803445037291394,
+        "stance": false,
+        "arm_dx": -32.819732666015625
+      }
+    }
+  ]
+}

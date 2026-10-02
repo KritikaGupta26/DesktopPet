@@ -53,7 +53,7 @@ class SpriteCollectionTests(unittest.TestCase):
 
     def test_walk_uses_requested_stride_frame_in_both_directions(self):
         pet=WaterPet.__new__(WaterPet);pet.pack_manifest=MANIFEST
-        pet.images={'panda':{f'pack_walk{suffix}_{i}':f'{suffix}:{i}' for suffix in ('','_left') for i in range(8)}}
+        pet.images={'panda':{f'rig_walk_{direction}_{i}':f'{suffix}:{i}' for direction,suffix in [('right',''),('left','_left')] for i in range(32)}}
         for i in range(8):
             self.assertEqual(pet._image(f'walk_right_{i+1}'),f':{i}')
             self.assertEqual(pet._image(f'walk_left_{i+1}'),f'_left:{i}')
@@ -72,8 +72,8 @@ class SpriteCollectionTests(unittest.TestCase):
         pet.walk_direction='right';pet.motion_mode='walking';pet.walk_frame_ms=Mock();pet.walk_frame_ms.get.return_value=180
         with patch('time.monotonic',side_effect=[10,10.1,10.2,10.4]):
             self.assertEqual(pet._locomotion_frame('walk'),1)
-            self.assertEqual(pet._locomotion_frame('walk'),1)
-            self.assertEqual(pet._locomotion_frame('walk'),2)
+            self.assertEqual(pet._locomotion_frame('walk'),3)
+            self.assertEqual(pet._locomotion_frame('walk'),5)
             pet.walk_direction='left'
             self.assertEqual(pet._locomotion_frame('walk'),1)
 
@@ -89,3 +89,19 @@ class SpriteCollectionTests(unittest.TestCase):
         for _ in range(3):
             now=datetime.now();pet.next_idle_activity=now-timedelta(seconds=1);pet._update_idle_mood(now)
         self.assertEqual([c.args[0] for c in pet._play_pack_animation.call_args_list],['dance','ear_rub','dance'])
+
+    def test_rig_arm_leg_opposition_and_grounded_support(self):
+        data=json.loads((ROOT/'assets/walk_rig_motion.json').read_text())
+        self.assertEqual(data['frames'],32)
+        for frame in data['motion']:
+            for side in ('near','far'):
+                values=frame[side]
+                self.assertLessEqual(values['arm_dx']*values['foot_dx'],0)
+                if values['stance']:self.assertEqual(values['foot_lift'],0)
+        self.assertTrue(any(f['near']['foot_lift']>20 for f in data['motion']))
+        for direction in ('left','right'):
+            for i in range(32):
+                with Image.open(ROOT/'assets'/f'rig_walk_{direction}_{i}.png') as image:
+                    image.load();box=image.getchannel('A').getbbox()
+                    self.assertGreaterEqual(box[0],10);self.assertGreaterEqual(box[1],10)
+                    self.assertLessEqual(box[2],502);self.assertLessEqual(box[3],502)

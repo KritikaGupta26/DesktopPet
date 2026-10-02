@@ -31,7 +31,7 @@ ROUTINE_ACTIVITIES = ("ear_rub", "wash_face", "lazy_stretch", "eat_bamboo", "dan
 GENTLE_ACTIVITIES = ROUTINE_ACTIVITIES[:4] + ("sit_down",)
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 21
+APP_VERSION = 22
 REMINDER_MINUTES = 30
 TRANSPARENT_COLOR = "#00ff01"
 SMALL_WIDTH = 180
@@ -833,6 +833,12 @@ class WaterPet:
                         sprite = opened.convert("RGBA").resize((180,180), Image.Resampling.LANCZOS)
                     sprite.putalpha(sprite.getchannel("A").point(lambda a: 255 if a >= 128 else 0))
                     loaded["panda"][f"pack_{variant}_{i}"] = ImageTk.PhotoImage(sprite)
+        for direction in ("left","right"):
+            for i in range(32):
+                with Image.open(assets / f"rig_walk_{direction}_{i}.png") as opened:
+                    sprite=opened.convert("RGBA").resize((180,180),Image.Resampling.LANCZOS)
+                sprite.putalpha(sprite.getchannel("A").point(lambda a:255 if a>=128 else 0))
+                loaded["panda"][f"rig_walk_{direction}_{i}"]=ImageTk.PhotoImage(sprite)
         return loaded
 
     def _pack_image(self, key: str, elapsed: float = 0.0, index: int | None = None):
@@ -861,6 +867,8 @@ class WaterPet:
             return self._pack_image(key, index=int(index))
         if state.startswith(("walk_", "run_")):
             parts = state.split("_");key=parts[0]
+            if key == "walk":
+                return self.images["panda"][f"rig_walk_{parts[1]}_{(int(parts[2])-1)%32}"]
             index = (int(parts[2]) - 1) % self.pack_manifest[key]["frames"]
             variant = key + "_left" if parts[1] == "left" else key
             return self.images["panda"][f"pack_{variant}_{index}"]
@@ -2390,7 +2398,10 @@ class WaterPet:
             if self.motion_mode == "walking":
                 step_speed = min(self.walk_speed, max(1.15, distance * 0.07))
             if self.motion_mode == "walking":
-                step_speed *= 80 / self.walk_frame_ms.get()
+                # Match window travel to the supporting foot's backward motion.
+                cycle_seconds=8*self.walk_frame_ms.get()/1000
+                step_speed=(80*180/512)/(0.6*cycle_seconds)*(ACTIVE_TICK_MILLISECONDS/1000)
+                step_speed=min(distance,step_speed)
             self.pet_x += (dx / distance) * step_speed
             self.pet_y += (dy / distance) * step_speed
 
@@ -2605,10 +2616,14 @@ class WaterPet:
             self.gait_signature = signature
             self.gait_started = now
         milliseconds = self.walk_frame_ms.get() if kind == "walk" else 110
-        return 1 + int((now-self.gait_started)/(milliseconds/1000)) % self.pack_manifest[kind]["frames"]
+        count = 32 if kind == "walk" else self.pack_manifest[kind]["frames"]
+        interval = milliseconds/1000 * (8/count) if kind == "walk" else milliseconds/1000
+        return 1 + int((now-self.gait_started)/interval) % count
 
     def _draw_pet_scene(self) -> None:
         self.canvas.delete("all")
+        if self.motion_mode not in ("walking","escaping"):
+            self.gait_signature=None
         if self.active_alert_kind:
             self._draw_cloud_alert()
             return

@@ -1,0 +1,2018 @@
+{
+  "water_offer": {
+    "sheet": "sprites/01_water_offer.png",
+    "frames": 8,
+    "seconds_per_frame": 0.28,
+    "mode": "once_hold",
+    "label": "Water Offer",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        0,
+        384,
+        512
+      ],
+      [
+        384,
+        0,
+        768,
+        512
+      ],
+      [
+        768,
+        0,
+        1152,
+        512
+      ],
+      [
+        1152,
+        0,
+        1536,
+        512
+      ],
+      [
+        0,
+        512,
+        384,
+        1024
+      ],
+      [
+        384,
+        512,
+        768,
+        1024
+      ],
+      [
+        768,
+        512,
+        1152,
+        1024
+      ],
+      [
+        1152,
+        512,
+        1536,
+        1024
+      ]
+    ],
+    "shared_scale": 0.9345794392523364,
+    "mirrored_frame_indices": []
+  },
+  "walk": {
+    "sheet": "sprites/02_walk.png",
+    "frames": 8,
+    "seconds_per_frame": 0.11,
+    "mode": "loop",
+    "label": "Walk",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        0,
+        444,
+        444
+      ],
+      [
+        444,
+        0,
+        887,
+        444
+      ],
+      [
+        887,
+        0,
+        1330,
+        444
+      ],
+      [
+        1330,
+        0,
+        1774,
+        444
+      ],
+      [
+        0,
+        444,
+        444,
+        887
+      ],
+      [
+        444,
+        444,
+        887,
+        887
+      ],
+      [
+        887,
+        444,
+        1330,
+        887
+      ],
+      [
+        1330,
+        444,
+        1774,
+        887
+      ]
+    ],
+    "shared_scale": 1.1135857461024499,
+    "mirrored_frame_indices": []
+  },
+  "run": {
+    "sheet": "sprites/03_run.png",
+    "frames": 8,
+    "seconds_per_frame": 0.11,
+    "mode": "loop",
+    "label": "Run",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        0,
+        444,
+        444
+      ],
+      [
+        444,
+        0,
+        887,
+        444
+      ],
+      [
+        887,
+        0,
+        1330,
+        444
+      ],
+      [
+        1330,
+        0,
+        1774,
+        444
+      ],
+      [
+        0,
+        444,
+        444,
+        887
+      ],
+      [
+        444,
+        444,
+        887,
+        887
+      ],
+      [
+        887,
+        444,
+        1330,
+        887
+      ],
+      [
+        1330,
+        444,
+        1774,
+        887
+      ]
+    ],
+    "shared_scale": 1.0869565217391304,
+    "mirrored_frame_indices": []
+  },
+  "jump": {
+    "sheet": "sprites/04_jump.png",
+    "frames": 8,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Jump",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        0,
+        444,
+        444
+      ],
+      [
+        444,
+        0,
+        887,
+        444
+      ],
+      [
+        887,
+        0,
+        1330,
+        444
+      ],
+      [
+        1330,
+        0,
+        1774,
+        444
+      ],
+      [
+        0,
+        444,
+        444,
+        887
+      ],
+      [
+        444,
+        444,
+        887,
+        887
+      ],
+      [
+        887,
+        444,
+        1330,
+        887
+      ],
+      [
+        1330,
+        444,
+        1774,
+        887
+      ]
+    ],
+    "shared_scale": 1.1053864168618266,
+    "mirrored_frame_indices": []
+  },
+  "wave": {
+    "sheet": "sprites/05_interactions.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Wave",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        0,
+        317,
+        310
+      ],
+      [
+        317,
+        0,
+        634,
+        310
+      ],
+      [
+        634,
+        0,
+        952,
+        310
+      ],
+      [
+        952,
+        0,
+        1269,
+        310
+      ]
+    ],
+    "shared_scale": 1.4749262536873156,
+    "mirrored_frame_indices": [
+      2
+    ]
+  },
+  "petting": {
+    "sheet": "sprites/05_interactions.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Petting",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        310,
+        317,
+        620
+      ],
+      [
+        317,
+        310,
+        634,
+        620
+      ],
+      [
+        634,
+        310,
+        952,
+        620
+      ],
+      [
+        952,
+        310,
+        1269,
+        620
+      ]
+    ],
+    "shared_scale": 1.4124293785310735,
+    "mirrored_frame_indices": []
+  },
+  "cursor_follow": {
+    "sheet": "sprites/05_interactions.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Cursor Follow",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        620,
+        317,
+        929
+      ],
+      [
+        317,
+        620,
+        634,
+        929
+      ],
+      [
+        634,
+        620,
+        952,
+        929
+      ],
+      [
+        952,
+        620,
+        1269,
+        929
+      ]
+    ],
+    "shared_scale": 1.4245014245014245,
+    "mirrored_frame_indices": []
+  },
+  "cursor_avoid": {
+    "sheet": "sprites/05_interactions.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Cursor Avoid",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        929,
+        317,
+        1239
+      ],
+      [
+        317,
+        929,
+        634,
+        1239
+      ],
+      [
+        634,
+        929,
+        952,
+        1239
+      ],
+      [
+        952,
+        929,
+        1269,
+        1239
+      ]
+    ],
+    "shared_scale": 1.4367816091954022,
+    "mirrored_frame_indices": []
+  },
+  "happy_idle": {
+    "sheet": "sprites/06_expressions.png",
+    "frames": 6,
+    "seconds_per_frame": 0.3,
+    "mode": "loop",
+    "label": "Happy Idle",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        0,
+        256,
+        256
+      ],
+      [
+        256,
+        0,
+        512,
+        256
+      ],
+      [
+        512,
+        0,
+        768,
+        256
+      ],
+      [
+        768,
+        0,
+        1024,
+        256
+      ],
+      [
+        1024,
+        0,
+        1280,
+        256
+      ],
+      [
+        1280,
+        0,
+        1536,
+        256
+      ]
+    ],
+    "shared_scale": 1.4619883040935673,
+    "mirrored_frame_indices": [],
+    "frame_seconds": [
+      3.0,
+      1.0,
+      0.12,
+      0.12,
+      3.0,
+      0.12
+    ]
+  },
+  "ear_rub": {
+    "sheet": "sprites/06_expressions.png",
+    "frames": 6,
+    "seconds_per_frame": 0.3,
+    "mode": "loop",
+    "label": "Ear Rub",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        256,
+        256,
+        512
+      ],
+      [
+        256,
+        256,
+        512,
+        512
+      ],
+      [
+        512,
+        256,
+        768,
+        512
+      ],
+      [
+        768,
+        256,
+        1024,
+        512
+      ],
+      [
+        1024,
+        256,
+        1280,
+        512
+      ],
+      [
+        1280,
+        256,
+        1536,
+        512
+      ]
+    ],
+    "shared_scale": 1.7301038062283738,
+    "mirrored_frame_indices": []
+  },
+  "bored_shuffle": {
+    "sheet": "sprites/06_expressions.png",
+    "frames": 6,
+    "seconds_per_frame": 1.0,
+    "mode": "loop",
+    "label": "Bored Shuffle",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        512,
+        256,
+        768
+      ],
+      [
+        256,
+        512,
+        512,
+        768
+      ],
+      [
+        512,
+        512,
+        768,
+        768
+      ],
+      [
+        768,
+        512,
+        1024,
+        768
+      ],
+      [
+        1024,
+        512,
+        1280,
+        768
+      ],
+      [
+        1280,
+        512,
+        1536,
+        768
+      ]
+    ],
+    "shared_scale": 1.7857142857142858,
+    "mirrored_frame_indices": []
+  },
+  "sad": {
+    "sheet": "sprites/06_expressions.png",
+    "frames": 6,
+    "seconds_per_frame": 0.3,
+    "mode": "loop",
+    "label": "Sad",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        768,
+        256,
+        1024
+      ],
+      [
+        256,
+        768,
+        512,
+        1024
+      ],
+      [
+        512,
+        768,
+        768,
+        1024
+      ],
+      [
+        768,
+        768,
+        1024,
+        1024
+      ],
+      [
+        1024,
+        768,
+        1280,
+        1024
+      ],
+      [
+        1280,
+        768,
+        1536,
+        1024
+      ]
+    ],
+    "shared_scale": 1.5625,
+    "mirrored_frame_indices": []
+  },
+  "alternate_offer": {
+    "sheet": "sprites/07_reminders.png",
+    "frames": 6,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Alternate Offer",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        0,
+        256,
+        256
+      ],
+      [
+        256,
+        0,
+        512,
+        256
+      ],
+      [
+        512,
+        0,
+        768,
+        256
+      ],
+      [
+        768,
+        0,
+        1024,
+        256
+      ],
+      [
+        1024,
+        0,
+        1280,
+        256
+      ],
+      [
+        1280,
+        0,
+        1536,
+        256
+      ]
+    ],
+    "shared_scale": 1.6778523489932886,
+    "mirrored_frame_indices": []
+  },
+  "drink_water": {
+    "sheet": "sprites/07_reminders.png",
+    "frames": 6,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Drink Water",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        256,
+        256,
+        512
+      ],
+      [
+        256,
+        256,
+        512,
+        512
+      ],
+      [
+        512,
+        256,
+        768,
+        512
+      ],
+      [
+        768,
+        256,
+        1024,
+        512
+      ],
+      [
+        1024,
+        256,
+        1280,
+        512
+      ],
+      [
+        1280,
+        256,
+        1536,
+        512
+      ]
+    ],
+    "shared_scale": 1.6233766233766234,
+    "mirrored_frame_indices": []
+  },
+  "watch": {
+    "sheet": "sprites/07_reminders.png",
+    "frames": 6,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Watch",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        512,
+        256,
+        768
+      ],
+      [
+        256,
+        512,
+        512,
+        768
+      ],
+      [
+        512,
+        512,
+        768,
+        768
+      ],
+      [
+        768,
+        512,
+        1024,
+        768
+      ],
+      [
+        1024,
+        512,
+        1280,
+        768
+      ],
+      [
+        1280,
+        512,
+        1536,
+        768
+      ]
+    ],
+    "shared_scale": 1.6501650165016502,
+    "mirrored_frame_indices": []
+  },
+  "alternate_hoop": {
+    "sheet": "sprites/07_reminders.png",
+    "frames": 6,
+    "seconds_per_frame": 0.3,
+    "mode": "loop",
+    "label": "Alternate Hoop",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        768,
+        256,
+        1024
+      ],
+      [
+        256,
+        768,
+        512,
+        1024
+      ],
+      [
+        512,
+        768,
+        768,
+        1024
+      ],
+      [
+        768,
+        768,
+        1024,
+        1024
+      ],
+      [
+        1024,
+        768,
+        1280,
+        1024
+      ],
+      [
+        1280,
+        768,
+        1536,
+        1024
+      ]
+    ],
+    "shared_scale": 1.84375,
+    "mirrored_frame_indices": []
+  },
+  "kung_fu": {
+    "sheet": "sprites/08_activities.png",
+    "frames": 6,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Kung Fu",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        0,
+        256,
+        256
+      ],
+      [
+        256,
+        0,
+        512,
+        256
+      ],
+      [
+        512,
+        0,
+        768,
+        256
+      ],
+      [
+        768,
+        0,
+        1024,
+        256
+      ],
+      [
+        1024,
+        0,
+        1280,
+        256
+      ],
+      [
+        1280,
+        0,
+        1536,
+        256
+      ]
+    ],
+    "shared_scale": 1.7301038062283738,
+    "mirrored_frame_indices": []
+  },
+  "bamboo_hang": {
+    "sheet": "sprites/08_activities.png",
+    "frames": 6,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Bamboo Hang",
+    "edge_only": true,
+    "crop_rectangles": [
+      [
+        0,
+        256,
+        256,
+        512
+      ],
+      [
+        256,
+        256,
+        512,
+        512
+      ],
+      [
+        512,
+        256,
+        768,
+        512
+      ],
+      [
+        768,
+        256,
+        1024,
+        512
+      ],
+      [
+        1024,
+        256,
+        1280,
+        512
+      ],
+      [
+        1280,
+        256,
+        1536,
+        512
+      ]
+    ],
+    "shared_scale": 1.9344262295081966,
+    "mirrored_frame_indices": []
+  },
+  "yawn_stretch": {
+    "sheet": "sprites/08_activities.png",
+    "frames": 6,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Yawn Stretch",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        512,
+        256,
+        768
+      ],
+      [
+        256,
+        512,
+        512,
+        768
+      ],
+      [
+        512,
+        512,
+        768,
+        768
+      ],
+      [
+        768,
+        512,
+        1024,
+        768
+      ],
+      [
+        1024,
+        512,
+        1280,
+        768
+      ],
+      [
+        1280,
+        512,
+        1536,
+        768
+      ]
+    ],
+    "shared_scale": 1.7361111111111112,
+    "mirrored_frame_indices": []
+  },
+  "sleep": {
+    "sheet": "sprites/08_activities.png",
+    "frames": 6,
+    "seconds_per_frame": 1.0,
+    "mode": "loop",
+    "label": "Sleep",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        768,
+        256,
+        1024
+      ],
+      [
+        256,
+        768,
+        512,
+        1024
+      ],
+      [
+        512,
+        768,
+        768,
+        1024
+      ],
+      [
+        768,
+        768,
+        1024,
+        1024
+      ],
+      [
+        1024,
+        768,
+        1280,
+        1024
+      ],
+      [
+        1280,
+        768,
+        1536,
+        1024
+      ]
+    ],
+    "shared_scale": 1.888,
+    "mirrored_frame_indices": []
+  },
+  "hula_hoop": {
+    "sheet": "sprites/09_hula_hoop.png",
+    "frames": 8,
+    "seconds_per_frame": 0.3,
+    "mode": "loop",
+    "label": "Hula Hoop",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        0,
+        444,
+        444
+      ],
+      [
+        444,
+        0,
+        887,
+        444
+      ],
+      [
+        887,
+        0,
+        1330,
+        444
+      ],
+      [
+        1330,
+        0,
+        1774,
+        444
+      ],
+      [
+        0,
+        444,
+        444,
+        887
+      ],
+      [
+        444,
+        444,
+        887,
+        887
+      ],
+      [
+        887,
+        444,
+        1330,
+        887
+      ],
+      [
+        1330,
+        444,
+        1774,
+        887
+      ]
+    ],
+    "shared_scale": 1.080091533180778,
+    "mirrored_frame_indices": []
+  },
+  "eat_bamboo": {
+    "sheet": "sprites/10_bamboo_and_log.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "loop",
+    "label": "Eat Bamboo",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        0,
+        318,
+        309
+      ],
+      [
+        318,
+        0,
+        636,
+        309
+      ],
+      [
+        636,
+        0,
+        954,
+        309
+      ],
+      [
+        954,
+        0,
+        1272,
+        309
+      ]
+    ],
+    "shared_scale": 1.2406947890818858,
+    "mirrored_frame_indices": []
+  },
+  "carry_bamboo": {
+    "sheet": "sprites/10_bamboo_and_log.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Carry Bamboo",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        309,
+        318,
+        618
+      ],
+      [
+        318,
+        309,
+        636,
+        618
+      ],
+      [
+        636,
+        309,
+        954,
+        618
+      ],
+      [
+        954,
+        309,
+        1272,
+        618
+      ]
+    ],
+    "shared_scale": 1.3333333333333333,
+    "mirrored_frame_indices": []
+  },
+  "sit_on_log": {
+    "sheet": "sprites/10_bamboo_and_log.png",
+    "frames": 4,
+    "seconds_per_frame": 1.0,
+    "mode": "once_hold",
+    "label": "Sit On Log",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        618,
+        318,
+        928
+      ],
+      [
+        318,
+        618,
+        636,
+        928
+      ],
+      [
+        636,
+        618,
+        954,
+        928
+      ],
+      [
+        954,
+        618,
+        1272,
+        928
+      ]
+    ],
+    "shared_scale": 1.5384615384615385,
+    "mirrored_frame_indices": []
+  },
+  "balance_on_log": {
+    "sheet": "sprites/10_bamboo_and_log.png",
+    "frames": 4,
+    "seconds_per_frame": 1.0,
+    "mode": "loop",
+    "label": "Balance On Log",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        928,
+        318,
+        1237
+      ],
+      [
+        318,
+        928,
+        636,
+        1237
+      ],
+      [
+        636,
+        928,
+        954,
+        1237
+      ],
+      [
+        954,
+        928,
+        1272,
+        1237
+      ]
+    ],
+    "shared_scale": 1.5432098765432098,
+    "mirrored_frame_indices": []
+  },
+  "peekaboo": {
+    "sheet": "sprites/11_games.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Peekaboo",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        0,
+        362,
+        272
+      ],
+      [
+        362,
+        0,
+        724,
+        272
+      ],
+      [
+        724,
+        0,
+        1086,
+        272
+      ],
+      [
+        1086,
+        0,
+        1448,
+        272
+      ]
+    ],
+    "shared_scale": 1.36986301369863,
+    "mirrored_frame_indices": []
+  },
+  "chase_ball": {
+    "sheet": "sprites/11_games.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "loop",
+    "label": "Chase Ball",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        272,
+        362,
+        543
+      ],
+      [
+        362,
+        272,
+        724,
+        543
+      ],
+      [
+        724,
+        272,
+        1086,
+        543
+      ],
+      [
+        1086,
+        272,
+        1448,
+        543
+      ]
+    ],
+    "shared_scale": 1.524390243902439,
+    "mirrored_frame_indices": []
+  },
+  "catch_ball": {
+    "sheet": "sprites/11_games.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Catch Ball",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        543,
+        362,
+        814
+      ],
+      [
+        362,
+        543,
+        724,
+        814
+      ],
+      [
+        724,
+        543,
+        1086,
+        814
+      ],
+      [
+        1086,
+        543,
+        1448,
+        814
+      ]
+    ],
+    "shared_scale": 1.5015015015015014,
+    "mirrored_frame_indices": []
+  },
+  "victory": {
+    "sheet": "sprites/11_games.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Victory",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        814,
+        362,
+        1086
+      ],
+      [
+        362,
+        814,
+        724,
+        1086
+      ],
+      [
+        724,
+        814,
+        1086,
+        1086
+      ],
+      [
+        1086,
+        814,
+        1448,
+        1086
+      ]
+    ],
+    "shared_scale": 1.639344262295082,
+    "mirrored_frame_indices": []
+  },
+  "bow": {
+    "sheet": "sprites/12_manners.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Bow",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        0,
+        362,
+        272
+      ],
+      [
+        362,
+        0,
+        724,
+        272
+      ],
+      [
+        724,
+        0,
+        1086,
+        272
+      ],
+      [
+        1086,
+        0,
+        1448,
+        272
+      ]
+    ],
+    "shared_scale": 1.4792899408284024,
+    "mirrored_frame_indices": []
+  },
+  "greeting": {
+    "sheet": "sprites/12_manners.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Greeting",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        272,
+        362,
+        543
+      ],
+      [
+        362,
+        272,
+        724,
+        543
+      ],
+      [
+        724,
+        272,
+        1086,
+        543
+      ],
+      [
+        1086,
+        272,
+        1448,
+        543
+      ]
+    ],
+    "shared_scale": 1.5384615384615385,
+    "mirrored_frame_indices": [
+      2
+    ]
+  },
+  "clap": {
+    "sheet": "sprites/12_manners.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Clap",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        543,
+        362,
+        814
+      ],
+      [
+        362,
+        543,
+        724,
+        814
+      ],
+      [
+        724,
+        543,
+        1086,
+        814
+      ],
+      [
+        1086,
+        543,
+        1448,
+        814
+      ]
+    ],
+    "shared_scale": 1.5060240963855422,
+    "mirrored_frame_indices": []
+  },
+  "blow_kiss": {
+    "sheet": "sprites/12_manners.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Blow Kiss",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        814,
+        362,
+        1086
+      ],
+      [
+        362,
+        814,
+        724,
+        1086
+      ],
+      [
+        724,
+        814,
+        1086,
+        1086
+      ],
+      [
+        1086,
+        814,
+        1448,
+        1086
+      ]
+    ],
+    "shared_scale": 1.492537313432836,
+    "mirrored_frame_indices": []
+  },
+  "sploot": {
+    "sheet": "sprites/13_floor_poses.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Sploot",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        0,
+        344,
+        286
+      ],
+      [
+        344,
+        0,
+        688,
+        286
+      ],
+      [
+        688,
+        0,
+        1033,
+        286
+      ],
+      [
+        1033,
+        0,
+        1377,
+        286
+      ]
+    ],
+    "shared_scale": 1.2594458438287153,
+    "mirrored_frame_indices": []
+  },
+  "side_roll": {
+    "sheet": "sprites/13_floor_poses.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Side Roll",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        286,
+        344,
+        571
+      ],
+      [
+        344,
+        286,
+        688,
+        571
+      ],
+      [
+        688,
+        286,
+        1033,
+        571
+      ],
+      [
+        1033,
+        286,
+        1377,
+        571
+      ]
+    ],
+    "shared_scale": 1.3550135501355014,
+    "mirrored_frame_indices": []
+  },
+  "belly_scratch": {
+    "sheet": "sprites/13_floor_poses.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "loop",
+    "label": "Belly Scratch",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        571,
+        344,
+        856
+      ],
+      [
+        344,
+        571,
+        688,
+        856
+      ],
+      [
+        688,
+        571,
+        1033,
+        856
+      ],
+      [
+        1033,
+        571,
+        1377,
+        856
+      ]
+    ],
+    "shared_scale": 1.2953367875647668,
+    "mirrored_frame_indices": []
+  },
+  "lazy_stretch": {
+    "sheet": "sprites/13_floor_poses.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Lazy Stretch",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        856,
+        344,
+        1142
+      ],
+      [
+        344,
+        856,
+        688,
+        1142
+      ],
+      [
+        688,
+        856,
+        1033,
+        1142
+      ],
+      [
+        1033,
+        856,
+        1377,
+        1142
+      ]
+    ],
+    "shared_scale": 1.3966480446927374,
+    "mirrored_frame_indices": []
+  },
+  "dance": {
+    "sheet": "sprites/14_silly_play.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "loop",
+    "label": "Dance",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        0,
+        362,
+        272
+      ],
+      [
+        362,
+        0,
+        724,
+        272
+      ],
+      [
+        724,
+        0,
+        1086,
+        272
+      ],
+      [
+        1086,
+        0,
+        1448,
+        272
+      ]
+    ],
+    "shared_scale": 1.557632398753894,
+    "mirrored_frame_indices": []
+  },
+  "wiggle": {
+    "sheet": "sprites/14_silly_play.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "loop",
+    "label": "Wiggle",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        272,
+        362,
+        543
+      ],
+      [
+        362,
+        272,
+        724,
+        543
+      ],
+      [
+        724,
+        272,
+        1086,
+        543
+      ],
+      [
+        1086,
+        272,
+        1448,
+        543
+      ]
+    ],
+    "shared_scale": 1.524390243902439,
+    "mirrored_frame_indices": []
+  },
+  "sneeze": {
+    "sheet": "sprites/14_silly_play.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Sneeze",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        543,
+        362,
+        814
+      ],
+      [
+        362,
+        543,
+        724,
+        814
+      ],
+      [
+        724,
+        543,
+        1086,
+        814
+      ],
+      [
+        1086,
+        543,
+        1448,
+        814
+      ]
+    ],
+    "shared_scale": 1.4124293785310735,
+    "mirrored_frame_indices": []
+  },
+  "hiccup": {
+    "sheet": "sprites/14_silly_play.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Hiccup",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        814,
+        362,
+        1086
+      ],
+      [
+        362,
+        814,
+        724,
+        1086
+      ],
+      [
+        724,
+        814,
+        1086,
+        1086
+      ],
+      [
+        1086,
+        814,
+        1448,
+        1086
+      ]
+    ],
+    "shared_scale": 1.440922190201729,
+    "mirrored_frame_indices": []
+  },
+  "sit_down": {
+    "sheet": "sprites/15_rest_and_groom.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Sit Down",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        0,
+        362,
+        272
+      ],
+      [
+        362,
+        0,
+        724,
+        272
+      ],
+      [
+        724,
+        0,
+        1086,
+        272
+      ],
+      [
+        1086,
+        0,
+        1448,
+        272
+      ]
+    ],
+    "shared_scale": 1.2953367875647668,
+    "mirrored_frame_indices": []
+  },
+  "wash_face": {
+    "sheet": "sprites/15_rest_and_groom.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Wash Face",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        272,
+        362,
+        543
+      ],
+      [
+        362,
+        272,
+        724,
+        543
+      ],
+      [
+        724,
+        272,
+        1086,
+        543
+      ],
+      [
+        1086,
+        272,
+        1448,
+        543
+      ]
+    ],
+    "shared_scale": 1.243781094527363,
+    "mirrored_frame_indices": []
+  },
+  "wake_up": {
+    "sheet": "sprites/15_rest_and_groom.png",
+    "frames": 4,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Wake Up",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        543,
+        362,
+        814
+      ],
+      [
+        362,
+        543,
+        724,
+        814
+      ],
+      [
+        724,
+        543,
+        1086,
+        814
+      ],
+      [
+        1086,
+        543,
+        1448,
+        814
+      ]
+    ],
+    "shared_scale": 1.4303030303030304,
+    "mirrored_frame_indices": []
+  },
+  "snore_sleep": {
+    "sheet": "sprites/15_rest_and_groom.png",
+    "frames": 4,
+    "seconds_per_frame": 1.0,
+    "mode": "loop",
+    "label": "Snore Sleep",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        814,
+        362,
+        1086
+      ],
+      [
+        362,
+        814,
+        724,
+        1086
+      ],
+      [
+        724,
+        814,
+        1086,
+        1086
+      ],
+      [
+        1086,
+        814,
+        1448,
+        1086
+      ]
+    ],
+    "shared_scale": 1.3801169590643274,
+    "mirrored_frame_indices": []
+  },
+  "fetch": {
+    "sheet": "sprites/16_fetch.png",
+    "frames": 8,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Fetch",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        0,
+        444,
+        444
+      ],
+      [
+        444,
+        0,
+        887,
+        444
+      ],
+      [
+        887,
+        0,
+        1330,
+        444
+      ],
+      [
+        1330,
+        0,
+        1774,
+        444
+      ],
+      [
+        0,
+        444,
+        444,
+        887
+      ],
+      [
+        444,
+        444,
+        887,
+        887
+      ],
+      [
+        887,
+        444,
+        1330,
+        887
+      ],
+      [
+        1330,
+        444,
+        1774,
+        887
+      ]
+    ],
+    "shared_scale": 1.002004008016032,
+    "mirrored_frame_indices": []
+  },
+  "forward_roll": {
+    "sheet": "sprites/17_somersault.png",
+    "frames": 8,
+    "seconds_per_frame": 0.3,
+    "mode": "once_hold",
+    "label": "Forward Roll",
+    "edge_only": false,
+    "crop_rectangles": [
+      [
+        0,
+        0,
+        444,
+        444
+      ],
+      [
+        444,
+        0,
+        887,
+        444
+      ],
+      [
+        887,
+        0,
+        1330,
+        444
+      ],
+      [
+        1330,
+        0,
+        1774,
+        444
+      ],
+      [
+        0,
+        444,
+        444,
+        887
+      ],
+      [
+        444,
+        444,
+        887,
+        887
+      ],
+      [
+        887,
+        444,
+        1330,
+        887
+      ],
+      [
+        1330,
+        444,
+        1774,
+        887
+      ]
+    ],
+    "shared_scale": 1.0040160642570282,
+    "mirrored_frame_indices": []
+  }
+}

@@ -1,45 +1,32 @@
-# Sprite integration audit: v17 versus v18
+# v19 complete sprite collection integration
 
-**No, the full expanded ZIP was not integrated in v17.** Existing app behaviours and newly integrated artwork are different things. Most older behaviours remained available but retained the old sprites.
+**All 17 supplied sheets are now integrated: 240 source poses, 47 mapped sequences, plus 16 mirrored walk/run frames.** The 47 sequences include two alternate reminder variants, so the pack describes 45 distinct action groups. Every sequence is available in the scrollable Panda Activities page and in the automatic-activity selector. No supplied sheet remains unused.
 
-| Supplied sheet | v17 use | v18 use | Still missing from this sheet |
-|---|---|---|---|
-| 01 water offer | All 8 frames | Retained | Jump/wave attention prelude not connected to this reveal |
-| 02 walk | None | None | All new walk frames; old walk remains |
-| 03 run | None | None | All new run frames; old run remains |
-| 04 jump | None | None | Full articulated jump; old activity remains |
-| 05 interactions | None | None | Wave, petting, cursor follow and cursor avoidance rows |
-| 06 expressions | None | None | Smile/blink, ear rub, bored shuffle and sad rows |
-| 07 reminders | Watch row only, 6 frames | Retained | Alternate offer, drink-water and alternate hoop rows |
-| 08 activities | None | None | Kung fu, edge bamboo hang, yawn/stretch and sleep rows |
-| 09 hula hoop | All 8 frames | Retained | None from this sheet |
-| 10 bamboo and log | None | Eating row, 4 frames | Carry bamboo, sit on log, balance on log |
-| 11 games | None | None | Peekaboo, chase ball, catch ball, victory |
-| 12 manners | None | None | New bow, greeting, clap and kiss rows; separate generated bow remains |
-| 13 floor poses | None | None | Sploot, side roll, belly scratch, lazy stretch |
-| 14 silly play | None | None | Dance, wiggle, sneeze, hiccup |
-| 15 rest and groom | None | None | Sit-down transition, wash face, wake-up, snoring |
-| 16 fetch | None | None | New pickup/return artwork; existing fetch uses old artwork |
-| 17 somersault | None | None | Articulated forward roll; existing rotation uses an old sprite |
+## Connected behaviour
 
-Meditation is **not present in this ZIP**. v18 adds a separately generated 512 px meditation pose with gentle breathing motion. It is one detailed pose, not a new multi-frame meditation sheet. Sitting idle and bow also use separate generated artwork rather than the supplied sheets.
+Normal roaming and cursor escape use the new eight-frame walk/run sequences, mirrored for leftward travel. Idle/sad expressions, petting, bowing after intake, inactivity yawning and sleep, kung fu, dance, floor poses and somersaults use the supplied sequences. Meditation remains the separate detailed pose because it is not in this pack.
 
-## What to supply or improve next
+Water now plays a jump/wave prelude, reveals the glass using all eight offer frames, then holds its final pose until answered. Movement uses the hoop sequence; personal reminders use the watch sequence. Amount controls, declining water, history and ten-minute snooze remain. The alternate offer, drink-water and alternate hoop rows are also selectable activities.
 
-Priority: walk, run, jump, wave, kung fu, sleep/yawn, somersault and fetch. These were not upgraded using the new sheets. First try correcting the existing supplied drafts rather than regenerating all art blindly.
+Bamboo feeding uses the eating row. Hanging is routed to a screen edge before playback. Log sitting/balancing use the new prop-bearing frames with deliberately slow timing. Fetch retains the existing placement/navigation engine and now uses supplied ball/pickup/return artwork. Peekaboo, chase, catch, victory, greetings, clapping, kisses, side rolls, belly scratches, wiggles, grooming, hiccups, waking and snoring are all available as activities.
 
-For each action supply separate numbered transparent PNG frames where possible, at least 512 px per frame, with the same panda identity, camera, body scale and foot baseline. Keep all ears, paws, props and curved feet inside the crop with padding. Include frame timings, loop/once/hold behaviour, action name and facing direction. Preserve actual airborne height in jump frames. Props must stay attached to the same paws. Return animations should connect naturally to idle.
+The existing behaviour settings remain: 30-second default walking rest, optional cursor games, inactivity thresholds, sleep toggle, chosen automatic activity and its interval. Manual only is the default. Reminders, sadness, dragging and active actions take priority over scheduled activities. Manual edge activities can approach the edge even with autonomous roaming disabled.
 
-A full meditation sequence would additionally need settle-in, eyes-closing, several subtle breathing frames and wake-up. The v18 detailed pose fixes the source-resolution issue but does not supply those transitions.
+## What was prepared
 
-## v18 behaviour
+All source grids were inspected. Fractional grid boundaries are retained in assets/sprite_collection_manifest.json. Crops remove small neighbouring-frame fragments while keeping sizable detached props such as ground balls. Per-action shared scale and face-size estimation reduce character-size changes. Grounding uses a shared baseline and preserves pose proportions; jump playback supplies an airborne arc. Transparent padding surrounds each frame. One switched-paw wave frame and the corresponding greeting frame are mirrored for consistency. All 47 animations have desktop-size GIF previews in the project ZIP. The manifest records modes, timing, crops and corrections.
 
-Panda Home has a dedicated Behaviour page. Default rest between walks is now 30 seconds instead of 90. Cursor games are separately switchable and off by default; they respect the roaming toggle. The cursor response no longer opens chatter that stalls its motion. Sleep can be disabled while keeping roaming enabled. Rest between walks, inactivity yawn threshold, inactivity sleep threshold, automatic activity and activity interval are saved. Default is Manual only. Automatic activity is an explicitly selected Meditate or Feed bamboo routine, not a random picker. It waits while reminders, dragging, chatter, sadness or another activity is active. Feed bamboo is also available as a manual activity; it is not a hunger simulation.
+The preparation tool is tools/integrate_sprite_collection.py. Regeneration needs Pillow, NumPy and SciPy; these are preparation dependencies, not new app runtime dependencies. Idle expression playback has longer neutral holds and short blink frames.
 
-Water remains every 30 minutes, unless paused or snoozed. Personal reminders use saved due dates. Movement follows its enabled interval. Cursor reactions and walking destinations retain their existing logic.
+## What genuinely remains pending
 
-## UI and verification
+- **Real Windows visual acceptance:** actual desktop playback, scaling/DPI, screen-edge dragging and multi-monitor placement have not been executed in this workspace. Packaging success is not proof of those checks.
+- **Source-art continuity:** all poses are integrated, but generated art still changes facial angle, limb length and some props between poses. Individual sequences may need targeted replacement after playback review. Integration does not mean every draft became a production-quality animation.
+- **Advanced hide-and-seek gameplay:** the supplied sequence is peekaboo. Hiding behind an actual window, discovery rules and scoring are not implemented by those four poses.
+- **Fetch polish:** placement and returning exist, but the supplied artwork is pickup/offer rather than a full continuous carrying run. Catch/chase gallery activities do not add a physics-based ball game. A carrying gait and consistent ball-only sprite would improve this.
+- **Meditation transitions:** the detailed meditation pose is separate. Settle-in, breathing variants and waking transitions need a new sheet if desired.
+- **Compact reminder titles:** long custom titles are shortened in the cloud; the full title stays in Panda Home.
 
-v18 replaces the cramped scalloped bubble with a compact, softer cloud above and to the right of the panda. Chatter is 176 x 100 px; water is 176 x 153 px; other reminders are 176 x 166 px. Water controls use compact amount buttons. Custom reminder titles are separated from the subtitle and shortened to 70 characters for compact display; full titles stay in history. Expanding the root adds a top gutter and adjusts its position to keep the panda anchored when screen space allows. All automatic reminder/chatter content remains on the pet canvas. Panda Home is still a manually opened settings/history window.
+## Validation
 
-Automated checks cover snooze without logging, final water pose hold, on-canvas dialogue, asset presence, activity scheduling priority and settings validation. Windows build validation is separate from real desktop appearance testing. Different DPI settings, multi-monitor edge placement and end-user visual quality still require Windows runtime verification.
+Automated validation accounts for every sheet and all 240 source poses, checks decoded PNGs and transparent margins, distinguishes once-and-hold from loop playback, routes every sequence to the renderer, checks hanging goes to an edge, preserves water snooze/history semantics and checks reminder priority. All 47 GIF previews were decoded. These are asset and behaviour checks, not live Windows visual or gameplay acceptance.

@@ -27,7 +27,7 @@ from PIL import Image, ImageTk
 
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 18
+APP_VERSION = 19
 REMINDER_MINUTES = 30
 TRANSPARENT_COLOR = "#00ff01"
 SMALL_WIDTH = 180
@@ -817,16 +817,84 @@ class WaterPet:
             canvas.alpha_composite(sprite, ((180-sprite.width)//2, (180-sprite.height)//2))
             canvas.putalpha(canvas.getchannel("A").point(lambda a: 255 if a >= 128 else 0))
             loaded["panda"][f"roll_{frame}"] = ImageTk.PhotoImage(canvas)
+        self.pack_manifest = json.loads((assets / "sprite_collection_manifest.json").read_text(encoding="utf-8"))
+        for key, metadata in self.pack_manifest.items():
+            for i in range(metadata["frames"]):
+                variants = (key, key + "_left") if key in ("walk", "run") else (key,)
+                for variant in variants:
+                    with Image.open(assets / f"pack_{variant}_{i}.png") as opened:
+                        sprite = opened.convert("RGBA").resize((180,180), Image.Resampling.LANCZOS)
+                    sprite.putalpha(sprite.getchannel("A").point(lambda a: 255 if a >= 128 else 0))
+                    loaded["panda"][f"pack_{variant}_{i}"] = ImageTk.PhotoImage(sprite)
         return loaded
 
+    def _pack_image(self, key: str, elapsed: float = 0.0, index: int | None = None):
+        metadata = self.pack_manifest[key]
+        if index is None and metadata.get("frame_seconds"):
+            timings = metadata["frame_seconds"]
+            position = max(0,elapsed) % sum(timings) if metadata["mode"] == "loop" else max(0,elapsed)
+            index = len(timings)-1
+            accumulated = 0.0
+            for frame,duration in enumerate(timings):
+                accumulated += duration
+                if position < accumulated:
+                    index = frame
+                    break
+        if index is None:
+            index = max(0, int(elapsed / metadata["seconds_per_frame"]))
+            index = index % metadata["frames"] if metadata["mode"] == "loop" else min(metadata["frames"]-1,index)
+        return self.images["panda"][f"pack_{key}_{index}"]
+
     def _image(self, state: str) -> ImageTk.PhotoImage:
-        if state in ("normal", "blink"):
-            state = "idle_hd"
-        elif state == "meditate":
-            state = "meditate_hd"
-        elif state == "bow":
-            state = "bow_hd"
+        now = datetime.now()
+        started = getattr(self, "idle_mood_started_at", now) if getattr(self,"idle_mood","") else getattr(self,"action_started_at",now)
+        elapsed = max(0.0,(now-started).total_seconds())
+        if state.startswith("packframe:"):
+            _, key, index = state.split(":")
+            return self._pack_image(key, index=int(index))
+        if state.startswith(("walk_", "run_")):
+            parts = state.split("_");key=parts[0]
+            index = int(now.timestamp() / self.pack_manifest[key]["seconds_per_frame"]) % 8
+            variant = key + "_left" if parts[1] == "left" else key
+            return self.images["panda"][f"pack_{variant}_{index}"]
+        for prefix,key in (("offer_","water_offer"),("hoop_","hula_hoop"),("clock_","watch")):
+            if state.startswith(prefix):
+                return self._pack_image(key,index=int(state.rsplit("_",1)[1]))
+        aliases = {"normal":"happy_idle","blink":"happy_idle","happy":"victory","sad":"sad",
+                   "asking":"cursor_follow","wave":"wave","nuzzle":"petting","kungfu":"kung_fu",
+                   "bow":"bow","stretch":"lazy_stretch","sneeze":"sneeze","sploot":"sploot",
+                   "yawn_1":"yawn_stretch","yawn_2":"yawn_stretch","sleep":"sleep","staff":"carry_bamboo",
+                   "fetch_look":"fetch","fetch_chase":"chase_ball","fetch_carry":"fetch","fetch_offer":"catch_ball",
+                   "somersault":"forward_roll"}
+        if state in aliases:
+            if state in ("normal","blink","sad"):elapsed=now.timestamp()
+            return self._pack_image(aliases[state],elapsed)
+        if state == "meditate":state="meditate_hd"
         return self.images[self.pet_type.get()][state]
+
+    def _play_pack_animation(self, key: str) -> None:
+        if self.prompt_visible or self.active_alert_kind or self.dragging or self.state == "sad":
+            return
+        metadata = self.pack_manifest[key]
+        if metadata["edge_only"]:
+            self._start_edge_activity("pack:" + key)
+            left,top,right,bottom=self._screen_bounds()
+            self.target_x=float(left if self.pet_x < (left+right)/2 else right-SMALL_WIDTH)
+            self.target_y=max(top,min(self.pet_y,bottom-SMALL_HEIGHT-42))
+            return
+        seconds = max(4.0,metadata["frames"]*metadata["seconds_per_frame"]+1.0)
+        self._play_test_animation("pack:" + key, seconds)
+
+    def _draw_pack_animation(self, key: str, elapsed: float) -> None:
+        y = PET_CENTER_Y
+        if key == "jump":
+            duration=self.pack_manifest[key]["frames"]*self.pack_manifest[key]["seconds_per_frame"]
+            y -= int(32*math.sin(min(1.0,elapsed/duration)*math.pi))
+        if key in ("sleep","snore_sleep"):
+            y += int(math.sin(elapsed*1.8)*2)
+        self.canvas.create_image(SMALL_WIDTH//2,y,image=self._pack_image(key,elapsed))
+        if key in ("sleep","snore_sleep"):
+            self.canvas.create_text(142,38,text="z Z",fill=PALETTE["muted"],font=("Segoe UI",10))
 
     def _load_settings(self) -> dict[str, object]:
         defaults: dict[str, object] = {
@@ -889,7 +957,7 @@ class WaterPet:
                 defaults[key] = max(low, min(high, int(defaults[key])))
             except (ValueError, TypeError):
                 defaults[key] = default
-        if defaults["auto_activity"] not in ("Manual only", "Meditate", "Feed bamboo"):
+        if defaults["auto_activity"] not in ("Manual only", "Meditate", "Feed bamboo") and defaults["auto_activity"] not in {m["label"] for m in self.pack_manifest.values()}:
             defaults["auto_activity"] = "Manual only"
         return defaults
 
@@ -1790,6 +1858,8 @@ class WaterPet:
             and (
                 self.roam_enabled.get()
                 or self.motion_mode in (
+                    "walking",
+                    "action",
                     "falling",
                     "escaping",
                     "fetch_out",
@@ -1947,6 +2017,11 @@ class WaterPet:
             self._play_test_animation("meditate", 8.0)
         elif self.auto_activity.get() == "Feed bamboo":
             self.feed_panda()
+        else:
+            for key, metadata in self.pack_manifest.items():
+                if metadata["label"] == self.auto_activity.get():
+                    self._play_pack_animation(key)
+                    break
 
     def _check_cursor_reaction(self, now: datetime) -> None:
         if not self.cursor_games.get() or not self.roam_enabled.get() or self.active_alert_kind:
@@ -2596,6 +2671,10 @@ class WaterPet:
             and self.motion_mode == "action"
             and self.current_action
         ):
+            if self.current_action.startswith("pack:"):
+                self._draw_pack_animation(self.current_action[5:], (datetime.now()-self.action_started_at).total_seconds())
+                self._draw_overlays()
+                return
             self._draw_ground_shadow()
             phase = self.frame * 0.45
             offset_x = 0
@@ -2689,6 +2768,14 @@ class WaterPet:
         return
 
     def _draw_idle_mood(self) -> None:
+        pack_aliases={"wave":"wave","nuzzle":"petting","yawn":"yawn_stretch","sleep":"sleep",
+                      "dance":"dance","kungfu_combo":"kung_fu","somersault":"forward_roll","sneeze":"sneeze",
+                      "stretch":"lazy_stretch","bow":"bow","sploot":"sploot","bored":"bored_shuffle",
+                      "ear_rub":"ear_rub","jump":"jump","feed":"eat_bamboo"}
+        key=self.idle_mood.removeprefix("pack:") if self.idle_mood.startswith("pack:") else pack_aliases.get(self.idle_mood)
+        if key in self.pack_manifest:
+            self._draw_pack_animation(key,(datetime.now()-self.idle_mood_started_at).total_seconds())
+            return
         phase = self.frame * 0.32
         mood = self.idle_mood
         elapsed = max(0.0, (datetime.now() - self.idle_mood_started_at).total_seconds())
@@ -2822,7 +2909,7 @@ class WaterPet:
         if action == "somersault":
             if progress < 0.18 or progress > 0.88:
                 return "normal"
-            return f"roll_{min(15, int((progress - 0.18) / 0.70 * 16))}"
+            return f"packframe:forward_roll:{min(7, int((progress - 0.18) / 0.70 * 8))}"
         progress = max(0.0, min(1.0, progress))
         sequences = {
             "wave": (
@@ -2940,6 +3027,8 @@ class WaterPet:
             )
 
     def _draw_kungfu_combo(self, elapsed: float) -> None:
+        self._draw_pack_animation("kung_fu",elapsed)
+        return
         if elapsed < 0.45:
             stage, image_key, offset_x, offset_y = 0, "normal", 0, 3
         elif elapsed < 1.00:
@@ -2995,6 +3084,9 @@ class WaterPet:
             )
 
     def _draw_bored_sequence(self, elapsed: float) -> None:
+        key="sit_on_log" if elapsed < 14 else "balance_on_log"
+        self._draw_pack_animation(key, elapsed if elapsed < 14 else elapsed-14)
+        return
         frame_times = (0.0, 3.0, 6.0, 9.0, 12.0, 16.0, 20.0, 24.0)
         frame_number = 1
         for index, start_time in enumerate(frame_times, start=1):
@@ -3109,7 +3201,16 @@ class WaterPet:
         self.canvas.tag_bind("water_snooze", "<Button-1>", self.snooze_water)
         self.canvas.create_text(262, 141, text="Pick an amount to log a sip", fill=PALETTE["muted"], font=("Segoe UI", 7))
         elapsed = (datetime.now() - self.attention_started_at).total_seconds() if self.attention_started_at else 0
-        self.canvas.create_image(90, 234, image=self._image(f"offer_{min(7, int(elapsed / 0.28))}"))
+        if elapsed < 0.88:
+            image = self._pack_image("jump",index=min(7,int(elapsed/0.11)))
+            y = 234-int(28*math.sin(elapsed/0.88*math.pi))
+        elif elapsed < 1.68:
+            image = self._pack_image("wave",index=min(3,int((elapsed-0.88)/0.2)))
+            y = 234
+        else:
+            image = self._image(f"offer_{min(7, int((elapsed-1.68) / 0.28))}")
+            y = 234
+        self.canvas.create_image(90, y, image=image)
 
     def _answer_button(
         self,
@@ -3429,7 +3530,7 @@ class WaterPet:
             ("Rest between walks (seconds)", self.roam_rest_seconds, (30,60,90,180,300,600)),
             ("Yawn after inactivity (seconds)", self.yawn_after_seconds, (30,60,90,120)),
             ("Sleep after inactivity (minutes)", self.sleep_after_minutes, (2,3,5,10,30,60)),
-            ("Automatic activity", self.auto_activity, ("Manual only","Meditate","Feed bamboo")),
+            ("Automatic activity", self.auto_activity, ("Manual only","Meditate","Feed bamboo") + tuple(m["label"] for m in self.pack_manifest.values())),
             ("Activity interval (minutes)", self.activity_minutes, (1,3,5,10,15,30,60)),
         ):
             row = ttk.Frame(behavior_frame, style="Glass.TFrame")
@@ -3446,8 +3547,18 @@ class WaterPet:
             text="Choose an activity and Panda Home will hide while your panda performs it.",
             style="Sub.TLabel",
         ).pack(anchor="w", pady=(2, 18))
-        activity_grid = ttk.Frame(activities_frame, style="Glass.TFrame")
-        activity_grid.pack(fill="both", expand=True)
+        activity_host = ttk.Frame(activities_frame, style="Glass.TFrame")
+        activity_host.pack(fill="both", expand=True)
+        activity_canvas = tk.Canvas(activity_host, bg=GLASS["surface"], highlightthickness=0)
+        activity_scroll = ttk.Scrollbar(activity_host, orient="vertical", command=activity_canvas.yview)
+        activity_canvas.configure(yscrollcommand=activity_scroll.set)
+        activity_scroll.pack(side="right",fill="y")
+        activity_canvas.pack(side="left",fill="both",expand=True)
+        activity_grid = ttk.Frame(activity_canvas, style="Glass.TFrame")
+        activity_window = activity_canvas.create_window(0,0,window=activity_grid,anchor="nw")
+        activity_grid.bind("<Configure>",lambda event: activity_canvas.configure(scrollregion=activity_canvas.bbox("all")))
+        activity_canvas.bind("<Configure>",lambda event: activity_canvas.itemconfigure(activity_window,width=event.width))
+        activity_canvas.bind("<MouseWheel>",lambda event: activity_canvas.yview_scroll(-int(event.delta/120),"units"))
         activities = (
             ("Feed bamboo", self.feed_panda),
             ("Walk across screen", self._test_walk_across_screen),
@@ -3482,6 +3593,8 @@ class WaterPet:
                 ),
             ),
         )
+        activities += tuple((meta["label"], lambda chosen=key: self._play_pack_animation(chosen))
+                            for key, meta in self.pack_manifest.items())
         for index, (label, callback) in enumerate(activities):
             button = ttk.Button(
                 activity_grid,
@@ -3489,13 +3602,13 @@ class WaterPet:
                 command=lambda chosen=callback: self._launch_home_activity(chosen),
             )
             button.grid(
-                row=index // 3,
-                column=index % 3,
+                row=index // 2,
+                column=index % 2,
                 sticky="ew",
-                padx=(0 if index % 3 == 0 else 8, 0),
+                padx=(0 if index % 2 == 0 else 8, 0),
                 pady=(0, 8),
             )
-        for column in range(3):
+        for column in range(2):
             activity_grid.columnconfigure(column, weight=1)
 
         switcher.select(0)

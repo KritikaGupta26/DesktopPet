@@ -2134,7 +2134,7 @@ class WaterPet:
             self.hungry = True
         if not self.hungry or self.hunger_requested:
             return
-        if self.prompt_visible or self.active_alert_kind or self.dragging or self.idle_mood or self.chatter_until or self.state != "normal" or self.motion_mode != "idle":
+        if self.prompt_visible or self.active_alert_kind or self.dragging or self.idle_mood or self.chatter_until or self.state != "normal" or self.motion_mode not in ("idle", "following"):
             return
         self.hunger_requested = True
         self._show_chatter("My tummy is rumbling! Click me for bamboo?", seconds=15)
@@ -2185,7 +2185,7 @@ class WaterPet:
         mode=getattr(self,"cursor_session_kind","") or (self.cursor_mode.get() if hasattr(self,"cursor_mode") else "Avoid" if self.cursor_games.get() else "Off")
         if mode=="Avoid" and not getattr(self,"cursor_session_kind","") and not self.roam_enabled.get():
             return
-        if mode=="Off" or self.active_alert_kind or self.prompt_visible or self.dragging or self.state!="normal" or self.idle_mood:
+        if mode=="Off" or self.active_alert_kind or self.prompt_visible or self.dragging or self.state!="normal" or self.idle_mood or getattr(self,"chatter_until",None):
             return
         if mode=="Follow":
             if self.motion_mode not in ("idle","walking","following"):

@@ -100,3 +100,18 @@ class AuditRegressionTests(unittest.TestCase):
         before=datetime.now();pet._snooze_active_alert()
         self.assertGreaterEqual(pet.next_movement_reminder,before+timedelta(minutes=10))
         self.assertLessEqual(pet.next_movement_reminder,datetime.now()+timedelta(minutes=10))
+
+    def test_hunger_can_interrupt_persistent_cursor_follow(self):
+        pet=WaterPet.__new__(WaterPet);pet.hunger_enabled=Mock();pet.hunger_enabled.get.return_value=True
+        pet.next_hunger=datetime.now()-timedelta(seconds=1);pet.hungry=False;pet.hunger_requested=False
+        pet.prompt_visible=False;pet.active_alert_kind='';pet.dragging=False;pet.idle_mood='';pet.chatter_until=None
+        pet.state='normal';pet.motion_mode='following';pet._show_chatter=Mock()
+        pet._update_hunger(datetime.now())
+        self.assertTrue(pet.hunger_requested);pet._show_chatter.assert_called_once()
+
+    def test_follow_pauses_while_cloud_changes_window_geometry(self):
+        pet=WaterPet.__new__(WaterPet);pet.cursor_mode=Mock();pet.cursor_mode.get.return_value='Follow'
+        pet.active_alert_kind='';pet.prompt_visible=False;pet.dragging=False;pet.state='normal';pet.idle_mood=''
+        pet.chatter_until=datetime.now()+timedelta(seconds=5);pet.root=Mock()
+        pet._check_cursor_reaction(datetime.now())
+        pet.root.winfo_pointerxy.assert_not_called()

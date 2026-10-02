@@ -27,7 +27,7 @@ from PIL import Image, ImageTk
 
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 19
+APP_VERSION = 20
 REMINDER_MINUTES = 30
 TRANSPARENT_COLOR = "#00ff01"
 SMALL_WIDTH = 180
@@ -854,7 +854,7 @@ class WaterPet:
             return self._pack_image(key, index=int(index))
         if state.startswith(("walk_", "run_")):
             parts = state.split("_");key=parts[0]
-            index = int(now.timestamp() / self.pack_manifest[key]["seconds_per_frame"]) % 8
+            index = (int(parts[2]) - 1) % self.pack_manifest[key]["frames"]
             variant = key + "_left" if parts[1] == "left" else key
             return self.images["panda"][f"pack_{variant}_{index}"]
         for prefix,key in (("offer_","water_offer"),("hoop_","hula_hoop"),("clock_","watch")):
@@ -2620,11 +2620,11 @@ class WaterPet:
             elif self.motion_mode == "fetch_return":
                 image_key = "fetch_carry"
             else:
-                run_frame = 1 + (self.frame % 4)
+                run_frame = 1 + (self.frame % 8)
                 image_key = f"run_{self.walk_direction}_{run_frame}"
             self.canvas.create_image(
                 SMALL_WIDTH // 2,
-                PET_CENTER_Y - int(abs(math.sin(self.frame * 0.95)) * 4),
+                PET_CENTER_Y,
                 image=self._image(image_key),
             )
             self._draw_overlays()
@@ -2659,15 +2659,13 @@ class WaterPet:
                 )
                 self._draw_overlays()
                 return
-            gait = (1, 2, 3, 4, 5, 6, 7, 8)
-            gait_bob = (0, 2, 3, 1, 0, 2, 3, 1)
-            gait_lean = (-1, 0, 1, 1, 1, 0, -1, -1)
-            gait_index = (self.frame // 2) % len(gait)
-            walk_frame = gait[gait_index]
+            # One phase drives the actual stride. The sheet already contains
+            # body movement, so do not layer a second bounce over it.
+            walk_frame = 1 + (self.frame % 8)
             image_key = f"walk_{self.walk_direction}_{walk_frame}"
             self.canvas.create_image(
-                (SMALL_WIDTH // 2) + gait_lean[gait_index],
-                PET_CENTER_Y - gait_bob[gait_index],
+                SMALL_WIDTH // 2,
+                PET_CENTER_Y,
                 image=self._image(image_key),
             )
             self._draw_overlays()

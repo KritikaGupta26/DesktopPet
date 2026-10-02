@@ -56,7 +56,7 @@
         1024
       ]
     ],
-    "shared_scale": 0.9345794392523364,
+    "shared_scale": 0.9309664694280079,
     "mirrored_frame_indices": []
   },
   "walk": {
@@ -774,7 +774,7 @@
         1024
       ]
     ],
-    "shared_scale": 1.84375,
+    "shared_scale": 1.858267716535433,
     "mirrored_frame_indices": []
   },
   "kung_fu": {
@@ -870,7 +870,7 @@
         512
       ]
     ],
-    "shared_scale": 1.9344262295081966,
+    "shared_scale": 1.728937728937729,
     "mirrored_frame_indices": []
   },
   "yawn_stretch": {
@@ -918,7 +918,7 @@
         768
       ]
     ],
-    "shared_scale": 1.7361111111111112,
+    "shared_scale": 1.7226277372262773,
     "mirrored_frame_indices": []
   },
   "sleep": {
@@ -966,7 +966,7 @@
         1024
       ]
     ],
-    "shared_scale": 1.888,
+    "shared_scale": 1.404494382022472,
     "mirrored_frame_indices": []
   },
   "hula_hoop": {
@@ -1170,7 +1170,7 @@
         1237
       ]
     ],
-    "shared_scale": 1.5432098765432098,
+    "shared_scale": 1.4658385093167703,
     "mirrored_frame_indices": []
   },
   "peekaboo": {
@@ -1820,7 +1820,7 @@
         543
       ]
     ],
-    "shared_scale": 1.243781094527363,
+    "shared_scale": 1.2254901960784315,
     "mirrored_frame_indices": []
   },
   "wake_up": {
@@ -1856,7 +1856,7 @@
         814
       ]
     ],
-    "shared_scale": 1.4303030303030304,
+    "shared_scale": 1.0309278350515463,
     "mirrored_frame_indices": []
   },
   "snore_sleep": {
@@ -1892,7 +1892,7 @@
         1086
       ]
     ],
-    "shared_scale": 1.3801169590643274,
+    "shared_scale": 1.3964497041420119,
     "mirrored_frame_indices": []
   },
   "fetch": {

@@ -50,3 +50,18 @@ class SpriteCollectionTests(unittest.TestCase):
         pet._start_edge_activity.assert_called_once_with('pack:bamboo_hang')
         self.assertEqual(pet.target_x,0)
         pet._play_test_animation.assert_not_called()
+
+    def test_walk_uses_requested_stride_frame_in_both_directions(self):
+        pet=WaterPet.__new__(WaterPet);pet.pack_manifest=MANIFEST
+        pet.images={'panda':{f'pack_walk{suffix}_{i}':f'{suffix}:{i}' for suffix in ('','_left') for i in range(8)}}
+        for i in range(8):
+            self.assertEqual(pet._image(f'walk_right_{i+1}'),f':{i}')
+            self.assertEqual(pet._image(f'walk_left_{i+1}'),f'_left:{i}')
+
+    def test_sleep_has_no_fragment_from_preceding_row(self):
+        for i in range(6):
+            with Image.open(ROOT/'assets'/f'pack_sleep_{i}.png') as im:
+                box=im.getchannel('A').getbbox()
+                # Sleeping panda is low and wide; preceding-row legs made
+                # the broken extraction taller than it was wide.
+                self.assertLess(box[3]-box[1],box[2]-box[0])

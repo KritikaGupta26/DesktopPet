@@ -5,7 +5,7 @@ from zipfile import ZipFile
 from io import BytesIO
 import numpy as np
 from PIL import Image, ImageOps
-from scipy.ndimage import label, binary_dilation
+from scipy.ndimage import label, binary_dilation, find_objects
 
 SHEETS = [
  ('01_water_offer',4,2,['water_offer']),('02_walk',4,2,['walk']),('03_run',4,2,['run']),('04_jump',4,2,['jump']),
@@ -30,21 +30,29 @@ def prepare(archive, assets, previews):
  manifest={};z=ZipFile(archive)
  for sheet,cols,rows,actions in SHEETS:
   image=Image.open(BytesIO(z.read(f'sprites/{sheet}.png'))).convert('RGBA')
+  sheet_array=np.array(image);sheet_labels,n=label(sheet_array[:,:,3]>=64)
+  sheet_counts=np.bincount(sheet_labels.ravel());sheet_counts[0]=0
+  sheet_boxes=find_objects(sheet_labels)
   for row,key in enumerate(actions):
    count=cols*rows if len(actions)==1 else cols;frames=[];crop_records=[];heads=[]
    for i in range(count):
     r=i//cols if len(actions)==1 else row;c=i%cols
     rect=(round(c*image.width/cols),round(r*image.height/rows),round((c+1)*image.width/cols),round((r+1)*image.height/rows))
-    crop=image.crop(rect);arr=np.array(crop);labs,n=label(arr[:,:,3]>=64);counts=np.bincount(labs.ravel());counts[0]=0
-    if counts.max()==0:raise ValueError(f'Empty {sheet} {i}')
-    main=int(counts.argmax()); retained=[main]
+    # The artwork crosses nominal grid lines. Isolate complete connected
+    # characters on the full sheet before cropping, never cut at a cell edge.
+    arr=sheet_array.copy();labs=sheet_labels;counts=sheet_counts
+    candidates=[]
     for component in range(1,len(counts)):
-     if component==main or counts[component] < max(64,counts[main]*0.008):continue
-     ys,xs=np.where(labs==component)
-     boundary=(ys.min()==0 or ys.max()==crop.height-1)
-     if boundary and counts[component] < counts[main]*0.10:continue
-     retained.append(component)
-    keep=binary_dilation(np.isin(labs,retained),iterations=2);arr[:,:,3]=np.where(keep,arr[:,:,3],0)
+     if counts[component]<1500:continue
+     box=sheet_boxes[component-1]
+     center=((box[1].start+box[1].stop)/2,(box[0].start+box[0].stop)/2)
+     if int(center[0]*cols/image.width)==c and int(center[1]*rows/image.height)==r:
+      candidates.append(component)
+    if not candidates:raise ValueError(f'No complete character {sheet} {i}')
+    main=max(candidates,key=lambda component:counts[component])
+    retained=[component for component in candidates if counts[component]>=max(64,counts[main]*.008)]
+    keep=binary_dilation(np.isin(labs,retained),iterations=2)
+    arr[:,:,3]=np.where(keep,arr[:,:,3],0)
     crop=Image.fromarray(arr);crop=crop.crop(crop.getchannel('A').getbbox())
     if key in ('wave','greeting') and i==2:crop=ImageOps.mirror(crop)
     arr=np.array(crop);cream=(arr[:,:,0]>160)&(arr[:,:,1]>140)&(arr[:,:,2]>110)&(arr[:,:,3]>128)
@@ -59,7 +67,8 @@ def prepare(archive, assets, previews):
    for i,f in enumerate(frames):
     f=f.resize((max(1,round(f.width*scale)),max(1,round(f.height*scale))),Image.Resampling.LANCZOS)
     out=Image.new('RGBA',(512,512));out.alpha_composite(f,((512-f.width)//2,492-f.height));buffer=BytesIO();out.save(buffer,format="PNG",optimize=True);destination=assets/f"pack_{key}_{i}.png";destination.write_bytes(buffer.getvalue());prepared.append(out)
-    if key in ('walk','run'):ImageOps.mirror(out).save(assets/f'pack_{key}_left_{i}.png',optimize=True)
+    if key in ('walk','run'):
+     buffer=BytesIO();ImageOps.mirror(out).save(buffer,format='PNG',optimize=True);(assets/f'pack_{key}_left_{i}.png').write_bytes(buffer.getvalue())
    duration=1.0 if key in SLOW else .11 if key in ('walk','run') else .28 if key=='water_offer' else .3
    manifest[key]={'sheet':f'sprites/{sheet}.png','frames':count,'seconds_per_frame':duration,'mode':'loop' if key in LOOPS else 'once_hold','label':key.replace('_',' ').title(),'edge_only':key=='bamboo_hang','crop_rectangles':crop_records,'shared_scale':scale,'mirrored_frame_indices':[2] if key in ('wave','greeting') else []}
    gif=[]

@@ -1,4 +1,4 @@
-# Water Panda v26 for Windows
+# Water Panda v27 for Windows
 
 A local desktop panda with water tracking, hula-hoop movement breaks, wristwatch personal reminders, bamboo feeding and configurable automatic activities.
 
@@ -28,3 +28,7 @@ Output: installer\output\Water_Panda_Setup.exe. Main pushes create build artifac
 Behaviour > Water reminder hours adds From/Until times. Enable Only ask during these hours and save. Daytime and overnight ranges work; equal times mean all day. Automatic water offers end at the closing time, snoozes wait for the next opening when needed, and Water now remains available anytime. Existing users retain all-day behaviour until enabling the window.
 
 Play on log now starts cheerful setup/balancing immediately, without the bored edge shuffle. Cloud text is larger, buttons use compact readable labels and water amounts remain explicitly labelled in ml. The previous Not yet recovery remains eight seconds.
+
+## v27 screen edges
+
+Removed the extra 42px bottom clearance and 24px manual walk inset. Regular roaming can choose all four screen edges. Cursor Follow keeps its usual interior distance, but approaches the screen boundary when the pointer is near it. The full transparent pet canvas stays inside the physical desktop bounds; artwork margins remain to prevent clipping.

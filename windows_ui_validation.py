@@ -248,6 +248,23 @@ def run_validation(pet_type, output_path: Path) -> None:
             check("Live Windows pointer follow moves closer", after < before)
             app._draw()
             snapshot("walk")
+            for name, point, target in (
+                ("top_left",(left,top),(left,top)),
+                ("bottom_right",(right-1,bottom-1),(right-180,bottom-184)),
+            ):
+                ctypes.windll.user32.SetCursorPos(*point)
+                for _ in range(2000):
+                    app._check_cursor_reaction(datetime.now())
+                    if app.cursor_at_rest:
+                        break
+                app.root.update_idletasks()
+                check(f"Follow reaches physical screen edge: {name}",
+                      abs(app.pet_x-target[0])<1 and abs(app.pet_y-target[1])<1)
+                check(f"Pet canvas stays visible at edge: {name}",
+                      left<=app.pet_x<=right-180 and top<=app.pet_y<=bottom-184)
+                app._draw()
+                snapshot(f"edge_{name}")
+
 
             clear_action()
             app.hungry = True

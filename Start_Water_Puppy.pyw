@@ -120,7 +120,7 @@ def normalize_standing_sprite(sprite: Image.Image) -> Image.Image:
 
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 26
+APP_VERSION = 27
 REMINDER_MINUTES = 30
 WATER_DECLINE_SECONDS = 8
 WALK_FRAME_ORDER = (0, 1, 2, 4, 5, 6)
@@ -1052,7 +1052,7 @@ class WaterPet:
             self._start_edge_activity("pack:" + key)
             left,top,right,bottom=self._screen_bounds()
             self.target_x=float(left if self.pet_x < (left+right)/2 else right-SMALL_WIDTH)
-            self.target_y=max(top,min(self.pet_y,bottom-SMALL_HEIGHT-42))
+            self.target_y=max(top,min(self.pet_y,bottom-SMALL_HEIGHT))
             self.walk_direction="left" if self.target_x<self.pet_x else "right"
             return
         seconds = max(4.0,metadata["frames"]*metadata["seconds_per_frame"]+1.0)
@@ -1289,8 +1289,8 @@ class WaterPet:
             x = max(left, min(saved_x, right - SMALL_WIDTH))
             y = max(top, min(saved_y, bottom - SMALL_HEIGHT))
         else:
-            x = max(left, right - SMALL_WIDTH - 18)
-            y = max(top, bottom - SMALL_HEIGHT - 52)
+            x = max(left, right - SMALL_WIDTH)
+            y = max(top, bottom - SMALL_HEIGHT)
         self.pet_x = float(x)
         self.pet_y = float(y)
         self.root.geometry(f"{SMALL_WIDTH}x{SMALL_HEIGHT}{x:+d}{y:+d}")
@@ -1402,10 +1402,10 @@ class WaterPet:
         left, _top, right, _bottom = self._screen_bounds()
         midpoint = left + ((right - left) // 2)
         if self.pet_x < midpoint:
-            self.target_x = float(right - SMALL_WIDTH - 24)
+            self.target_x = float(right - SMALL_WIDTH)
             self.walk_direction = "right"
         else:
-            self.target_x = float(left + 24)
+            self.target_x = float(left)
             self.walk_direction = "left"
         self.target_y = self.pet_y
         self.walk_speed = 2.8
@@ -1421,7 +1421,7 @@ class WaterPet:
         self._choose_edge_destination()
         left,top,right,bottom=self._screen_bounds()
         self.target_x=float(left if self.pet_x<(left+right)/2 else right-SMALL_WIDTH)
-        self.target_y=max(top,min(self.pet_y,bottom-SMALL_HEIGHT-42))
+        self.target_y=max(top,min(self.pet_y,bottom-SMALL_HEIGHT))
         self.walk_direction="left" if self.target_x<self.pet_x else "right"
         self.bored_walk_started=time.monotonic()
 
@@ -1516,7 +1516,7 @@ class WaterPet:
             return
         left, top, right, bottom = self._screen_bounds()
         target_x = max(left, min(pointer_x - SMALL_WIDTH // 2, right - SMALL_WIDTH))
-        target_y = max(top, min(pointer_y - SMALL_HEIGHT // 2, bottom - SMALL_HEIGHT - 42))
+        target_y = max(top, min(pointer_y - SMALL_HEIGHT // 2, bottom - SMALL_HEIGHT))
         if math.hypot(target_x - self.pet_x, target_y - self.pet_y) < 90:
             target_x = max(left, min(target_x + 180, right - SMALL_WIDTH))
         self.fetch_origin = (self.pet_x, self.pet_y)
@@ -2383,11 +2383,14 @@ class WaterPet:
             cx,cy=self.pet_x+SMALL_WIDTH/2,self.pet_y+SMALL_HEIGHT/2
             dx,dy=px-cx,py-cy;distance=math.hypot(dx,dy)
             self.motion_mode="following"
-            self.cursor_at_rest=distance<=140
-            if self.cursor_at_rest:return
             left,top,right,bottom=self._screen_bounds()
-            tx=max(left,min(px-dx/distance*140-SMALL_WIDTH/2,right-SMALL_WIDTH))
-            ty=max(top,min(py-dy/distance*140-SMALL_HEIGHT/2,bottom-SMALL_HEIGHT-42))
+            near_edge = (px <= left+SMALL_WIDTH/2 or px >= right-SMALL_WIDTH/2
+                         or py <= top+SMALL_HEIGHT/2 or py >= bottom-SMALL_HEIGHT/2)
+            standoff = 0 if near_edge else 140
+            self.cursor_at_rest=distance<=standoff
+            if self.cursor_at_rest:return
+            tx=max(left,min(px-dx/distance*standoff-SMALL_WIDTH/2,right-SMALL_WIDTH))
+            ty=max(top,min(py-dy/distance*standoff-SMALL_HEIGHT/2,bottom-SMALL_HEIGHT))
             vx,vy=tx-self.pet_x,ty-self.pet_y;remaining=math.hypot(vx,vy)
             if remaining<1:
                 self.cursor_at_rest=True
@@ -2441,7 +2444,7 @@ class WaterPet:
                 top,
                 min(
                     self.pet_y + (away_y / length) * escape_distance,
-                    bottom - SMALL_HEIGHT - 42,
+                    bottom - SMALL_HEIGHT,
                 ),
             )
             self.walk_direction = "right" if self.target_x >= self.pet_x else "left"
@@ -2759,17 +2762,17 @@ class WaterPet:
     def _choose_edge_destination(self) -> None:
         left, top, right, bottom = self._screen_bounds()
         max_x = right - SMALL_WIDTH
-        max_y = bottom - SMALL_HEIGHT - 42
-        side = random.choice(("left", "right", "bottom"))
+        max_y = bottom - SMALL_HEIGHT
+        side = random.choice(("left", "right", "top", "bottom"))
         if side == "left":
             self.target_x = float(left)
-            self.target_y = float(random.randint(top + 48, max(top + 48, max_y)))
+            self.target_y = float(random.randint(top, max(top, max_y)))
         elif side == "right":
             self.target_x = float(max_x)
-            self.target_y = float(random.randint(top + 48, max(top + 48, max_y)))
+            self.target_y = float(random.randint(top, max(top, max_y)))
         else:
             self.target_x = float(random.randint(left, max(left, max_x)))
-            self.target_y = float(max_y)
+            self.target_y = float(top if side == "top" else max_y)
         self.walk_direction = "right" if self.target_x >= self.pet_x else "left"
         speed_ranges = {
             "Calm": (1.9, 2.8),
@@ -2780,9 +2783,14 @@ class WaterPet:
         self.motion_mode = "walking"
 
     def _choose_destination(self) -> None:
+        # Regular roaming should actually visit the available edges, not only
+        # random interior points whose chance of landing on an edge is tiny.
+        if random.random() < 0.22:
+            self._choose_edge_destination()
+            return
         left, top, right, bottom = self._screen_bounds()
         max_x = right - SMALL_WIDTH
-        max_y = bottom - SMALL_HEIGHT - 42
+        max_y = bottom - SMALL_HEIGHT
 
         ledges = self._visible_window_ledges()
         if ledges and random.random() < 0.28:
@@ -2844,7 +2852,7 @@ class WaterPet:
             next_x = float(right - SMALL_WIDTH)
             self.velocity_x = -abs(self.velocity_x) * 0.68
 
-        landing_y = float(bottom - SMALL_HEIGHT - 42)
+        landing_y = float(bottom - SMALL_HEIGHT)
         if self.velocity_y >= 0:
             center_x = next_x + SMALL_WIDTH / 2
             current_bottom = self.pet_y + SMALL_HEIGHT - 8

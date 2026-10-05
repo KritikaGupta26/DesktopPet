@@ -1,3 +1,7 @@
+# v27 edge-travel update
+
+Supersedes previous 42px bottom clearance and manual walking side inset. Ordinary roaming can visit all four edges. Cursor Follow uses zero additional standoff near the screen boundary while keeping the interior 140px distance. Clamp the complete 180×184 pet canvas within physical desktop bounds, including negative virtual-desktop coordinates. Preserve artwork padding, reminder cloud bounds, v26 water hours and all other behaviours. No walk artwork is replaced in this patch.
+
 # v26 update contract
 
 This update supersedes the older v25 log and cloud instructions below. Add persisted optional daily water hours in Behaviour with From/Until fields, validation, overnight support and start-inclusive/end-exclusive boundaries. Equal hours mean all day. Existing installations default to the old all-day behaviour until enabled. Scheduled offers close at the end; snoozes wait for the next window when needed. Manual Water now works at any time. Preserve the eight-second Not yet recovery and water history.

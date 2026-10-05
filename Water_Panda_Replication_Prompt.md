@@ -1,3 +1,9 @@
+# v26 update contract
+
+This update supersedes the older v25 log and cloud instructions below. Add persisted optional daily water hours in Behaviour with From/Until fields, validation, overnight support and start-inclusive/end-exclusive boundaries. Equal hours mean all day. Existing installations default to the old all-day behaviour until enabled. Scheduled offers close at the end; snoozes wait for the next window when needed. Manual Water now works at any time. Preserve the eight-second Not yet recovery and water history.
+
+Play on log directly uses cheerful setup for four seconds and balancing for twelve seconds, without bored edge travel. Keep the bored edge routine separate. Increase cloud main/body/button text to readable 15/13/12–14 pixel fonts; compact button labels retain ml context. Do not claim unrelated walking defects fixed without concrete reproduction.
+
 # Water Panda v25: complete replication and continuation prompt
 
 Copy the instruction below into a coding agent with the full DesktopPet repository and original assets available. A prompt alone cannot recreate identical generated artwork; source sheets and exported assets are part of the specification. Continue the existing repository rather than starting an unrelated pet.

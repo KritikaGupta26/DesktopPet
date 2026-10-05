@@ -29,8 +29,8 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(convert(0), 0)
         self.assertEqual(convert(255), 255)
 
-    def test_version_is_25(self):
-        self.assertIn("APP_VERSION = 25", self.source)
+    def test_version_is_26(self):
+        self.assertIn("APP_VERSION = 26", self.source)
 
     def test_panda_face_icon_exists(self):
         icon = ASSETS / "panda.ico"

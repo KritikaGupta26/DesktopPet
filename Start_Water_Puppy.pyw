@@ -86,6 +86,30 @@ def fit_cloud_text(text: str, measure, width: int, max_lines: int) -> str:
         remaining = remaining[len(chunk):].lstrip()
     return "\n".join(lines)
 
+def parse_water_clock(value: str) -> str:
+    value = str(value).strip().upper()
+    for pattern in ("%H:%M", "%I:%M %p", "%I %p"):
+        try:
+            return datetime.strptime(value, pattern).strftime("%H:%M")
+        except ValueError:
+            pass
+    raise ValueError("Use a time such as 09:00, 9 AM or 9:30 PM.")
+
+def water_window_contains(now: datetime, start: str, end: str) -> bool:
+    start = parse_water_clock(start)
+    end = parse_water_clock(end)
+    clock = now.strftime("%H:%M")
+    if start == end:
+        return True
+    return start <= clock < end if start < end else clock >= start or clock < end
+
+def next_water_window_time(now: datetime, start: str, end: str) -> datetime:
+    if water_window_contains(now, start, end):
+        return now
+    hour, minute = map(int, parse_water_clock(start).split(":"))
+    candidate = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    return candidate if candidate > now else candidate + timedelta(days=1)
+
 def normalize_standing_sprite(sprite: Image.Image) -> Image.Image:
     # One scale for the entire idle row, with the same ground anchor as walking.
     enlarged = sprite.resize((625, 625), Image.Resampling.LANCZOS)
@@ -96,7 +120,7 @@ def normalize_standing_sprite(sprite: Image.Image) -> Image.Image:
 
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 25
+APP_VERSION = 26
 REMINDER_MINUTES = 30
 WATER_DECLINE_SECONDS = 8
 WALK_FRAME_ORDER = (0, 1, 2, 4, 5, 6)
@@ -769,6 +793,11 @@ class WaterPet:
         self.movement_minutes = tk.IntVar(
             value=self.settings["movement_minutes"]
         )
+        self.water_window_enabled = tk.BooleanVar(value=self.settings["water_window_enabled"])
+        self.water_start = tk.StringVar(value=self.settings["water_start"])
+        self.water_end = tk.StringVar(value=self.settings["water_end"])
+        self.water_schedule_feedback = tk.StringVar(value="")
+        self.water_prompt_manual = False
         self.state = "normal"
         self.water_prompt_text = random.choice(WATER_PROMPTS)
         self.frame = 0
@@ -1036,7 +1065,7 @@ class WaterPet:
         elif key == "groom":self._play_test_animation("groom",sum(duration for _,duration in GROOM_SEQUENCE))
         elif key == "feed":self.feed_panda()
         elif key == "fetch":self.start_fetch()
-        elif key == "log":self._test_bored_at_edge()
+        elif key == "log":self._play_test_animation("log_play",16)
         elif key == "meditate":self._play_test_animation("meditate",20)
         elif key == "water":self.show_prompt()
         elif key == "watch":self.show_reminders()
@@ -1085,6 +1114,9 @@ class WaterPet:
             "home_y": None,
             "movement_enabled": True,
             "movement_minutes": 60,
+            "water_window_enabled": False,
+            "water_start": "09:00",
+            "water_end": "21:00",
             "pat_count": 0,
             "adopted_at": datetime.now().date().isoformat(),
         }
@@ -1094,6 +1126,12 @@ class WaterPet:
                 defaults.update(data)
         except (OSError, ValueError, TypeError):
             pass
+        defaults["water_window_enabled"] = bool(defaults.get("water_window_enabled", False))
+        for key, fallback in (("water_start", "09:00"), ("water_end", "21:00")):
+            try:
+                defaults[key] = parse_water_clock(defaults[key])
+            except ValueError:
+                defaults[key] = fallback
         defaults["pet"] = "panda"
         name = str(defaults.get("name", "Mochi")).strip()[:18]
         defaults["name"] = name or "Mochi"
@@ -1178,6 +1216,9 @@ class WaterPet:
             "home_y": self.settings.get("home_y"),
             "movement_enabled": self.movement_enabled.get(),
             "movement_minutes": self.movement_minutes.get(),
+            "water_window_enabled": self.water_window_enabled.get(),
+            "water_start": self.water_start.get(),
+            "water_end": self.water_end.get(),
             "pat_count": self.pat_count,
             "adopted_at": self.adopted_at,
         }
@@ -1575,9 +1616,50 @@ class WaterPet:
         )
         self._show_chatter("I’m back on sip duty!", seconds=4)
 
-    def show_prompt(self) -> None:
+    def _water_window_active(self, now: datetime) -> bool:
+        if not hasattr(self, "water_window_enabled") or not self.water_window_enabled.get():
+            return True
+        try:
+            return water_window_contains(now, self.water_start.get(), self.water_end.get())
+        except ValueError:
+            return False
+
+    def _water_schedule_settings_changed(self) -> None:
+        try:
+            start, end = parse_water_clock(self.water_start.get()), parse_water_clock(self.water_end.get())
+        except ValueError as error:
+            self.water_schedule_feedback.set(str(error))
+            return
+        self.water_start.set(start)
+        self.water_end.set(end)
+        self.water_schedule_feedback.set("Saved. Same start/end means all day; overnight ranges work too.")
+        self._save_settings()
+        now = datetime.now()
+        self.next_reminder = now + timedelta(minutes=REMINDER_MINUTES)
+        self._enforce_water_window(now)
+
+    def _enforce_water_window(self, now: datetime) -> None:
+        if self._water_window_active(now):
+            return
+        if getattr(self, "prompt_visible", False) and not getattr(self, "water_prompt_manual", False):
+            self.prompt_visible = False
+            self.state = "normal"
+            self._clear_attention()
+            self._resize_anchored(SMALL_WIDTH, SMALL_HEIGHT)
+        try:
+            next_start = next_water_window_time(now, self.water_start.get(), self.water_end.get())
+            self.next_reminder = max(self.next_reminder, next_start)
+        except ValueError:
+            pass
+
+    def show_prompt(self, *, automatic: bool = False) -> None:
         if self.active_alert_kind:
             return
+        if automatic and not self._water_window_active(datetime.now()):
+            self.state = "normal"
+            self._enforce_water_window(datetime.now())
+            return
+        self.water_prompt_manual = not automatic
         self._close_chatter_card()
         if not self.prompt_visible:
             self._resize_anchored(PROMPT_WIDTH, PROMPT_HEIGHT)
@@ -1622,10 +1704,10 @@ class WaterPet:
         self._cloud_shape(self.canvas, 194, 12, 350, 112, PALETTE["cream"], "#E0D4ED")
         self.canvas.create_oval(179, 123, 191, 135, fill=PALETTE["cream"], outline="#E0D4ED")
         self.canvas.create_oval(167, 142, 175, 150, fill=PALETTE["cream"], outline="#E0D4ED")
-        cloud_font = tkfont.Font(family="Segoe UI",size=-12)
-        message = fit_cloud_text(self.chatter_text,cloud_font.measure,126,5)
+        cloud_font = tkfont.Font(family="Segoe UI",size=-15)
+        message = fit_cloud_text(self.chatter_text,cloud_font.measure,126,4)
         self.canvas.create_text(272, 61, text=message, width=126,
-                                fill=PALETTE["ink"], font=("Segoe UI", -12), justify="center")
+                                fill=PALETTE["ink"], font=("Segoe UI", -15), justify="center")
 
     def _position_chatter_card(self) -> None:
         # Chatter shares the pet canvas, so dragging moves both together.
@@ -2049,8 +2131,9 @@ class WaterPet:
         if self.reminders_paused_until and not paused:
             self.reminders_paused_until = None
 
-        if not paused and not self.active_alert_kind and not self.prompt_visible and now >= self.next_reminder:
-            self.show_prompt()
+        self._enforce_water_window(now)
+        if not paused and not self.active_alert_kind and not self.prompt_visible and now >= self.next_reminder and self._water_window_active(now):
+            self.show_prompt(automatic=True)
 
         if (now - self.last_schedule_check).total_seconds() >= 10:
             self.last_schedule_check = now
@@ -2481,7 +2564,7 @@ class WaterPet:
         self._resize_anchored(SMALL_WIDTH, SMALL_HEIGHT)
         if getattr(self,"water_prompt_deferred",False):
             self.water_prompt_deferred = False
-            self.show_prompt()
+            self.show_prompt(automatic=not getattr(self, "water_prompt_manual", False))
 
     def _update_particles(self) -> None:
         alive: list[dict[str, float | str]] = []
@@ -3083,6 +3166,12 @@ class WaterPet:
         return
 
     def _draw_idle_mood(self) -> None:
+        if self.idle_mood == "log_play":
+            elapsed = (datetime.now()-self.idle_mood_started_at).total_seconds()
+            key = "sit_on_log" if elapsed < 4 else "balance_on_log"
+            index = min(3,int(elapsed)) if elapsed < 4 else int((elapsed-4)/0.8)%4
+            self.canvas.create_image(SMALL_WIDTH//2, PET_CENTER_Y, image=self._pack_image(key,index=index))
+            return
         if self.idle_mood in ("wind_down", "groom"):
             sequence = WIND_DOWN_SEQUENCE if self.idle_mood == "wind_down" else GROOM_SEQUENCE
             key, elapsed = sequence_pose(sequence,(datetime.now()-self.idle_mood_started_at).total_seconds())
@@ -3504,16 +3593,16 @@ class WaterPet:
         pose = f"clock_{min(5, int(elapsed / 0.22))}" if personal else f"hoop_{int(elapsed / 0.22) % 8}"
         self.canvas.create_image(90, 234, image=self._image(pose))
         if personal:
-            title_font = tkfont.Font(family="Segoe UI",size=-13,weight="bold")
+            title_font = tkfont.Font(family="Segoe UI",size=-15,weight="bold")
             title = fit_cloud_text(self.alert_title,title_font.measure,126,3)
         else:
             title = "Time to move!"
         self.canvas.create_text(272, 25, text=title, anchor="n", width=126,
-                                fill=PALETTE["ink"], font=("Segoe UI", -13, "bold"), justify="center")
+                                fill=PALETTE["ink"], font=("Segoe UI", -15, "bold"), justify="center")
         self.canvas.create_text(272, 97, text=self.alert_subtitle if personal else "Hula, stretch, or take a little walk.",
-                                width=126, fill=PALETTE["muted"], font=("Segoe UI", -11), justify="center")
+                                width=126, fill=PALETTE["muted"], font=("Segoe UI", -13), justify="center")
         self._answer_button(204, 126, 257, 150, "Done", PALETTE["purple"], PALETTE["purple_dark"], "alert_done")
-        self._answer_button(263, 126, 340, 150, "10 min later", PALETTE["teal"], "#439D87", "alert_snooze")
+        self._answer_button(263, 126, 340, 150, "10 min", PALETTE["teal"], "#439D87", "alert_snooze")
         self.canvas.tag_bind("alert_done", "<Button-1>", lambda event: self._complete_active_alert())
         self.canvas.tag_bind("alert_snooze", "<Button-1>", lambda event: self._snooze_active_alert())
 
@@ -3521,16 +3610,16 @@ class WaterPet:
         self._cloud_shape(self.canvas, 194, 6, 350, 159, PALETTE["cream"], "#E0D4ED")
         self.canvas.create_oval(179, 164, 191, 176, fill=PALETTE["cream"], outline="#E0D4ED")
         self.canvas.create_oval(167, 185, 175, 193, fill=PALETTE["cream"], outline="#E0D4ED")
-        self.canvas.create_text(272, 29, text="Water time?", fill=PALETTE["ink"], font=("Segoe UI", -13, "bold"))
-        self.canvas.create_text(272, 49, text=f"Today: {self.today_total_cache} ml", fill=PALETTE["muted"], font=("Segoe UI", -11))
+        self.canvas.create_text(272, 29, text="Water time?", fill=PALETTE["ink"], font=("Segoe UI", -15, "bold"))
+        self.canvas.create_text(272, 49, text=f"Today: {self.today_total_cache} ml", fill=PALETTE["muted"], font=("Segoe UI", -13))
         for x, amount, tag, color in ((204,100,"amount_100",PALETTE["teal"]),(251,200,"amount_200","#69B8E8"),(298,300,"amount_300",PALETTE["purple"])):
-            self._answer_button(x, 66, x+42, 91, f"{amount} ml", color, color, tag)
+            self._answer_button(x, 66, x+42, 91, f"{amount}", color, color, tag)
             self.canvas.tag_bind(tag, "<Button-1>", lambda event, ml=amount: self.record_water(ml, event))
         self._answer_button(204, 102, 258, 127, "Not yet", "#746F86", "#746F86", "not_yet")
-        self._answer_button(264, 102, 340, 127, "10 min later", PALETTE["purple"], PALETTE["purple_dark"], "water_snooze")
+        self._answer_button(264, 102, 340, 127, "10 min", PALETTE["purple"], PALETTE["purple_dark"], "water_snooze")
         self.canvas.tag_bind("not_yet", "<Button-1>", self.answer_not_yet)
         self.canvas.tag_bind("water_snooze", "<Button-1>", self.snooze_water)
-        self.canvas.create_text(272, 141, text="Pick an amount to log a sip", fill=PALETTE["muted"], font=("Segoe UI", -10))
+        self.canvas.create_text(272, 141, text="Amount in ml", fill=PALETTE["muted"], font=("Segoe UI", -13))
         elapsed = (datetime.now() - self.attention_started_at).total_seconds() if self.attention_started_at else 0
         if elapsed < 0.88:
             image = self._pack_image("jump",index=min(7,int(elapsed/0.11)))
@@ -3566,8 +3655,8 @@ class WaterPet:
             width=1,
             tags=tags,
         )
-        pixels = 11
-        while pixels > 9 and tkfont.Font(family="Segoe UI", size=-pixels, weight="bold").measure(label) > x2-x1-6:
+        pixels = 14
+        while pixels > 12 and tkfont.Font(family="Segoe UI", size=-pixels, weight="bold").measure(label) > x2-x1-6:
             pixels -= 1
         self.canvas.create_text(
             (x1 + x2) // 2,
@@ -3880,6 +3969,24 @@ class WaterPet:
 
         ttk.Label(behavior_frame, text="Behaviour and timing", style="Hero.TLabel").pack(anchor="w")
         ttk.Label(behavior_frame, text="Reminders take priority. Activities wait until the panda is free.", style="Sub.TLabel").pack(anchor="w", pady=(4,18))
+
+        water_card = ttk.LabelFrame(behavior_frame, text="Water reminder hours", padding=12)
+        water_card.pack(fill="x", pady=(0, 16))
+        ttk.Checkbutton(water_card, text="Only ask during these hours", variable=self.water_window_enabled,
+                        command=self._water_schedule_settings_changed).pack(anchor="w")
+        time_row = ttk.Frame(water_card)
+        time_row.pack(fill="x", pady=8)
+        for label, variable in (("From", self.water_start), ("Until", self.water_end)):
+            ttk.Label(time_row, text=label).pack(side="left", padx=(0,6))
+            entry = ttk.Entry(time_row, textvariable=variable, width=9)
+            entry.pack(side="left", padx=(0,12))
+            entry.bind("<FocusOut>", lambda event: self._water_schedule_settings_changed())
+            entry.bind("<Return>", lambda event: self._water_schedule_settings_changed())
+        ttk.Button(time_row, text="Save hours", command=self._water_schedule_settings_changed).pack(side="left")
+        ttk.Label(water_card, text="Every 30 minutes inside this window. Water now works anytime.",
+                  style="CardSub.TLabel", wraplength=540).pack(anchor="w")
+        ttk.Label(water_card, textvariable=self.water_schedule_feedback,
+                  style="CardSub.TLabel", wraplength=540).pack(anchor="w")
 
         ttk.Checkbutton(behavior_frame, text="Ask for bamboo when hungry", variable=self.hunger_enabled, command=self._behavior_settings_changed).pack(anchor="w",pady=3)
         ttk.Checkbutton(behavior_frame, text="Sleep when the computer is inactive", variable=self.sleep_enabled, command=self._behavior_settings_changed).pack(anchor="w", pady=3)

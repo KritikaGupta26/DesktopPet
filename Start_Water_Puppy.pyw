@@ -26,6 +26,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
 from PIL import Image, ImageTk
+from scene_playback import scene_pose, scene_duration
 from seasonal_themes import THEMES, PROP_KEYS, LUNAR_KEYS, resolve_theme, valid_birthday, normalize_custom_dates, festival_ranges
 
 
@@ -153,11 +154,11 @@ def windows_menu_active(thread_id: int | None = None) -> bool:
 
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 31
+APP_VERSION = 32
 REMINDER_MINUTES = 30
 WATER_DECLINE_SECONDS = 8
-WALK_FRAME_ORDER = (0, 1, 2, 4, 5, 6)
-WALK_STRIDE_PIXELS = 100
+WALK_FRAME_ORDER = tuple(range(8))
+WALK_STRIDE_PIXELS = 76
 TRANSPARENT_COLOR = "#00ff01"
 SMALL_WIDTH = 180
 SMALL_HEIGHT = 184
@@ -804,10 +805,11 @@ class WaterPet:
         self.birthday = tk.StringVar(value=self.settings["birthday"])
         self.theme_hemisphere = tk.StringVar(value=self.settings["theme_hemisphere"])
         self.thanksgiving_region = tk.StringVar(value=self.settings["thanksgiving_region"])
+        self.theme_activity_minutes = tk.IntVar(value=self.settings["theme_activity_minutes"])
         self.theme_activity_enabled = tk.BooleanVar(value=self.settings["theme_activity_enabled"])
         self.theme_enabled = {key: tk.BooleanVar(value=key in self.settings["theme_enabled"]) for key in PROP_KEYS}
         self.theme_feedback = tk.StringVar(value="")
-        self.next_theme_activity = datetime.now() + timedelta(minutes=20)
+        self.next_theme_activity = datetime.now() + timedelta(minutes=self.theme_activity_minutes.get())
         self.personality = tk.StringVar(value=self.settings["personality"])
         self.cursor_mode = tk.StringVar(value=self.settings["cursor_mode"])
         self.cursor_session_kind = ""
@@ -1034,17 +1036,24 @@ class WaterPet:
                     sprite = sprite.resize((180,180), Image.Resampling.LANCZOS)
                     sprite.putalpha(sprite.getchannel("A").point(lambda a: 255 if a >= 128 else 0))
                     loaded["panda"][f"pack_{variant}_{i}"] = ImageTk.PhotoImage(sprite)
-        self.theme_images = {}
-        for key in PROP_KEYS:
-            with Image.open(assets / f"theme_{key}.png") as opened:
-                sprite = opened.convert("RGBA")
-            sprite.thumbnail((32,32), Image.Resampling.LANCZOS)
-            sprite.putalpha(sprite.getchannel("A").point(lambda alpha: 255 if alpha >= 128 else 0))
-            self.theme_images[key] = ImageTk.PhotoImage(sprite)
+        self.scene_manifest = json.loads((assets / "scene_manifest.json").read_text(encoding="utf-8"))
+        self.scene_images = {}
+        for key, metadata in self.scene_manifest.items():
+            self.scene_images[key] = []
+            for index in range(metadata["frames"]):
+                with Image.open(assets / f"scene_{key}_{index}.png") as opened:
+                    sprite = opened.convert("RGBA").resize((180,180), Image.Resampling.LANCZOS)
+                sprite.putalpha(sprite.getchannel("A").point(lambda a:255 if a>=128 else 0))
+                self.scene_images[key].append(ImageTk.PhotoImage(sprite))
         return loaded
 
     def _pack_image(self, key: str, elapsed: float = 0.0, index: int | None = None):
         metadata = self.pack_manifest[key]
+        if index is None and metadata.get("playback_order"):
+            order=metadata["playback_order"]
+            slot=max(0,int(elapsed/metadata["seconds_per_frame"]))
+            slot=slot%len(order) if metadata["mode"]=="loop" else min(len(order)-1,slot)
+            index=order[slot]
         if index is None and metadata.get("frame_seconds"):
             timings = metadata["frame_seconds"]
             position = max(0,elapsed) % sum(timings) if metadata["mode"] == "loop" else max(0,elapsed)
@@ -1124,8 +1133,8 @@ class WaterPet:
         elif key == "groom":self._play_test_animation("groom",sum(duration for _,duration in GROOM_SEQUENCE))
         elif key == "feed":self.feed_panda()
         elif key == "fetch":self.start_fetch()
-        elif key == "log":self._play_test_animation("log_play",16)
-        elif key == "meditate":self._play_test_animation("meditate",20)
+        elif key == "log":self._play_test_animation("log_play",scene_duration(self.scene_manifest["log"]))
+        elif key == "meditate":self._play_test_animation("meditate",scene_duration(self.scene_manifest["meditate"]))
         elif key == "water":self.show_prompt()
         elif key == "watch":self.show_reminders()
         elif key == "movement":
@@ -1158,6 +1167,7 @@ class WaterPet:
             "theme_hemisphere": "Northern",
             "thanksgiving_region": "US",
             "theme_activity_enabled": True,
+            "theme_activity_minutes": 20,
             "theme_enabled": list(PROP_KEYS),
             "festival_dates": {},
             "name": "Mochi",
@@ -1211,6 +1221,10 @@ class WaterPet:
             defaults["thanksgiving_region"] = "US"
         enabled = defaults.get("theme_enabled")
         defaults["theme_enabled"] = [key for key in enabled if isinstance(key,str) and key in PROP_KEYS] if isinstance(enabled,list) else list(PROP_KEYS)
+        try:
+            defaults["theme_activity_minutes"] = max(5,min(120,int(defaults.get("theme_activity_minutes",20))))
+        except (TypeError,ValueError):
+            defaults["theme_activity_minutes"] = 20
         defaults["theme_activity_enabled"] = bool(defaults.get("theme_activity_enabled", True))
         defaults["festival_dates"] = normalize_custom_dates(defaults.get("festival_dates"))
         defaults["pet"] = "panda"
@@ -1299,6 +1313,7 @@ class WaterPet:
             "theme_hemisphere": self.theme_hemisphere.get(),
             "thanksgiving_region": self.thanksgiving_region.get(),
             "theme_activity_enabled": self.theme_activity_enabled.get(),
+            "theme_activity_minutes": self.theme_activity_minutes.get(),
             "theme_enabled": [key for key, value in self.theme_enabled.items() if value.get()],
             "festival_dates": self.settings.get("festival_dates", {}),
             "home_x": self.settings.get("home_x"),
@@ -2393,15 +2408,29 @@ class WaterPet:
                              self.thanksgiving_region.get())
 
     def _draw_theme_prop(self) -> None:
+        # A themed full-body idle pose replaces the body, never a tiny sticker.
         key = self._current_theme()
-        # Grounded companion props stay beside the panda, not pasted across
-        # its face/limbs. Hide during travel, airborne actions and reminders.
         if (key == "classic" or self.prompt_visible or self.active_alert_kind or self.dragging
                 or self.motion_mode != "idle" or self.idle_mood or self.state != "normal"):
             return
-        image = getattr(self, "theme_images", {}).get(key)
-        if image is not None:
-            self.canvas.create_image(22, 165, image=image, tags="season_prop")
+        frames = getattr(self, "scene_images", {}).get(key)
+        if frames:
+            body = next((item for item in self.canvas.find_all() if self.canvas.type(item)=="image"),None)
+            if body:
+                self.canvas.itemconfigure(body, image=frames[0], tags="season_body")
+
+    def _play_theme_scene(self, key: str) -> None:
+        if key not in getattr(self, "scene_manifest", {}):
+            return
+        if self.prompt_visible or self.active_alert_kind or self.dragging or self.state == "sad":
+            return
+        self._close_chatter_card()
+        self._play_test_animation("theme:"+key, scene_duration(self.scene_manifest[key]))
+
+    def _draw_scene(self, key: str, elapsed: float) -> None:
+        index = scene_pose(self.scene_manifest[key],elapsed)
+        self.canvas.create_image(SMALL_WIDTH//2,PET_CENTER_Y,
+                                 image=self.scene_images[key][index], tags=("scene_body", "scene_"+key))
 
     def _check_theme_activity(self, now: datetime) -> None:
         if not hasattr(self, "theme_activity_enabled") or not self.theme_activity_enabled.get():
@@ -2413,10 +2442,9 @@ class WaterPet:
                 or self._studio_is_open() or self.hungry):
             return
         key = self._current_theme()
-        self.next_theme_activity = now + timedelta(minutes=20)
-        activity = THEMES[key][3]
-        if activity:
-            self._play_activity(activity)
+        self.next_theme_activity = now + timedelta(minutes=self.theme_activity_minutes.get() if hasattr(self,"theme_activity_minutes") else 20)
+        if key != "classic":
+            self._play_theme_scene(key)
             self._show_chatter(THEMES[key][4][0], seconds=4)
 
     def _update_inactivity_behavior(self, now: datetime) -> None:
@@ -3332,11 +3360,12 @@ class WaterPet:
         return
 
     def _draw_idle_mood(self) -> None:
+        elapsed = (datetime.now()-self.idle_mood_started_at).total_seconds()
+        if self.idle_mood.startswith("theme:"):
+            self._draw_scene(self.idle_mood.split(":",1)[1], elapsed)
+            return
         if self.idle_mood == "log_play":
-            elapsed = (datetime.now()-self.idle_mood_started_at).total_seconds()
-            key = "sit_on_log" if elapsed < 4 else "balance_on_log"
-            index = min(3,int(elapsed)) if elapsed < 4 else int((elapsed-4)/0.8)%4
-            self.canvas.create_image(SMALL_WIDTH//2, PET_CENTER_Y, image=self._pack_image(key,index=index))
+            self._draw_scene("log", elapsed)
             return
         if self.idle_mood in ("wind_down", "groom"):
             sequence = WIND_DOWN_SEQUENCE if self.idle_mood == "wind_down" else GROOM_SEQUENCE
@@ -3344,8 +3373,7 @@ class WaterPet:
             self._draw_pack_animation(key, elapsed)
             return
         if self.idle_mood == "meditate":
-            elapsed=(datetime.now()-self.idle_mood_started_at).total_seconds()
-            self.canvas.create_image(SMALL_WIDTH//2,PET_CENTER_Y+math.sin(elapsed*1.4),image=self._image("meditate"))
+            self._draw_scene("meditate", elapsed)
             return
         if self.idle_mood=="bored":
             self._draw_bored_sequence((datetime.now()-self.idle_mood_started_at).total_seconds())
@@ -3943,18 +3971,22 @@ class WaterPet:
 
     def _preview_theme(self) -> None:
         key = self._current_theme()
-        activity = THEMES[key][3]
-        if activity:
-            self._play_activity(activity)
+        self._play_theme_scene(key)
         self._show_chatter(THEMES[key][4][0], seconds=5)
 
     def _theme_settings_changed(self) -> None:
         try:
             self.birthday.set(valid_birthday(self.birthday.get()))
-        except ValueError as error:
+            minutes=int(self.theme_activity_minutes.get())
+            if not 5<=minutes<=120:
+                raise ValueError("Scene interval must be 5 to 120 minutes.")
+        except (ValueError,tk.TclError) as error:
             self.theme_feedback.set(str(error))
             return
         self._save_settings()
+        self.next_theme_activity=datetime.now()+timedelta(minutes=self.theme_activity_minutes.get())
+        if self.idle_mood.startswith("theme:"):
+            self.idle_mood="";self.idle_mood_until=None
         self.theme_feedback.set(f"Active: {THEMES[self._current_theme()][0]}. Changes saved.")
         self._draw()
 
@@ -3970,7 +4002,7 @@ class WaterPet:
         canvas.bind("<Configure>", lambda event: canvas.itemconfigure(item, width=event.width))
         self.themes_canvas = canvas
         ttk.Label(body, text="Seasons & celebrations", style="Hero.TLabel").pack(anchor="w")
-        ttk.Label(body, text="Little props, cloud colours, greetings and gentle familiar activities.",
+        ttk.Label(body, text="Costumes and full seasonal scenes: ghost play, pumpkin carving, flowers, dancing and more.",
                   style="Sub.TLabel", wraplength=510).pack(anchor="w", pady=(4,14))
         labels = {"Auto": "Auto", **{key: value[0] for key, value in THEMES.items()}}
         choice = tk.StringVar(value=labels[self.theme_mode.get()])
@@ -3997,8 +4029,16 @@ class WaterPet:
         ttk.Button(row, text="Save", command=self._theme_settings_changed).pack(side="left", padx=8)
         ttk.Label(body, text="Optional. No birth year needed. February 29 celebrates on February 28 in other years.",
                   style="CardSub.TLabel", wraplength=510).pack(anchor="w")
-        ttk.Checkbutton(body, text="A gentle themed activity every 20 minutes when free", variable=self.theme_activity_enabled,
+        ttk.Checkbutton(body, text="Seasonal scenes when free", variable=self.theme_activity_enabled,
                         command=self._theme_settings_changed).pack(anchor="w", pady=8)
+        row = ttk.Frame(body)
+        row.pack(fill="x", pady=4)
+        ttk.Label(row,text="Scene interval (minutes)",width=24).pack(side="left")
+        ttk.Spinbox(row,from_=5,to=120,textvariable=self.theme_activity_minutes,width=6,
+                    command=self._theme_settings_changed).pack(side="left")
+        ttk.Button(row,text="Save",command=self._theme_settings_changed).pack(side="left",padx=8)
+        ttk.Label(body,text="Scenes wait for reminders, feeding, drag and Home. Roaming resumes after each scene.",
+                  style="CardSub.TLabel",wraplength=510).pack(anchor="w",pady=4)
         ttk.Label(body, text="Auto themes to include", style="CardTitle.TLabel").pack(anchor="w", pady=(12,6))
         options = ttk.Frame(body)
         options.pack(fill="x")

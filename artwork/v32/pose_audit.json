@@ -1,0 +1,3022 @@
+{
+  "version": 32,
+  "method": "Visual review of every original and exported contact-sheet cell; source versus runtime extraction inspection; automated padding, alpha, distinctness and dispatch tests. Visual inspection is not a guarantee of cinematic animation.",
+  "core_rows": {
+    "water_offer": {
+      "frames": 8,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_water_offer_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_water_offer_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_water_offer_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_water_offer_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_water_offer_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_water_offer_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/pack_water_offer_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/pack_water_offer_7.png"
+        }
+      ]
+    },
+    "walk": {
+      "frames": 8,
+      "review": "Replaced with eight individually generated low-stride poses, both mirrored directions; opposite arm/leg contact pairs, passing feet beneath body. No detached fragments.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_walk_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_walk_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_walk_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_walk_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_walk_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_walk_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/pack_walk_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/pack_walk_7.png"
+        }
+      ]
+    },
+    "run": {
+      "frames": 8,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_run_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_run_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_run_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_run_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_run_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_run_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/pack_run_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/pack_run_7.png"
+        }
+      ]
+    },
+    "jump": {
+      "frames": 8,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_jump_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_jump_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_jump_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_jump_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_jump_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_jump_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/pack_jump_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/pack_jump_7.png"
+        }
+      ]
+    },
+    "wave": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_wave_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_wave_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_wave_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_wave_3.png"
+        }
+      ]
+    },
+    "petting": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_petting_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_petting_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_petting_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_petting_3.png"
+        }
+      ]
+    },
+    "cursor_follow": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_cursor_follow_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_cursor_follow_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_cursor_follow_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_cursor_follow_3.png"
+        }
+      ]
+    },
+    "cursor_avoid": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_cursor_avoid_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_cursor_avoid_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_cursor_avoid_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_cursor_avoid_3.png"
+        }
+      ]
+    },
+    "happy_idle": {
+      "frames": 6,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_happy_idle_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_happy_idle_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_happy_idle_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_happy_idle_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_happy_idle_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_happy_idle_5.png"
+        }
+      ]
+    },
+    "ear_rub": {
+      "frames": 6,
+      "review": "Combined into grooming sequence.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_ear_rub_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_ear_rub_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_ear_rub_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_ear_rub_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_ear_rub_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_ear_rub_5.png"
+        }
+      ]
+    },
+    "bored_shuffle": {
+      "frames": 6,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_bored_shuffle_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_bored_shuffle_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_bored_shuffle_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_bored_shuffle_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_bored_shuffle_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_bored_shuffle_5.png"
+        }
+      ]
+    },
+    "sad": {
+      "frames": 6,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sad_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sad_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sad_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sad_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sad_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sad_5.png"
+        }
+      ]
+    },
+    "alternate_offer": {
+      "frames": 6,
+      "review": "Source retained for compatibility; water UI uses water_offer instead.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_alternate_offer_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_alternate_offer_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_alternate_offer_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_alternate_offer_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_alternate_offer_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_alternate_offer_5.png"
+        }
+      ]
+    },
+    "drink_water": {
+      "frames": 6,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_drink_water_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_drink_water_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_drink_water_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_drink_water_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_drink_water_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_drink_water_5.png"
+        }
+      ]
+    },
+    "watch": {
+      "frames": 6,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_watch_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_watch_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_watch_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_watch_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_watch_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_watch_5.png"
+        }
+      ]
+    },
+    "alternate_hoop": {
+      "frames": 6,
+      "review": "Source retained; movement reminder uses hula_hoop instead.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_alternate_hoop_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_alternate_hoop_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_alternate_hoop_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_alternate_hoop_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_alternate_hoop_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_alternate_hoop_5.png"
+        }
+      ]
+    },
+    "kung_fu": {
+      "frames": 6,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_kung_fu_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_kung_fu_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_kung_fu_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_kung_fu_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_kung_fu_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_kung_fu_5.png"
+        }
+      ]
+    },
+    "bamboo_hang": {
+      "frames": 6,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_bamboo_hang_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_bamboo_hang_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_bamboo_hang_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_bamboo_hang_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_bamboo_hang_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_bamboo_hang_5.png"
+        }
+      ]
+    },
+    "yawn_stretch": {
+      "frames": 6,
+      "review": "Playback order corrected to yawn, open-mouth, cover-mouth, stretch, settle.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_yawn_stretch_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_yawn_stretch_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_yawn_stretch_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_yawn_stretch_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_yawn_stretch_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_yawn_stretch_5.png"
+        }
+      ]
+    },
+    "sleep": {
+      "frames": 6,
+      "review": "Low curled body retained, not scaled to standing height.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sleep_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sleep_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sleep_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sleep_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sleep_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sleep_5.png"
+        }
+      ]
+    },
+    "hula_hoop": {
+      "frames": 8,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_hula_hoop_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_hula_hoop_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_hula_hoop_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_hula_hoop_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_hula_hoop_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_hula_hoop_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/pack_hula_hoop_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/pack_hula_hoop_7.png"
+        }
+      ]
+    },
+    "eat_bamboo": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_eat_bamboo_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_eat_bamboo_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_eat_bamboo_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_eat_bamboo_3.png"
+        }
+      ]
+    },
+    "carry_bamboo": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_carry_bamboo_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_carry_bamboo_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_carry_bamboo_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_carry_bamboo_3.png"
+        }
+      ]
+    },
+    "sit_on_log": {
+      "frames": 4,
+      "review": "Original source retained; live log uses new continuous scene.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sit_on_log_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sit_on_log_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sit_on_log_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sit_on_log_3.png"
+        }
+      ]
+    },
+    "balance_on_log": {
+      "frames": 4,
+      "review": "Original source retained; live log uses new continuous scene.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_balance_on_log_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_balance_on_log_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_balance_on_log_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_balance_on_log_3.png"
+        }
+      ]
+    },
+    "peekaboo": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_peekaboo_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_peekaboo_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_peekaboo_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_peekaboo_3.png"
+        }
+      ]
+    },
+    "chase_ball": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_chase_ball_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_chase_ball_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_chase_ball_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_chase_ball_3.png"
+        }
+      ]
+    },
+    "catch_ball": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_catch_ball_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_catch_ball_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_catch_ball_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_catch_ball_3.png"
+        }
+      ]
+    },
+    "victory": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_victory_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_victory_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_victory_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_victory_3.png"
+        }
+      ]
+    },
+    "bow": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_bow_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_bow_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_bow_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_bow_3.png"
+        }
+      ]
+    },
+    "greeting": {
+      "frames": 4,
+      "review": "Removed duplicate control; legacy settings route to wave.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_greeting_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_greeting_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_greeting_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_greeting_3.png"
+        }
+      ]
+    },
+    "clap": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_clap_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_clap_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_clap_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_clap_3.png"
+        }
+      ]
+    },
+    "blow_kiss": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_blow_kiss_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_blow_kiss_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_blow_kiss_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_blow_kiss_3.png"
+        }
+      ]
+    },
+    "sploot": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sploot_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sploot_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sploot_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sploot_3.png"
+        }
+      ]
+    },
+    "side_roll": {
+      "frames": 4,
+      "review": "Removed as separate control; legacy settings route to forward_roll.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_side_roll_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_side_roll_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_side_roll_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_side_roll_3.png"
+        }
+      ]
+    },
+    "belly_scratch": {
+      "frames": 4,
+      "review": "Combined into grooming sequence.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_belly_scratch_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_belly_scratch_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_belly_scratch_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_belly_scratch_3.png"
+        }
+      ]
+    },
+    "lazy_stretch": {
+      "frames": 4,
+      "review": "Combined into wind-down sequence.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_lazy_stretch_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_lazy_stretch_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_lazy_stretch_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_lazy_stretch_3.png"
+        }
+      ]
+    },
+    "dance": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_dance_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_dance_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_dance_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_dance_3.png"
+        }
+      ]
+    },
+    "wiggle": {
+      "frames": 4,
+      "review": "Removed duplicate control; legacy settings route to dance.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_wiggle_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_wiggle_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_wiggle_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_wiggle_3.png"
+        }
+      ]
+    },
+    "sneeze": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sneeze_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sneeze_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sneeze_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sneeze_3.png"
+        }
+      ]
+    },
+    "hiccup": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_hiccup_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_hiccup_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_hiccup_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_hiccup_3.png"
+        }
+      ]
+    },
+    "sit_down": {
+      "frames": 4,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sit_down_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sit_down_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sit_down_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_sit_down_3.png"
+        }
+      ]
+    },
+    "wash_face": {
+      "frames": 4,
+      "review": "Combined into grooming sequence.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_wash_face_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_wash_face_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_wash_face_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_wash_face_3.png"
+        }
+      ]
+    },
+    "wake_up": {
+      "frames": 4,
+      "review": "Combined into wind-down sequence.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_wake_up_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_wake_up_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_wake_up_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_wake_up_3.png"
+        }
+      ]
+    },
+    "snore_sleep": {
+      "frames": 4,
+      "review": "Combined into wind-down control; no separate duplicate control.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_snore_sleep_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_snore_sleep_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_snore_sleep_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_snore_sleep_3.png"
+        }
+      ]
+    },
+    "fetch": {
+      "frames": 8,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_fetch_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_fetch_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_fetch_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_fetch_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_fetch_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_fetch_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/pack_fetch_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/pack_fetch_7.png"
+        }
+      ]
+    },
+    "forward_roll": {
+      "frames": 8,
+      "review": "Reviewed identity, visible limbs, prop grasp where present, complete silhouette, readable action and sequence order.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/pack_forward_roll_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/pack_forward_roll_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/pack_forward_roll_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/pack_forward_roll_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/pack_forward_roll_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/pack_forward_roll_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/pack_forward_roll_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/pack_forward_roll_7.png"
+        }
+      ]
+    }
+  },
+  "scenes": {
+    "autumn": {
+      "title": "Autumn leaves",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_autumn_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_autumn_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_autumn_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_autumn_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_autumn_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_autumn_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_autumn_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_autumn_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          0.6
+        ],
+        [
+          2,
+          0.6
+        ],
+        [
+          3,
+          0.6
+        ],
+        [
+          4,
+          0.6
+        ],
+        [
+          5,
+          0.6
+        ],
+        [
+          6,
+          0.6
+        ],
+        [
+          7,
+          2
+        ]
+      ]
+    },
+    "spooky": {
+      "title": "Ghost and pumpkin carving",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_spooky_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_spooky_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_spooky_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_spooky_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_spooky_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_spooky_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_spooky_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_spooky_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0.7
+        ],
+        [
+          2,
+          0.7
+        ],
+        [
+          0,
+          0.6
+        ],
+        [
+          2,
+          0.7
+        ],
+        [
+          3,
+          0.8
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          0.8
+        ],
+        [
+          4,
+          0.4
+        ],
+        [
+          5,
+          0.8
+        ],
+        [
+          6,
+          2
+        ],
+        [
+          7,
+          2
+        ]
+      ]
+    },
+    "holi": {
+      "title": "Playful colours",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_holi_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_holi_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_holi_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_holi_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_holi_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_holi_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_holi_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_holi_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          0.6
+        ],
+        [
+          2,
+          0.6
+        ],
+        [
+          3,
+          0.6
+        ],
+        [
+          4,
+          0.6
+        ],
+        [
+          5,
+          0.6
+        ],
+        [
+          6,
+          0.6
+        ],
+        [
+          7,
+          2
+        ]
+      ]
+    },
+    "navratri": {
+      "title": "Dandiya dance",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_navratri_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_navratri_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_navratri_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_navratri_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_navratri_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_navratri_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_navratri_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_navratri_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          0.8
+        ],
+        [
+          1,
+          0.6
+        ],
+        [
+          2,
+          0.6
+        ],
+        [
+          3,
+          0.5
+        ],
+        [
+          4,
+          0.6
+        ],
+        [
+          5,
+          0.5
+        ],
+        [
+          6,
+          0.6
+        ],
+        [
+          3,
+          0.5
+        ],
+        [
+          4,
+          0.6
+        ],
+        [
+          5,
+          0.5
+        ],
+        [
+          6,
+          0.6
+        ],
+        [
+          7,
+          1.5
+        ]
+      ]
+    },
+    "thanksgiving": {
+      "title": "Harvest and gratitude",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_thanksgiving_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_thanksgiving_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_thanksgiving_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_thanksgiving_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_thanksgiving_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_thanksgiving_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_thanksgiving_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_thanksgiving_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          0.6
+        ],
+        [
+          2,
+          0.6
+        ],
+        [
+          3,
+          0.6
+        ],
+        [
+          4,
+          0.6
+        ],
+        [
+          5,
+          0.6
+        ],
+        [
+          6,
+          0.6
+        ],
+        [
+          7,
+          2
+        ]
+      ]
+    },
+    "christmas": {
+      "title": "Decorate a tiny tree",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_christmas_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_christmas_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_christmas_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_christmas_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_christmas_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_christmas_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_christmas_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_christmas_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          0.6
+        ],
+        [
+          2,
+          0.6
+        ],
+        [
+          3,
+          0.6
+        ],
+        [
+          4,
+          0.6
+        ],
+        [
+          5,
+          0.6
+        ],
+        [
+          6,
+          0.6
+        ],
+        [
+          7,
+          2
+        ]
+      ]
+    },
+    "diwali": {
+      "title": "Diya and rangoli",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_diwali_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_diwali_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_diwali_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_diwali_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_diwali_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_diwali_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_diwali_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_diwali_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          0.6
+        ],
+        [
+          2,
+          0.6
+        ],
+        [
+          3,
+          0.6
+        ],
+        [
+          4,
+          0.6
+        ],
+        [
+          5,
+          0.6
+        ],
+        [
+          6,
+          0.6
+        ],
+        [
+          7,
+          2
+        ]
+      ]
+    },
+    "new_year": {
+      "title": "Countdown and confetti",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_new_year_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_new_year_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_new_year_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_new_year_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_new_year_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_new_year_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_new_year_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_new_year_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          0.6
+        ],
+        [
+          2,
+          0.6
+        ],
+        [
+          3,
+          0.6
+        ],
+        [
+          4,
+          0.6
+        ],
+        [
+          5,
+          0.6
+        ],
+        [
+          6,
+          0.6
+        ],
+        [
+          7,
+          2
+        ]
+      ]
+    },
+    "valentine": {
+      "title": "Gift and affection",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_valentine_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_valentine_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_valentine_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_valentine_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_valentine_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_valentine_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_valentine_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_valentine_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          0.6
+        ],
+        [
+          2,
+          0.6
+        ],
+        [
+          3,
+          0.6
+        ],
+        [
+          4,
+          0.6
+        ],
+        [
+          5,
+          0.6
+        ],
+        [
+          6,
+          0.6
+        ],
+        [
+          7,
+          2
+        ]
+      ]
+    },
+    "birthday": {
+      "title": "Cake and wish",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_birthday_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_birthday_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_birthday_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_birthday_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_birthday_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_birthday_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_birthday_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_birthday_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          0.6
+        ],
+        [
+          2,
+          0.6
+        ],
+        [
+          3,
+          0.6
+        ],
+        [
+          4,
+          0.6
+        ],
+        [
+          5,
+          0.6
+        ],
+        [
+          6,
+          0.6
+        ],
+        [
+          7,
+          2
+        ]
+      ]
+    },
+    "krishna": {
+      "title": "Flute melody",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_krishna_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_krishna_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_krishna_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_krishna_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_krishna_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_krishna_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_krishna_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_krishna_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          0.5
+        ],
+        [
+          2,
+          0.6
+        ],
+        [
+          3,
+          1.2
+        ],
+        [
+          4,
+          0.8
+        ],
+        [
+          5,
+          0.8
+        ],
+        [
+          4,
+          0.8
+        ],
+        [
+          5,
+          0.8
+        ],
+        [
+          6,
+          0.6
+        ],
+        [
+          7,
+          1.5
+        ]
+      ]
+    },
+    "shiva": {
+      "title": "Quiet meditation and damru",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_shiva_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_shiva_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_shiva_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_shiva_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_shiva_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_shiva_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_shiva_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_shiva_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          0.6
+        ],
+        [
+          2,
+          0.6
+        ],
+        [
+          3,
+          0.6
+        ],
+        [
+          4,
+          0.6
+        ],
+        [
+          5,
+          0.6
+        ],
+        [
+          6,
+          0.6
+        ],
+        [
+          7,
+          2
+        ]
+      ]
+    },
+    "spring": {
+      "title": "Garden and blossoms",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_spring_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_spring_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_spring_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_spring_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_spring_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_spring_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_spring_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_spring_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          0.6
+        ],
+        [
+          2,
+          0.6
+        ],
+        [
+          3,
+          0.6
+        ],
+        [
+          4,
+          0.6
+        ],
+        [
+          5,
+          0.6
+        ],
+        [
+          6,
+          0.6
+        ],
+        [
+          7,
+          2
+        ]
+      ]
+    },
+    "summer": {
+      "title": "Fan and shade",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_summer_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_summer_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_summer_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_summer_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_summer_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_summer_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_summer_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_summer_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          0.6
+        ],
+        [
+          2,
+          0.6
+        ],
+        [
+          3,
+          0.6
+        ],
+        [
+          4,
+          0.6
+        ],
+        [
+          5,
+          0.6
+        ],
+        [
+          6,
+          0.6
+        ],
+        [
+          7,
+          2
+        ]
+      ]
+    },
+    "winter": {
+      "title": "Scarf and snow",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_winter_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_winter_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_winter_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_winter_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_winter_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_winter_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_winter_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_winter_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          0.6
+        ],
+        [
+          1,
+          0.6
+        ],
+        [
+          2,
+          0.6
+        ],
+        [
+          3,
+          0.6
+        ],
+        [
+          4,
+          0.6
+        ],
+        [
+          5,
+          0.6
+        ],
+        [
+          6,
+          0.6
+        ],
+        [
+          7,
+          2
+        ]
+      ]
+    },
+    "log": {
+      "title": "log",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_log_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_log_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_log_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_log_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_log_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_log_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_log_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_log_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          0.8
+        ],
+        [
+          1,
+          0.8
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          3,
+          0.8
+        ],
+        [
+          4,
+          1.2
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          4,
+          0.7
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          4,
+          0.7
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          4,
+          0.7
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          2
+        ]
+      ]
+    },
+    "meditate": {
+      "title": "meditate",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_meditate_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_meditate_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_meditate_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_meditate_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_meditate_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_meditate_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_meditate_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_meditate_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          0.65
+        ],
+        [
+          2,
+          0.8
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          2.8
+        ],
+        [
+          5,
+          2.8
+        ],
+        [
+          4,
+          2.8
+        ],
+        [
+          5,
+          2.8
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ]
+      ]
+    },
+    "ganesh": {
+      "title": "Modak and flowers",
+      "frames": 8,
+      "review": "Reviewed all eight cells: whole body, scale through standing/sitting, costume, limb attachment, held props and ordered action. Unequal atlas gutters and neighbouring row/column fragments corrected during extraction.",
+      "poses": [
+        {
+          "index": 0,
+          "visual_review": "reviewed",
+          "export": "assets/scene_ganesh_0.png"
+        },
+        {
+          "index": 1,
+          "visual_review": "reviewed",
+          "export": "assets/scene_ganesh_1.png"
+        },
+        {
+          "index": 2,
+          "visual_review": "reviewed",
+          "export": "assets/scene_ganesh_2.png"
+        },
+        {
+          "index": 3,
+          "visual_review": "reviewed",
+          "export": "assets/scene_ganesh_3.png"
+        },
+        {
+          "index": 4,
+          "visual_review": "reviewed",
+          "export": "assets/scene_ganesh_4.png"
+        },
+        {
+          "index": 5,
+          "visual_review": "reviewed",
+          "export": "assets/scene_ganesh_5.png"
+        },
+        {
+          "index": 6,
+          "visual_review": "reviewed",
+          "export": "assets/scene_ganesh_6.png"
+        },
+        {
+          "index": 7,
+          "visual_review": "reviewed",
+          "export": "assets/scene_ganesh_7.png"
+        }
+      ],
+      "timeline": [
+        [
+          0,
+          0.7
+        ],
+        [
+          1,
+          0.7
+        ],
+        [
+          2,
+          0.7
+        ],
+        [
+          3,
+          0.7
+        ],
+        [
+          4,
+          0.7
+        ],
+        [
+          5,
+          0.7
+        ],
+        [
+          6,
+          0.7
+        ],
+        [
+          7,
+          2
+        ]
+      ]
+    }
+  },
+  "limitations": [
+    "Seasonal full-body costumes appear at rest and in seasonal scenes. Classic locomotion, feeding and reminder artwork stays in its own compatible wardrobe; 27-by-16 fully costumed variants are not supplied.",
+    "Scene sheets are chronological key poses with deliberate holds, not rigged motion-capture or continuously interpolated joint animation.",
+    "Festival dates are curated for 2026 and 2027 with editable local ranges; future lunar years require date updates.",
+    "Review covers bundled output and the packaged Windows test environment, not every possible user DPI or monitor arrangement."
+  ]
+}

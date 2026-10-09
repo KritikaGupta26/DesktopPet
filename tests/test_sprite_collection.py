@@ -57,8 +57,8 @@ class SpriteCollectionTests(unittest.TestCase):
         pet=WaterPet.__new__(WaterPet);pet.pack_manifest=MANIFEST
         pet.images={'panda':{f'pack_walk{suffix}_{i}':f'{suffix}:{i}' for suffix in ('','_left') for i in range(8)}}
         for i in range(8):
-            self.assertEqual(pet._image(f'walk_right_{i+1}'),f':{(0,1,2,4,5,6)[i%6]}')
-            self.assertEqual(pet._image(f'walk_left_{i+1}'),f'_left:{(0,1,2,4,5,6)[i%6]}')
+            self.assertEqual(pet._image(f'walk_right_{i+1}'),f':{i}')
+            self.assertEqual(pet._image(f'walk_left_{i+1}'),f'_left:{i}')
 
     def test_sleep_has_no_fragment_from_preceding_row(self):
         for i in range(6):
@@ -186,7 +186,7 @@ class SpriteCollectionTests(unittest.TestCase):
 
     def test_new_walk_retains_previous_art_and_uses_matching_mirrors(self):
         from PIL import ImageOps,ImageChops
-        self.assertEqual(MANIFEST['walk']['selected_playback_frames'],[0,1,2,4,5,6])
+        self.assertEqual(MANIFEST['walk']['selected_playback_frames'],list(range(8)))
         self.assertTrue((ROOT/'artwork/walk_v25_source.png').is_file())
         for i in range(8):
             self.assertTrue((ROOT/f'artwork/v24_walk/pack_walk_{i}.png').is_file())

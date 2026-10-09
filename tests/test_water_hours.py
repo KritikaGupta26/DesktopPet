@@ -55,6 +55,7 @@ class WaterHoursTests(unittest.TestCase):
     def test_log_play_skips_bored_approach(self):
         p=WaterPet.__new__(WaterPet);p.prompt_visible=False;p.active_alert_kind="";p.dragging=False;p.state="normal"
         p._play_test_animation=Mock();p._test_bored_at_edge=Mock()
+        p.scene_manifest={"log":{"timeline":[[0,16]]}}
         p._play_activity("log")
         p._play_test_animation.assert_called_once_with("log_play",16)
         p._test_bored_at_edge.assert_not_called()

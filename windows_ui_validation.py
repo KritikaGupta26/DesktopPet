@@ -12,7 +12,7 @@ import traceback
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from PIL import ImageGrab
+from PIL import Image, ImageGrab
 
 
 def run_validation(pet_type, output_path: Path) -> None:
@@ -356,11 +356,11 @@ def run_validation(pet_type, output_path: Path) -> None:
             clear_action()
             app.theme_mode.set("diwali")
             app._draw()
-            check("Theme prop is rendered on panda canvas", len(app.canvas.find_withtag("season_prop")) == 1)
+            check("Full-body themed idle replaces sticker", len(app.canvas.find_withtag("season_body")) == 1)
             snapshot("theme_diwali_idle")
             app.show_prompt()
             app._draw()
-            check("Festival prop stays out of water offer", not app.canvas.find_withtag("season_prop"))
+            check("Seasonal costume yields to water offer", not app.canvas.find_withtag("season_body"))
             check("Festival tint reaches water cloud", any(app.canvas.itemcget(i,"fill") == "#FFF2D9" for i in app.canvas.find_withtag("cloud") if app.canvas.type(i)=="polygon"))
             snapshot("theme_diwali_water")
             app.answer_not_yet()
@@ -368,11 +368,58 @@ def run_validation(pet_type, output_path: Path) -> None:
             for key in from_module.PROP_KEYS:
                 app.theme_mode.set(key)
                 app._draw()
-                check(f"Festival prop loaded: {key}", bool(app.canvas.find_withtag("season_prop")))
+                check(f"Full-body theme loaded: {key}", bool(app.canvas.find_withtag("season_body")))
+            # Verify every exported pose through the packaged renderer, then
+            # capture a sheet of actual Windows output for each scene.
+            app.theme_mode.set("classic")
+            for key,metadata in app.scene_manifest.items():
+                clear_action()
+                app._resize_anchored(180,184)
+                contact=Image.new("RGB",(720,368),"#f4eadd")
+                seen=set();elapsed=0
+                for index,seconds in metadata["timeline"]:
+                    if index not in seen:
+                        seen.add(index)
+                        app.idle_mood="log_play" if key=="log" else "meditate" if key=="meditate" else "theme:"+key
+                        app.idle_mood_until=datetime.now()+timedelta(minutes=1)
+                        app.idle_mood_started_at=datetime.now()-timedelta(seconds=elapsed+seconds/2)
+                        app._draw();app.root.update_idletasks()
+                        body=app.canvas.find_withtag("scene_body")
+                        check(f"Packaged scene pose: {key}:{index}",len(body)==1 and app.canvas.itemcget(body[0],"image")==str(app.scene_images[key][index]))
+                        check(f"Scene canvas bounds: {key}:{index}",app.canvas.bbox(body[0])==(0,4,180,184))
+                        ctypes.windll.dwmapi.DwmFlush()
+                        shot=ImageGrab.grab(bbox=(app.root.winfo_rootx(),app.root.winfo_rooty(),app.root.winfo_rootx()+180,app.root.winfo_rooty()+184),all_screens=True)
+                        contact.paste(shot,((index%4)*180,(index//4)*184))
+                    elapsed+=seconds
+                filename=f"scene_{key}_all_poses.png";contact.save(output_path/filename)
+                report["screenshots"].append(filename)
+            clear_action()
+            for direction in ("left","right"):
+                contact=Image.new("RGB",(720,368),"#f4eadd")
+                for index in range(8):
+                    app.canvas.delete("all")
+                    expected=app._image(f"walk_{direction}_{index+1}")
+                    app.canvas.create_image(90,94,image=expected)
+                    app.root.update_idletasks();ctypes.windll.dwmapi.DwmFlush()
+                    shot=ImageGrab.grab(bbox=(app.root.winfo_rootx(),app.root.winfo_rooty(),app.root.winfo_rootx()+180,app.root.winfo_rooty()+184),all_screens=True)
+                    contact.paste(shot,((index%4)*180,(index//4)*184))
+                    check(f"Packaged gait frame: {direction}:{index}",True)
+                filename=f"walk_{direction}_all_poses.png";contact.save(output_path/filename);report["screenshots"].append(filename)
+            clear_action()
+            app.theme_mode.set("spooky")
+            app._play_theme_scene("spooky")
+            check("Ghost scene launches as own animation",app.idle_mood=="theme:spooky")
+            app.show_prompt()
+            check("Water interrupts seasonal play cleanly",app.prompt_visible and not app.idle_mood)
+            app.answer_not_yet()
+            app.sad_until=datetime.now()-timedelta(seconds=1)
+            app._tick()
+            check("Not yet returns to normal from seasonal context",app.state=="normal" and not app.prompt_visible)
+            clear_action()
             app.theme_mode.set("shiva")
             app.next_theme_activity=datetime.now()-timedelta(seconds=1)
             app._check_theme_activity(datetime.now())
-            check("Shivaratri uses quiet meditation", app.idle_mood=="meditate")
+            check("Shivaratri uses its meditation and damru scene", app.idle_mood=="theme:shiva")
             app.theme_mode.set("Auto")
             app.birthday.set("10-09")
             app._save_settings()

@@ -60,11 +60,11 @@ class SeasonalTests(unittest.TestCase):
     def test_themed_activity_waits_for_reminders_then_runs(self):
         p=WaterPet.__new__(WaterPet);p.theme_activity_enabled=Mock();p.theme_activity_enabled.get.return_value=True
         p.next_theme_activity=datetime.now()-timedelta(seconds=1);p.prompt_visible=True
-        p._play_activity=Mock();p._show_chatter=Mock();p._current_theme=Mock(return_value='shiva')
+        p._play_theme_scene=Mock();p._play_activity=Mock();p._show_chatter=Mock();p._current_theme=Mock(return_value='shiva')
         p._check_theme_activity(datetime.now());p._play_activity.assert_not_called()
         p.prompt_visible=False;p.active_alert_kind='';p.dragging=False;p.state='normal';p.motion_mode='idle'
         p.idle_mood='';p.chatter_until=None;p._studio_is_open=Mock(return_value=False);p.hungry=False
-        p._check_theme_activity(datetime.now());p._play_activity.assert_called_once_with('meditate')
+        p._check_theme_activity(datetime.now());p._play_theme_scene.assert_called_once_with('shiva')
         self.assertGreater(p.next_theme_activity,datetime.now()+timedelta(minutes=19))
     def test_props_have_actual_transparent_padding(self):
         from PIL import Image

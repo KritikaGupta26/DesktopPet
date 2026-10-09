@@ -1,3 +1,13 @@
+# v32: whole-body seasonal scenes and a rebuilt horizontal walk
+
+Sixteen themes now have their own eight-pose scene sheets and full-body idle costumes. Spooky season combines friendly ghost play with pumpkin carving. Diwali arranges a diya and marigolds, Navratri plays dandiya, Christmas decorates a tree, and the remaining themes have their own actions.
+
+The walk uses eight individually generated full-body poses with opposite arm/leg contact pairs. Both directions share mirrored artwork. Walk timing drives horizontal travel; it does not move the window vertically. Log play now braces before standing, and meditation lowers into a seated breathing sequence.
+
+Panda Home → Seasons & celebrations selects Auto/manual themes, individual events, hemisphere, birthday and editable festival dates. Seasonal scenes run only when free, with a saved 5–120 minute interval. Water, personal reminders, hunger, drag and Home have priority. Scene sheets use finite key-pose timelines with deliberate pauses. Locomotion and reminders use their classic artwork; they do not have 16 costumed variants each.
+
+Source sheets, exported previews, frame audit and storyboards are in `artwork/v32`. Re-export tools need Pillow, NumPy and SciPy in the development environment; the Windows application needs no such setup. Run `python -m unittest discover -s tests -v`, then the GitHub Windows workflow for packaged UI regression and installer creation.
+
 # v31: seasons, festivals and horizontal ground movement
 
 This section supersedes historical movement/art instructions below.

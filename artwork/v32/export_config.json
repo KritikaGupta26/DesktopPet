@@ -1,0 +1,862 @@
+{
+  "autumn": {
+    "title": "Autumn leaves",
+    "frames": 8,
+    "source": "artwork/v32/autumn_source.png",
+    "timeline": [
+      [
+        0,
+        0.6
+      ],
+      [
+        1,
+        0.6
+      ],
+      [
+        2,
+        0.6
+      ],
+      [
+        3,
+        0.6
+      ],
+      [
+        4,
+        0.6
+      ],
+      [
+        5,
+        0.6
+      ],
+      [
+        6,
+        0.6
+      ],
+      [
+        7,
+        2
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Cozy burnt-orange knitted scarf. Eight phases: standing attentive; reaches for falling amber leaf; catches it between both paws; examines leaf at nose; seated arranging three leaves; pats a small uncarved pumpkin; curls beside pumpkin; rests peacefully. Pumpkin only one-quarter panda head diameter, about 10 percent full standing height."
+  },
+  "spooky": {
+    "title": "Ghost and pumpkin carving",
+    "frames": 8,
+    "source": "artwork/v32/spooky_source.png",
+    "timeline": [
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        0.7
+      ],
+      [
+        2,
+        0.7
+      ],
+      [
+        0,
+        0.6
+      ],
+      [
+        2,
+        0.7
+      ],
+      [
+        3,
+        0.8
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        5,
+        0.8
+      ],
+      [
+        4,
+        0.4
+      ],
+      [
+        5,
+        0.8
+      ],
+      [
+        6,
+        2
+      ],
+      [
+        7,
+        2
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Ivory ghost sheet with embroidered cobweb. Friendly standing ghost, raised paws, peeking under hood, sitting, hood pulled back while steadied small pumpkin is carved, smile cut completed, proudly presents softly glowing jack-o-lantern. Four consistent carving poses replace the first inconsistent pumpkin candidates."
+  },
+  "holi": {
+    "title": "Playful colours",
+    "frames": 8,
+    "source": "artwork/v32/holi_source.png",
+    "timeline": [
+      [
+        0,
+        0.6
+      ],
+      [
+        1,
+        0.6
+      ],
+      [
+        2,
+        0.6
+      ],
+      [
+        3,
+        0.6
+      ],
+      [
+        4,
+        0.6
+      ],
+      [
+        5,
+        0.6
+      ],
+      [
+        6,
+        0.6
+      ],
+      [
+        7,
+        2
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Simple ivory short kurta, gradually gathering pink and turquoise gulal smudges. Eight phases: standing with two tiny colour bowls; bends to pinch pink gulal; raises right paw with pink pinch; releases small pink puff; bends for turquoise; releases tiny turquoise puff with left; cheeky colourful dance; rests laughing with coloured cheeks. Keep paws connected to body, powders not covering face."
+  },
+  "navratri": {
+    "title": "Dandiya dance",
+    "frames": 8,
+    "source": "artwork/v32/navratri_source.png",
+    "timeline": [
+      [
+        0,
+        0.8
+      ],
+      [
+        1,
+        0.6
+      ],
+      [
+        2,
+        0.6
+      ],
+      [
+        3,
+        0.5
+      ],
+      [
+        4,
+        0.6
+      ],
+      [
+        5,
+        0.5
+      ],
+      [
+        6,
+        0.6
+      ],
+      [
+        3,
+        0.5
+      ],
+      [
+        4,
+        0.6
+      ],
+      [
+        5,
+        0.5
+      ],
+      [
+        6,
+        0.6
+      ],
+      [
+        7,
+        1.5
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Bright teal/orange mirror-work short vest and small turban with panda ears visible. Eight phases: standing one dandiya stick in each paw; lowers sticks apart; lifts right stick diagonally; crosses sticks with contact above belly; uncrosses left while stepping right; crosses again mirrored; small joyful turn; returns front smiling with both sticks held. Sticks stay in same paws throughout, correct grasp, no extra limbs."
+  },
+  "thanksgiving": {
+    "title": "Harvest and gratitude",
+    "frames": 8,
+    "source": "artwork/v32/thanksgiving_source.png",
+    "timeline": [
+      [
+        0,
+        0.6
+      ],
+      [
+        1,
+        0.6
+      ],
+      [
+        2,
+        0.6
+      ],
+      [
+        3,
+        0.6
+      ],
+      [
+        4,
+        0.6
+      ],
+      [
+        5,
+        0.6
+      ],
+      [
+        6,
+        0.6
+      ],
+      [
+        7,
+        2
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Rust wool scarf. Eight phases: greets; seated with small wicker harvest basket; picks small apple; places apple in basket; arranges tiny pumpkin; rests both paws on basket; bows gratefully without losing basket; smiles content. Basket no wider than panda hips."
+  },
+  "christmas": {
+    "title": "Decorate a tiny tree",
+    "frames": 8,
+    "source": "artwork/v32/christmas_source.png",
+    "timeline": [
+      [
+        0,
+        0.6
+      ],
+      [
+        1,
+        0.6
+      ],
+      [
+        2,
+        0.6
+      ],
+      [
+        3,
+        0.6
+      ],
+      [
+        4,
+        0.6
+      ],
+      [
+        5,
+        0.6
+      ],
+      [
+        6,
+        0.6
+      ],
+      [
+        7,
+        2
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Soft red Santa cap, white fur trim and green scarf. Eight phases: standing with a bauble in paw; kneels beside tiny pine tree; lifts bauble; hangs it on branch; reaches for gold star; places star on treetop; admires decorated tree; cuddles a tiny wrapped present. Pine tree only half standing height, panda size constant, cap does not hide ears or eyes."
+  },
+  "diwali": {
+    "title": "Diya and rangoli",
+    "frames": 8,
+    "source": "artwork/v32/diwali_source.png",
+    "timeline": [
+      [
+        0,
+        0.6
+      ],
+      [
+        1,
+        0.6
+      ],
+      [
+        2,
+        0.6
+      ],
+      [
+        3,
+        0.6
+      ],
+      [
+        4,
+        0.6
+      ],
+      [
+        5,
+        0.6
+      ],
+      [
+        6,
+        0.6
+      ],
+      [
+        7,
+        2
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Coral-gold kurta. Greeting palms together, sitting with diya, placing diya, choosing marigolds, arranging a flower ring, admiring it, clapping, content palms-together finish. The lamp is already lit, with no taper-lighting animation."
+  },
+  "new_year": {
+    "title": "Countdown and confetti",
+    "frames": 8,
+    "source": "artwork/v32/new_year_source.png",
+    "timeline": [
+      [
+        0,
+        0.6
+      ],
+      [
+        1,
+        0.6
+      ],
+      [
+        2,
+        0.6
+      ],
+      [
+        3,
+        0.6
+      ],
+      [
+        4,
+        0.6
+      ],
+      [
+        5,
+        0.6
+      ],
+      [
+        6,
+        0.6
+      ],
+      [
+        7,
+        2
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Gold/navy party vest with tiny party cap. Eight phases: happy poised standing; glances at wristwatch; raises paw anticipating midnight; arms up; pops tiny confetti cracker; colourful confetti arcs away from face; little celebratory hop; bows smiling. No numbers or lettering, cracker remains in paw."
+  },
+  "valentine": {
+    "title": "Gift and affection",
+    "frames": 8,
+    "source": "artwork/v32/valentine_source.png",
+    "timeline": [
+      [
+        0,
+        0.6
+      ],
+      [
+        1,
+        0.6
+      ],
+      [
+        2,
+        0.6
+      ],
+      [
+        3,
+        0.6
+      ],
+      [
+        4,
+        0.6
+      ],
+      [
+        5,
+        0.6
+      ],
+      [
+        6,
+        0.6
+      ],
+      [
+        7,
+        2
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Soft rose scarf. Eight phases: standing hiding small gift behind back; moves gift around side; presents rose-coloured heart gift with both paws; tilts head; lifts one paw to mouth; blows a kiss; hugs heart gift; content smile. Gift only half head width, connected grip."
+  },
+  "birthday": {
+    "title": "Cake and wish",
+    "frames": 8,
+    "source": "artwork/v32/birthday_source.png",
+    "timeline": [
+      [
+        0,
+        0.6
+      ],
+      [
+        1,
+        0.6
+      ],
+      [
+        2,
+        0.6
+      ],
+      [
+        3,
+        0.6
+      ],
+      [
+        4,
+        0.6
+      ],
+      [
+        5,
+        0.6
+      ],
+      [
+        6,
+        0.6
+      ],
+      [
+        7,
+        2
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Small pastel party hat and coral bow tie. Eight phases: smiles standing by tiny one-candle cake; kneels; presents cake carefully on plate with both paws; closes eyes making wish; leans forward cheeks puffed; blows candle extinguishing flame; claps; returns smiling beside cake. Cake only half head width and consistent, do not eat flame."
+  },
+  "krishna": {
+    "title": "Flute melody",
+    "frames": 8,
+    "source": "artwork/v32/krishna_source.png",
+    "timeline": [
+      [
+        0,
+        0.6
+      ],
+      [
+        1,
+        0.5
+      ],
+      [
+        2,
+        0.6
+      ],
+      [
+        3,
+        1.2
+      ],
+      [
+        4,
+        0.8
+      ],
+      [
+        5,
+        0.8
+      ],
+      [
+        4,
+        0.8
+      ],
+      [
+        5,
+        0.8
+      ],
+      [
+        6,
+        0.6
+      ],
+      [
+        7,
+        1.5
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Royal blue/gold short vest and tiny peacock-feather headband that leaves ears visible. Eight phases: standing holding small wooden flute; lifts flute in both paws; places it at lips horizontally; gently plays with fingertips on holes; sways left; sways right; lowers flute; smiles serenely. Same flute and grasp throughout, no impossible third hand, panda remains panda."
+  },
+  "shiva": {
+    "title": "Quiet meditation and damru",
+    "frames": 8,
+    "source": "artwork/v32/shiva_source.png",
+    "timeline": [
+      [
+        0,
+        0.6
+      ],
+      [
+        1,
+        0.6
+      ],
+      [
+        2,
+        0.6
+      ],
+      [
+        3,
+        0.6
+      ],
+      [
+        4,
+        0.6
+      ],
+      [
+        5,
+        0.6
+      ],
+      [
+        6,
+        0.6
+      ],
+      [
+        7,
+        2
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Muted indigo wrap/scarf and modest bead bracelet. Eight phases: calm standing namaste; lowers to cross-legged sitting; rests both palms upward on knees; closes eyes breathing; opens eyes; gently holds small damru in right paw; softly turns wrist once; places drum beside knees and resumes meditation. Panda remains panda, no deity transformation, no weapons."
+  },
+  "spring": {
+    "title": "Garden and blossoms",
+    "frames": 8,
+    "source": "artwork/v32/spring_source.png",
+    "timeline": [
+      [
+        0,
+        0.6
+      ],
+      [
+        1,
+        0.6
+      ],
+      [
+        2,
+        0.6
+      ],
+      [
+        3,
+        0.6
+      ],
+      [
+        4,
+        0.6
+      ],
+      [
+        5,
+        0.6
+      ],
+      [
+        6,
+        0.6
+      ],
+      [
+        7,
+        2
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Mint scarf and watering can. Kneels, raises can, pours at sprout, sets can down, admires blossom, sniffs, sits pleased. Bloom is a stylized story change, not a botanical time-lapse."
+  },
+  "summer": {
+    "title": "Fan and shade",
+    "frames": 8,
+    "source": "artwork/v32/summer_source.png",
+    "timeline": [
+      [
+        0,
+        0.6
+      ],
+      [
+        1,
+        0.6
+      ],
+      [
+        2,
+        0.6
+      ],
+      [
+        3,
+        0.6
+      ],
+      [
+        4,
+        0.6
+      ],
+      [
+        5,
+        0.6
+      ],
+      [
+        6,
+        0.6
+      ],
+      [
+        7,
+        2
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Small straw sunhat and yellow neckerchief. Eight phases: standing warm expression; retrieves small folding fan; opens fan in one paw; gently fans face; switches angle; sits relaxed beside tiny sunflower; breathes content; rests holding closed fan. Fan below head width, hat ears remain visible, no sweat giant droplets."
+  },
+  "winter": {
+    "title": "Scarf and snow",
+    "frames": 8,
+    "source": "artwork/v32/winter_source.png",
+    "timeline": [
+      [
+        0,
+        0.6
+      ],
+      [
+        1,
+        0.6
+      ],
+      [
+        2,
+        0.6
+      ],
+      [
+        3,
+        0.6
+      ],
+      [
+        4,
+        0.6
+      ],
+      [
+        5,
+        0.6
+      ],
+      [
+        6,
+        0.6
+      ],
+      [
+        7,
+        2
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Soft powder-blue knitted scarf and tiny wool cap. Eight phases: cozy standing; adjusts scarf with both paws; notices snowflake; catches one on black paw; examines; curls seated; hugs small warm mug; relaxed smile. Mug stays attached to both paws, no giant snowflake or scenery."
+  },
+  "log": {
+    "title": "log",
+    "frames": 8,
+    "source": "artwork/v32/log_source.png",
+    "timeline": [
+      [
+        0,
+        0.8
+      ],
+      [
+        1,
+        0.8
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        3,
+        0.8
+      ],
+      [
+        4,
+        1.2
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        4,
+        0.7
+      ],
+      [
+        6,
+        1
+      ],
+      [
+        4,
+        0.7
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        4,
+        0.7
+      ],
+      [
+        6,
+        1
+      ],
+      [
+        7,
+        2
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Continuous purposeful sequence"
+  },
+  "meditate": {
+    "title": "meditate",
+    "frames": 8,
+    "source": "artwork/v32/meditate_source.png",
+    "timeline": [
+      [
+        0,
+        0.7
+      ],
+      [
+        1,
+        0.65
+      ],
+      [
+        2,
+        0.8
+      ],
+      [
+        3,
+        2
+      ],
+      [
+        4,
+        2.8
+      ],
+      [
+        5,
+        2.8
+      ],
+      [
+        4,
+        2.8
+      ],
+      [
+        5,
+        2.8
+      ],
+      [
+        6,
+        1
+      ],
+      [
+        7,
+        1
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Continuous purposeful sequence"
+  },
+  "ganesh": {
+    "title": "Modak and flowers",
+    "frames": 8,
+    "source": "artwork/v32/ganesh_source.png",
+    "timeline": [
+      [
+        0,
+        0.7
+      ],
+      [
+        1,
+        0.7
+      ],
+      [
+        2,
+        0.7
+      ],
+      [
+        3,
+        0.7
+      ],
+      [
+        4,
+        0.7
+      ],
+      [
+        5,
+        0.7
+      ],
+      [
+        6,
+        0.7
+      ],
+      [
+        7,
+        2
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "description": "Orange festive jacket. Greeting, seated beside modak-style sweets and marigolds, selects a sweet, arranges sweets, adds flowers, presents bowl, polite appreciative tilt, smiling with bowl. Panda stays panda."
+  }
+}

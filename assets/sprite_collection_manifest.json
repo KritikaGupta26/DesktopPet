@@ -142,22 +142,40 @@
     ],
     "shared_scale": 1.066350710900474,
     "mirrored_frame_indices": [],
-    "generated_source": "artwork/walk_v31_first_half.png",
+    "generated_source": "artwork/v32/walk_0_source.png",
     "previous_frames": "artwork/v30_walk",
     "selected_playback_frames": [
       0,
       1,
       2,
+      3,
       4,
       5,
-      6
+      6,
+      7
     ],
     "generated_sources": [
-      "artwork/walk_v31_first_half.png",
-      "artwork/walk_v31_opposite_half.png"
+      "artwork/v32/walk_0_source.png",
+      "artwork/v32/walk_1_source.png",
+      "artwork/v32/walk_2_source.png",
+      "artwork/v32/walk_3_source.png",
+      "artwork/v32/walk_4_source.png",
+      "artwork/v32/walk_5_source.png",
+      "artwork/v32/walk_6_source.png",
+      "artwork/v32/walk_7_source.png"
     ],
-    "head_anchor_x": 286,
-    "ground_anchor_y": 489
+    "head_anchor_x": 276,
+    "ground_anchor_y": 489,
+    "pose_phases": [
+      "contact A",
+      "down A",
+      "passing A",
+      "up A",
+      "contact B",
+      "down B",
+      "passing B",
+      "up B"
+    ]
   },
   "run": {
     "sheet": "sprites/03_run.png",
@@ -959,7 +977,14 @@
       ]
     ],
     "shared_scale": 1.7226277372262773,
-    "mirrored_frame_indices": []
+    "mirrored_frame_indices": [],
+    "playback_order": [
+      0,
+      2,
+      3,
+      4,
+      5
+    ]
   },
   "sleep": {
     "sheet": "sprites/08_activities.png",

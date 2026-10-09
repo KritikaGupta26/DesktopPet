@@ -16,7 +16,7 @@ class TransitionTests(unittest.TestCase):
             frames=[]
             for path in sorted((root/"assets").glob(f"pack_{row}_*.png")):
                 with Image.open(path) as im:frames.append(im.convert("RGBA"))
-            scale=450/max(im.getchannel("A").getbbox()[3]-im.getchannel("A").getbbox()[1] for im in frames)
+            scale=450/max(im.getchannel("A").point(lambda a:255 if a>=128 else 0).getbbox()[3]-im.getchannel("A").point(lambda a:255 if a>=128 else 0).getbbox()[1] for im in frames)
             heights=[]
             for im in frames:
                 box=normalize(im,scale).getchannel("A").getbbox()

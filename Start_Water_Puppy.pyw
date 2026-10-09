@@ -111,7 +111,7 @@ def next_water_window_time(now: datetime, start: str, end: str) -> datetime:
     return candidate if candidate > now else candidate + timedelta(days=1)
 
 def normalize_standing_sprite(sprite: Image.Image) -> Image.Image:
-    return normalize_pose_sprite(sprite, 450 / 379)
+    return normalize_pose_sprite(sprite, 450 / 371)
 
 
 def normalize_pose_sprite(sprite: Image.Image, scale: float) -> Image.Image:
@@ -123,7 +123,8 @@ def normalize_pose_sprite(sprite: Image.Image, scale: float) -> Image.Image:
     enlarged = sprite.resize((size, size), Image.Resampling.LANCZOS)
     enlarged.putalpha(enlarged.getchannel("A").point(lambda alpha: 255 if alpha >= 128 else 0))
     canvas = Image.new("RGBA", (512, 512))
-    canvas.alpha_composite(enlarged, ((512-size)//2, 489-round(bbox[3]*size/512)))
+    opaque_bottom = enlarged.getchannel("A").getbbox()[3]
+    canvas.alpha_composite(enlarged, ((512-size)//2, 489-opaque_bottom))
     return canvas
 
 
@@ -1008,7 +1009,7 @@ class WaterPet:
                 heights = []
                 for i in range(metadata["frames"]):
                     with Image.open(assets / f"pack_{key}_{i}.png") as opened:
-                        bbox = opened.getchannel("A").getbbox()
+                        bbox = opened.getchannel("A").point(lambda alpha: 255 if alpha >= 128 else 0).getbbox()
                         if bbox:
                             heights.append(bbox[3]-bbox[1])
                 if heights:

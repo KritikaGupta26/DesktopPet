@@ -73,6 +73,10 @@ def landmarks(image, key):
         "scene_peekaboo_4":((116,60,210,113),(117,114,210,152)),
         "scene_peekaboo_5":((174,34,242,112),(132,111,221,147)),
     }
+    spooky_heads=[(56,42,124,94),(56,41,124,94),(49,73,126,122),(54,58,126,116),(50,65,132,119),(52,65,132,120),(52,65,132,120),(52,65,132,120)]
+    if key.startswith("scene_spooky_"):
+        index=int(key.rsplit("_",1)[1])
+        overrides[key]=(spooky_heads[index],(55,115,130,155))
     if key in overrides:
         head,torso=overrides[key]
     if key.startswith("pack_sleep_"):

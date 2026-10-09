@@ -147,7 +147,7 @@ class FinalReleaseRegressionTests(unittest.TestCase):
         pet.auto_activity=Mock();pet.auto_activity.get.return_value='Selected routine'
         enabled=Mock();enabled.get.return_value=True;pet.routine_enabled={'groom':enabled}
         pet._play_activity=Mock();pet._update_idle_mood(datetime.now())
-        pet._play_activity.assert_called_once_with('groom')
+        pet._play_activity.assert_called_once_with('groom', automatic=True)
 
     def test_all_reminder_clouds_are_smaller_than_pet_canvas(self):
         pet=WaterPet.__new__(WaterPet);pet.canvas=Mock();pet._cloud_shape=Mock()

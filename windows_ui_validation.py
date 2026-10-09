@@ -291,6 +291,42 @@ def run_validation(pet_type, output_path: Path) -> None:
                 app.root.update_idletasks()
                 check(f"Activity dispatch and render: {key}", True)
 
+            for theme in ("classic","spooky","diwali"):
+                clear_action();app.theme_mode.set(theme)
+                app.show_history();app.studio_notebook.select(4)
+                mirror_button=next(button for button in app.activity_buttons if button.cget("text")=="Mirror surprise")
+                mirror_button.invoke()
+                until=time.monotonic()+.2
+                while time.monotonic()<until:app.root.update()
+                check(f"Actual mirror activity button launches: {theme}",app.idle_mood=="mirror_surprise")
+                for index,elapsed in enumerate((.3,1.3,2.5,3.3,4.0,5.0,6.2,7.8)):
+                    app.idle_mood_started_at=datetime.now()-timedelta(seconds=elapsed)
+                    app._draw();app.root.update_idletasks()
+                    check(f"Mirror pose renders with persistent theme: {theme}:{index}",bool(app.canvas.find_withtag("mirror_body")))
+                    snapshot(f"mirror_{theme}_{index}")
+            clear_action();app.theme_mode.set("spooky")
+            app.pranks_enabled.set(False)
+            app._play_activity("boo",automatic=True)
+            check("Disabled automatic pranks do not launch",not app.idle_mood)
+            app.show_history();app.studio_notebook.select(4)
+            next(button for button in app.activity_buttons if button.cget("text")=="Boo prank").invoke()
+            until=time.monotonic()+.2
+            while time.monotonic()<until:app.root.update()
+            check("Actual Boo button works with auto pranks off",app.idle_mood=="boo_prank")
+            for index,elapsed in enumerate((.2,.8,1.8,3.7)):
+                app.idle_mood_started_at=datetime.now()-timedelta(seconds=elapsed)
+                app._draw();snapshot(f"boo_phase_{index}")
+                check(f"Boo phase draws cloud and dressed pet: {index}",bool(app.canvas.find_withtag("boo_body")) and bool(app.canvas.find_withtag("cloud")))
+            app.show_prompt()
+            check("Water reminder interrupts prank",app.prompt_visible and not app.idle_mood)
+            clear_action()
+            for index in range(8):
+                app.idle_mood="theme:spooky";app.idle_mood_until=datetime.now()+timedelta(minutes=1)
+                elapsed=sum(seconds for _,seconds in app.scene_manifest["spooky"]["timeline"][:index])
+                app.canvas.delete("all");app._draw_scene("spooky",elapsed)
+                check(f"Ghost seasonal scene stays dressed: {index}",bool(app.canvas.find_withtag("scene_spooky")))
+            clear_action()
+
             # Exercise the actual Home buttons, not merely the scene helper.
             automatic_scenes = app.theme_activity_enabled.get()
             app.theme_activity_enabled.set(False)

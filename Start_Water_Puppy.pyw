@@ -31,6 +31,7 @@ from home_layout import HomePage, bind_page_wheel
 from locomotion import escape_target, run_step
 from wardrobe import Wardrobe
 from desktop_effects import DesktopEffects
+from playful_activities import compose_mirror, mirror_pose, MIRROR_DURATION, BOO_DURATION, PRANK_COOLDOWN_MINUTES, boo_phase
 from collections import OrderedDict
 from seasonal_themes import THEMES, PROP_KEYS, LUNAR_KEYS, resolve_theme, valid_birthday, normalize_custom_dates, festival_ranges
 
@@ -43,7 +44,7 @@ ACTIVITY_LABELS = {
     "forward_roll":"Somersault", "petting":"Petting", "bow":"Bow", "water":"Water reminder",
     "movement":"Movement break", "wave":"Wave", "groom":"Grooming",
     "peekaboo":"Peekaboo", "clap":"Clap", "blow_kiss":"Blow a kiss",
-    "hiccup":"Hiccup", "victory":"Celebrate",
+    "hiccup":"Hiccup", "victory":"Celebrate", "mirror":"Mirror surprise", "boo":"Boo prank",
 }
 THEME_EFFECT_LABELS = {"diwali": "Festival fireworks", "new_year": "New Year fireworks",
                        "holi": "Throw Holi colours", "birthday": "Birthday fireworks"}
@@ -66,7 +67,7 @@ ACTIVITY_ALIASES = {
     "drink_water":"water", "alternate_hoop":"movement", "hula_hoop":"movement",
      "happy_idle":"wave", "sad":"bow",
 }
-ROUTINE_ACTIVITIES = ("groom", "wind_down", "meditate", "log", "dance", "kung_fu", "peekaboo", "bamboo_hang", "jump", "wave", "sploot", "petting", "bow", "clap", "blow_kiss", "sneeze", "hiccup", "victory")
+ROUTINE_ACTIVITIES = ("groom", "wind_down", "meditate", "log", "dance", "kung_fu", "peekaboo", "bamboo_hang", "jump", "wave", "sploot", "petting", "bow", "clap", "blow_kiss", "sneeze", "hiccup", "victory", "mirror", "boo")
 GENTLE_ACTIVITIES = ROUTINE_ACTIVITIES[:2]
 GROOM_SEQUENCE = (("wash_face", 3.0), ("ear_rub", 3.0), ("belly_scratch", 3.0))
 WIND_DOWN_SEQUENCE = (("yawn_stretch", 3.0), ("lazy_stretch", 3.0), ("sleep", 18.0), ("wake_up", 4.0))
@@ -172,7 +173,7 @@ def windows_menu_active(thread_id: int | None = None) -> bool:
 
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 35
+APP_VERSION = 36
 REMINDER_MINUTES = 30
 WATER_DECLINE_SECONDS = 8
 WALK_FRAME_ORDER = tuple(range(8))
@@ -848,6 +849,9 @@ class WaterPet:
         self.next_hunger = datetime.now() + timedelta(minutes=self.hunger_minutes.get())
         self.walk_frame_ms = tk.IntVar(value=self.settings["walk_frame_ms"])
         self.routine_enabled = {key: tk.BooleanVar(value=key in self.settings["routine_activities"]) for key in ROUTINE_ACTIVITIES}
+        self.pranks_enabled = tk.BooleanVar(value=self.settings["pranks_enabled"])
+        self.next_prank = datetime.now() + timedelta(minutes=PRANK_COOLDOWN_MINUTES)
+        self.playful_photos = OrderedDict()
         self.routine_index = 0
         self.activity_minutes = tk.IntVar(value=self.settings["activity_minutes"])
         self.next_idle_activity = datetime.now() + timedelta(minutes=self.activity_minutes.get())
@@ -1062,6 +1066,13 @@ class WaterPet:
                     sprite.putalpha(sprite.getchannel("A").point(lambda a: 255 if a >= 128 else 0))
                     loaded["panda"][f"pack_{variant}_{i}"] = ImageTk.PhotoImage(sprite)
                     self.image_pil[f"pack_{variant}_{i}"] = sprite.copy()
+        for index in range(8):
+            with Image.open(assets / f"pack_mirror_{index}.png") as opened:
+                sprite=opened.convert("RGBA")
+            self.image_pil[f"pack_mirror_{index}"]=sprite
+            loaded["panda"][f"pack_mirror_{index}"]=ImageTk.PhotoImage(sprite)
+        with Image.open(assets / "mirror_prop.png") as opened:
+            self.mirror_prop=opened.convert("RGBA")
         self.scene_manifest = json.loads((assets / "scene_manifest.json").read_text(encoding="utf-8"))
         self.scene_images = {}
         for key, metadata in self.scene_manifest.items():
@@ -1168,8 +1179,18 @@ class WaterPet:
         seconds = max(4.0,metadata["frames"]*metadata["seconds_per_frame"]+1.0)
         self._play_test_animation("pack:" + key, seconds)
 
-    def _play_activity(self, key: str) -> None:
+    def _play_activity(self, key: str, automatic: bool = False) -> None:
         if self.prompt_visible or self.active_alert_kind or self.dragging or self.state == "sad":
+            return
+        if key in ("mirror", "boo"):
+            now=datetime.now()
+            if automatic and (not self.pranks_enabled.get() or now < self.next_prank):
+                return
+            self.next_prank=now+timedelta(minutes=PRANK_COOLDOWN_MINUTES)
+            self._close_chatter_card()
+            self._play_test_animation("mirror_surprise" if key=="mirror" else "boo_prank", MIRROR_DURATION if key=="mirror" else BOO_DURATION)
+            self.prank_caption_stage=-1
+            self._resize_anchored(360 if key=="mirror" else SMALL_WIDTH,SMALL_HEIGHT)
             return
         if key == "wind_down":self._play_test_animation("wind_down",sum(duration for _,duration in WIND_DOWN_SEQUENCE))
         elif key == "groom":self._play_test_animation("groom",sum(duration for _,duration in GROOM_SEQUENCE))
@@ -1213,6 +1234,7 @@ class WaterPet:
             "thanksgiving_region": "US",
             "theme_activity_enabled": True,
             "theme_effects_enabled": True,
+            "pranks_enabled": False,
             "theme_activity_minutes": 20,
             "theme_enabled": list(PROP_KEYS),
             "festival_dates": {},
@@ -1273,6 +1295,7 @@ class WaterPet:
             defaults["theme_activity_minutes"] = 20
         defaults["theme_activity_enabled"] = bool(defaults.get("theme_activity_enabled", True))
         defaults["festival_dates"] = normalize_custom_dates(defaults.get("festival_dates"))
+        defaults["pranks_enabled"] = defaults.get("pranks_enabled") is True
         defaults["pet"] = "panda"
         name = str(defaults.get("name", "Mochi")).strip()[:18]
         defaults["name"] = name or "Mochi"
@@ -1353,6 +1376,7 @@ class WaterPet:
             "hunger_enabled": self.hunger_enabled.get(),
             "hunger_minutes": self.hunger_minutes.get(),
             "routine_activities": [key for key,enabled in self.routine_enabled.items() if enabled.get()],
+            "pranks_enabled": self.pranks_enabled.get(),
             "personality": self.personality.get(),
             "theme_mode": self.theme_mode.get(),
             "birthday": self.birthday.get(),
@@ -2527,7 +2551,7 @@ class WaterPet:
     def _draw_scene(self, key: str, elapsed: float) -> None:
         index = scene_pose(self.scene_manifest[key],elapsed)
         self.canvas.create_image(180 if key == "peekaboo" else SMALL_WIDTH//2,PET_CENTER_Y,
-                                 image=(self._styled_image(f"scene_{key}_{index}") if key in ("log","meditate","peekaboo") else self.scene_images[key][index]), tags=("scene_body", "scene_"+key))
+                                 image=(self._styled_image(f"scene_{key}_{index}") if key in ("log","meditate","peekaboo","spooky") else self.scene_images[key][index]), tags=("scene_body", "scene_"+key))
 
     def _check_theme_activity(self, now: datetime) -> None:
         if not hasattr(self, "theme_activity_enabled") or not self.theme_activity_enabled.get():
@@ -2641,19 +2665,20 @@ class WaterPet:
         self.next_idle_activity = now + timedelta(minutes=self.activity_minutes.get())
         if self.auto_activity.get() in ("Gentle routine", "Selected routine"):
             pool = list(GENTLE_ACTIVITIES) if self.auto_activity.get() == "Gentle routine" else [key for key,enabled in self.routine_enabled.items() if enabled.get()]
+            pool=[key for key in pool if key not in ("mirror","boo") or (self.pranks_enabled.get() and now>=self.next_prank)]
             if pool:
                 index = getattr(self,"routine_index",0) % len(pool)
                 if len(pool)>1 and pool[index]==getattr(self,"last_routine_key",""):
                     index=(index+1)%len(pool)
                 self.routine_index = index + 1
                 self.last_routine_key=pool[index]
-                self._play_activity(pool[index])
+                self._play_activity(pool[index], automatic=True)
         elif self.auto_activity.get() == "Meditate":
             self._play_activity("meditate")
         else:
             for key,label in ACTIVITY_LABELS.items():
                 if label==self.auto_activity.get() and key in ROUTINE_ACTIVITIES:
-                    self._play_activity(key)
+                    self._play_activity(key, automatic=True)
                     break
 
 
@@ -3446,8 +3471,32 @@ class WaterPet:
         # A painted ground line obscured the curved feet. Keep the full silhouette.
         return
 
+    def _draw_mirror_routine(self, elapsed):
+        index=mirror_pose(elapsed)
+        theme=self._current_theme()
+        cache=(theme,index)
+        if cache not in self.playful_photos:
+            raw=self.image_pil[f"pack_mirror_{index}"]
+            dressed=self.wardrobe.dress(raw,theme,f"pack_mirror_{index}")
+            self.playful_photos[cache]=ImageTk.PhotoImage(compose_mirror(dressed,self.mirror_prop))
+            while len(self.playful_photos)>32:self.playful_photos.popitem(last=False)
+        self.canvas.create_image(180,PET_CENTER_Y,image=self.playful_photos[cache],tags=("scene_body","mirror_body"))
+
+    def _draw_boo_routine(self, elapsed):
+        stage,key,caption=boo_phase(elapsed)
+        if stage!=self.prank_caption_stage:
+            self.prank_caption_stage=stage
+            self._show_chatter(caption,seconds=max(.2,BOO_DURATION-elapsed))
+        self.canvas.create_image(90,PET_CENTER_Y,image=self._styled_image(key),tags=("boo_body",))
+
     def _draw_idle_mood(self) -> None:
         elapsed = (datetime.now()-self.idle_mood_started_at).total_seconds()
+        if self.idle_mood=="mirror_surprise":
+            self._draw_mirror_routine(elapsed)
+            return
+        if self.idle_mood=="boo_prank":
+            self._draw_boo_routine(elapsed)
+            return
         if self.idle_mood.startswith("theme:"):
             self._draw_scene(self.idle_mood.split(":",1)[1], elapsed)
             return
@@ -4410,6 +4459,8 @@ class WaterPet:
             box.pack(side="left")
             box.bind("<<ComboboxSelected>>", lambda _event: self._behavior_settings_changed())
         ttk.Label(behavior_frame, text="Gentle routine cycles through quiet activities. Selected routine uses your choices below.\nExisting Manual only settings are preserved: select a routine to enable automatic play.", style="Sub.TLabel", wraplength=500).pack(anchor="w", pady=12)
+        ttk.Checkbutton(behavior_frame,text="Allow automatic mirror surprises and gentle pranks",variable=self.pranks_enabled,command=self._behavior_settings_changed).pack(anchor="w",pady=5)
+        ttk.Label(behavior_frame,text="Choose them in Selected routine below. Pranks wait at least 15 minutes between automatic performances. Manual activity buttons always work.",style="Sub.TLabel",wraplength=500).pack(anchor="w",pady=5)
         routine_choices = ttk.Frame(behavior_frame,style="Glass.TFrame")
         routine_choices.pack(fill="x")
         for i,(key,enabled) in enumerate(self.routine_enabled.items()):

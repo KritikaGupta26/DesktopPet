@@ -250,7 +250,8 @@ def run_validation(pet_type, output_path: Path) -> None:
                 check(f"Small Home wheel routes over controls: {name}",not overflowing or page.canvas.yview()[0]>before)
                 snapshot(f"small_page_{name}",app.history_window)
                 check(f"Small Home content viewport stays inside window: {name}",page.canvas.winfo_rootx()>=app.history_window.winfo_rootx() and page.canvas.winfo_rootx()+page.canvas.winfo_width()<=app.history_window.winfo_rootx()+app.history_window.winfo_width())
-                snapshot(f"small_page_{name}",app.history_window)
+                if name in ("home", "history"):
+                    check(f"Narrow Home table fits viewport: {name}", not page.horizontal.winfo_ismapped())
             app.history_window.geometry(original_geometry)
             app.root.update_idletasks()
             app.behavior_canvas.yview_moveto(1)
@@ -425,6 +426,13 @@ def run_validation(pet_type, output_path: Path) -> None:
                 app.motion_mode="escaping"
                 app.walk_direction="right"
                 app._draw();snapshot(f"outfit_{theme}_running")
+                app.motion_mode="walking"
+                app.pending_edge_action="bored_edge"
+                app.bored_walk_started=time.monotonic()
+                app._draw()
+                raw_bored={str(app.images["panda"][f"pack_bored_shuffle_{i}"]) for i in range(8)}
+                drawn=[app.canvas.itemcget(i,"image") for i in app.canvas.find_all() if app.canvas.type(i)=="image"]
+                check(f"Persistent outfit during bored walk: {theme}",bool(drawn) and not any(i in raw_bored for i in drawn))
             clear_action()
             app.theme_mode.set("diwali")
             app._play_theme_scene("diwali")

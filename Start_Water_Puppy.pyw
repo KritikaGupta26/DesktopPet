@@ -3289,7 +3289,7 @@ class WaterPet:
             if self.pending_edge_action == "bored_edge":
                 index=(3,4,5,4)[int((time.monotonic()-self.bored_walk_started)/0.7)%4]
                 variant="bored_shuffle_left" if self.walk_direction=="left" else "bored_shuffle"
-                self.canvas.create_image(SMALL_WIDTH//2,PET_CENTER_Y,image=self.images["panda"][f"pack_{variant}_{index}"])
+                self.canvas.create_image(SMALL_WIDTH//2,PET_CENTER_Y,image=self._styled_image(f"pack_{variant}_{index}"))
                 self._draw_overlays()
                 return
             walk_frame = self._locomotion_frame("walk")

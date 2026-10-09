@@ -63,7 +63,12 @@ def dress_ghost(image, cloth, geometry, key):
                   or max(r,g,b)>=160 and max(r,g,b)-min(r,g,b)>90 and min(r,g,b)<130
                   or key.startswith(('scene_log_','scene_peekaboo_','pack_sit_on_log_','pack_balance_on_log_')) and r>90 and r>g*1.15 and g>b*1.3)
             dark=max(r,g,b)<125
-            limb=dark and (y< hb-4 or y>=tb-1 or x<tl+8 or x>tr-8)
+            if angle in (90, -90):
+                # A sleeping panda's back is part of its body, not a foreground
+                # limb. Keep paws outside the torso, and let the cloak cover it.
+                limb=dark and (x<tl+3 or x>tr-2 or y<tt+3 or y>=tb-3)
+            else:
+                limb=dark and (y<hb-4 or y>=tb-1 or x<tl+8 or x>tr-8)
             values.append(255 if a>=128 and (prop or limb) else 0)
     preserve.putdata(values)
     # Open the face in the correct travel direction. The generated opening

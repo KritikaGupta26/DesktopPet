@@ -72,7 +72,7 @@ class SpriteCollectionTests(unittest.TestCase):
         from unittest.mock import patch
         pet=WaterPet.__new__(WaterPet);pet.pack_manifest=MANIFEST
         pet.walk_direction='right';pet.motion_mode='walking';pet.walk_frame_ms=Mock();pet.walk_frame_ms.get.return_value=180
-        with patch('time.monotonic',side_effect=[10,10.1,10.2,10.4]):
+        with patch('time.monotonic',side_effect=[10,10.05,10.1,10.4]):
             self.assertEqual(pet._locomotion_frame('walk'),1)
             self.assertEqual(pet._locomotion_frame('walk'),1)
             self.assertEqual(pet._locomotion_frame('walk'),1)

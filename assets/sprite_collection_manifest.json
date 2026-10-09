@@ -67,59 +67,83 @@
     "label": "Walk",
     "edge_only": false,
     "crop_rectangles": [
-      [
-        0,
-        0,
-        444,
-        444
-      ],
-      [
-        444,
-        0,
-        887,
-        444
-      ],
-      [
-        887,
-        0,
-        1330,
-        444
-      ],
-      [
-        1330,
-        0,
-        1774,
-        444
-      ],
-      [
-        0,
-        444,
-        444,
-        887
-      ],
-      [
-        444,
-        444,
-        887,
-        887
-      ],
-      [
-        887,
-        444,
-        1330,
-        887
-      ],
-      [
-        1330,
-        444,
-        1774,
-        887
-      ]
+      {
+        "source": "walk_v31_first_half.png",
+        "rect": [
+          0,
+          0,
+          543,
+          724
+        ]
+      },
+      {
+        "source": "walk_v31_first_half.png",
+        "rect": [
+          543,
+          0,
+          1086,
+          724
+        ]
+      },
+      {
+        "source": "walk_v31_first_half.png",
+        "rect": [
+          1086,
+          0,
+          1629,
+          724
+        ]
+      },
+      {
+        "source": "walk_v31_first_half.png",
+        "rect": [
+          1629,
+          0,
+          2172,
+          724
+        ]
+      },
+      {
+        "source": "walk_v31_opposite_half.png",
+        "rect": [
+          0,
+          0,
+          543,
+          724
+        ]
+      },
+      {
+        "source": "walk_v31_opposite_half.png",
+        "rect": [
+          543,
+          0,
+          1086,
+          724
+        ]
+      },
+      {
+        "source": "walk_v31_opposite_half.png",
+        "rect": [
+          1086,
+          0,
+          1629,
+          724
+        ]
+      },
+      {
+        "source": "walk_v31_opposite_half.png",
+        "rect": [
+          1629,
+          0,
+          2172,
+          724
+        ]
+      }
     ],
-    "shared_scale": 1.0688836104513064,
+    "shared_scale": 1.066350710900474,
     "mirrored_frame_indices": [],
-    "generated_source": "artwork/walk_v25_source.png",
-    "previous_frames": "artwork/v24_walk",
+    "generated_source": "artwork/walk_v31_first_half.png",
+    "previous_frames": "artwork/v30_walk",
     "selected_playback_frames": [
       0,
       1,
@@ -127,7 +151,13 @@
       4,
       5,
       6
-    ]
+    ],
+    "generated_sources": [
+      "artwork/walk_v31_first_half.png",
+      "artwork/walk_v31_opposite_half.png"
+    ],
+    "head_anchor_x": 286,
+    "ground_anchor_y": 489
   },
   "run": {
     "sheet": "sprites/03_run.png",

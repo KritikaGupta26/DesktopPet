@@ -227,7 +227,7 @@ def run_validation(pet_type, output_path: Path) -> None:
             check("Panda Home opens", app.history_window.winfo_exists())
             snapshot("panda_home", app.history_window)
             check("Panda does not cover Panda Home", not app.root.winfo_viewable())
-            for index, name in enumerate(("home", "history", "reminders", "settings", "activities", "behaviour")):
+            for index, name in enumerate(("home", "history", "reminders", "settings", "activities", "behaviour", "themes")):
                 app.studio_notebook.select(index)
                 app.root.update_idletasks()
                 snapshot(f"page_{name}", app.history_window)
@@ -309,8 +309,8 @@ def run_validation(pet_type, output_path: Path) -> None:
             check("Follow resumes after hover cloud closes", position != (app.pet_x, app.pet_y))
             app._draw()
             for name, point, target in (
-                ("top_left",(left,top),(left,top)),
-                ("bottom_right",(right-1,bottom-1),(right-180,bottom-184)),
+                ("top_left",(left,top),(left,top+100)),
+                ("bottom_right",(right-1,bottom-1),(right-180,top+100)),
             ):
                 ctypes.windll.user32.SetCursorPos(*point)
                 for _ in range(2000):
@@ -353,7 +353,31 @@ def run_validation(pet_type, output_path: Path) -> None:
             check("Bamboo feeding clears hunger", not app.hungry and app.idle_mood == "feed")
             app._draw()
             snapshot("feed")
+            clear_action()
+            app.theme_mode.set("diwali")
+            app._draw()
+            check("Theme prop is rendered on panda canvas", len(app.canvas.find_withtag("season_prop")) == 1)
+            snapshot("theme_diwali_idle")
+            app.show_prompt()
+            app._draw()
+            check("Festival prop stays out of water offer", not app.canvas.find_withtag("season_prop"))
+            check("Festival tint reaches water cloud", any(app.canvas.itemcget(i,"fill") == "#FFF2D9" for i in app.canvas.find_withtag("cloud") if app.canvas.type(i)=="polygon"))
+            snapshot("theme_diwali_water")
+            app.answer_not_yet()
+            clear_action()
+            for key in from_module.PROP_KEYS:
+                app.theme_mode.set(key)
+                app._draw()
+                check(f"Festival prop loaded: {key}", bool(app.canvas.find_withtag("season_prop")))
+            app.theme_mode.set("shiva")
+            app.next_theme_activity=datetime.now()-timedelta(seconds=1)
+            app._check_theme_activity(datetime.now())
+            check("Shivaratri uses quiet meditation", app.idle_mood=="meditate")
+            app.theme_mode.set("Auto")
+            app.birthday.set("10-09")
             app._save_settings()
+            stored=json.loads(app.settings_path.read_text())
+            check("Festival and birthday settings persist", stored["theme_mode"]=="Auto" and stored["birthday"]=="10-09")
             check("Settings persist in isolated data", app.settings_path.exists())
             report["passed"] = True
             app.close()

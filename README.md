@@ -1,3 +1,20 @@
+# v31: seasons, festivals and horizontal ground movement
+
+This section supersedes historical movement/art instructions below.
+
+- Ground walking, roaming, following, avoidance, running and fetch stay on the current horizontal lane. The cursor's vertical position cannot pull the panda upward/downward. Left/right physical edges remain reachable. Dragging and explicit jump/throw physics may change height. No rope-climbing feature is added.
+- Keep a soft, weighty animated-film panda, using Kung Fu Panda as motion/personality inspiration. Retain the existing baby-panda identity. Opposite-side arm/leg swing must be reviewed in actual loop previews; automated alpha/scale tests do not establish anatomical correctness.
+- Add Auto, all individual themes, and Classic panda under a separate scrollable Seasons & festivals page. Persist choice, optional birthday MM-DD, enabled themes, Northern/Southern seasons, US/Canada Thanksgiving and custom dated lunar ranges. Include Preview celebration and a separately switchable themed activity every 20 minutes when free.
+- Themes: Autumn, Spooky, Diwali, Holi, both Chaitra and Sharad Navratri, Thanksgiving, Christmas, New Year, Valentine, Birthday, Ganesh Chaturthi, Krishna Janmashtami, Maha Shivaratri, Spring, Summer, Winter.
+- Theme visuals are 16 high-resolution generated transparent props, a coordinated cloud fill/outline and original greetings. Props appear beside the grounded idle panda; hide during movement, activities, dragging and active reminders. Keep paws/face unobstructed. This release does not include full-body festival costumes or new dandiya/flute animations. Familiar dance, celebration, bow, meditation, grooming, wave or wind-down poses are reused intentionally as thematic actions, not exposed as duplicate activity names.
+- Birthday has priority over lunar festivals, which have priority over fixed festivals and seasons. Manual selection overrides Auto and theme enable switches until the user selects Auto again. Disabled Auto themes fall through to an enabled season or Classic.
+- Lunar dates are a curated New Delhi, India table for 2026 and 2027 only, sourced from Drik Panchang. They are not a perpetual lunar calendar. Never repeat a prior year's lunar dates into unknown years. Custom exact YYYY-MM-DD start/end ranges override built-in dates for that festival/year. Other traditions/locations require custom dates. Fixed holiday ranges recur algorithmically every year; leap-day birthdays observe February 28 in non-leap years, including 2100.
+- Do not disturb reminders: water, movement, personal alerts, hungry feed, dragging, Home and current activities block the themed scheduler. Birthday is optional, local-only and stores no birth year. Theme greetings cannot replace the content or response buttons of an active reminder.
+
+Calendar sources:
+https://www.drikpanchang.com/calendars/hindu/hinducalendar.html?geoname-id=1261481&year=2026
+https://www.drikpanchang.com/calendars/hindu/hinducalendar.html?geoname-id=1261481&year=2027
+
 ## v30.0.2 interaction-size correction
 
 Idle, drag/cursor-follow, petting and sad rows now share the walk row's 450px maximum full-body height and 489px ground baseline at the 512px source canvas. Use one scale per entire row, preserving genuine bending between frames. Previously idle was slightly too large and the drag/petting rows were smaller. This is runtime scaling of the existing full-resolution artwork, not regenerated art. Unit checks verify scale, ground alignment and unclipped alpha bounds for every frame in these four rows.

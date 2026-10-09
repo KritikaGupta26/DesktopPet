@@ -65,13 +65,13 @@ class Audit29Tests(unittest.TestCase):
         p=WaterPet.__new__(WaterPet);p.prompt_visible=False;p.active_alert_kind="personal";p._show_chatter=Mock();p.root=Mock()
         p.start_fetch();p.root.winfo_pointerxy.assert_not_called()
 
-    def test_ledge_destination_is_inside_screen(self):
+    def test_roaming_does_not_walk_vertically_to_ledge(self):
         p=self.geometry_pet(500,300);p.pet_x,p.pet_y=500,300
         p._visible_window_ledges=Mock(return_value=[(0,50,1000)])
         p.personality=Mock();p.personality.get.return_value="Balanced"
         with patch.object(WaterPet._choose_destination.__globals__["random"],"random",side_effect=[.5,.1]):
             p._choose_destination()
-        self.assertEqual(p.target_y,0)
+        self.assertEqual(p.target_y,300)
 
     def test_invalid_activity_settings_are_normalized(self):
         with tempfile.TemporaryDirectory() as d:

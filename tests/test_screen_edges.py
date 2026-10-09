@@ -11,18 +11,17 @@ class ScreenEdgesTests(unittest.TestCase):
         p.pet_x=500.;p.pet_y=300.;p.personality=Mock();p.personality.get.return_value="Balanced"
         p.prompt_visible=False;p.dragging=False
         return p
-    def test_all_four_edge_destinations(self):
+    def test_horizontal_edge_destinations(self):
         for bounds in ((0,0,1920,1080),(-1920,-200,1920,1080)):
             left,top,right,bottom=bounds
-            for side in ("left","right","top","bottom"):
+            for side in ("left","right"):
                 p=self.pet(bounds)
                 with patch.object(WaterPet._choose_edge_destination.__globals__["random"],"choice",return_value=side):p._choose_edge_destination()
                 self.assertGreaterEqual(p.target_x,left);self.assertLessEqual(p.target_x+180,right)
                 self.assertGreaterEqual(p.target_y,top);self.assertLessEqual(p.target_y+184,bottom)
                 if side=="left":self.assertEqual(p.target_x,left)
                 if side=="right":self.assertEqual(p.target_x+180,right)
-                if side=="top":self.assertEqual(p.target_y,top)
-                if side=="bottom":self.assertEqual(p.target_y+184,bottom)
+                self.assertEqual(p.target_y,300)
     def test_manual_walk_reaches_both_edges(self):
         p=self.pet();p._test_walk_across_screen();self.assertEqual(p.target_x,1740)
         p.pet_x=1800;p._test_walk_across_screen();self.assertEqual(p.target_x,0)
@@ -36,8 +35,8 @@ class ScreenEdgesTests(unittest.TestCase):
         p.root=Mock();p.root.winfo_pointerxy.return_value=point;p.motion_mode="idle"
         p._walk_cycle_seconds=Mock(return_value=1.44);p._move_root=Mock()
         return p
-    def test_follow_reaches_corners_without_clipping_canvas(self):
-        for point,target in (((0,0),(0,0)),((1919,0),(1740,0)),((0,1079),(0,896)),((1919,1079),(1740,896))):
+    def test_follow_reaches_horizontal_edges_without_changing_lane(self):
+        for point,target in (((0,0),(0,300)),((1919,0),(1740,300)),((0,1079),(0,300)),((1919,1079),(1740,300))):
             p=self.follow_pet(point)
             for _ in range(1500):p._check_cursor_reaction(datetime.now())
             self.assertAlmostEqual(p.pet_x,target[0],delta=1)

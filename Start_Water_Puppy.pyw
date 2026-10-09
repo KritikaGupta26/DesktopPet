@@ -172,7 +172,7 @@ def windows_menu_active(thread_id: int | None = None) -> bool:
 
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 34
+APP_VERSION = 35
 REMINDER_MINUTES = 30
 WATER_DECLINE_SECONDS = 8
 WALK_FRAME_ORDER = tuple(range(8))

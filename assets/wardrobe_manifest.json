@@ -7,7 +7,9 @@
     "front": "wardrobe_spooky_front.png",
     "profile": "wardrobe_spooky_profile.png",
     "head_front": "wardrobe_spooky_head_front.png",
-    "head_profile": "wardrobe_spooky_head_profile.png"
+    "head_profile": "wardrobe_spooky_head_profile.png",
+    "full_front": "wardrobe_spooky_full_front.png",
+    "full_profile": "wardrobe_spooky_full_profile.png"
   },
   "diwali": {
     "front": "wardrobe_diwali_front.png",

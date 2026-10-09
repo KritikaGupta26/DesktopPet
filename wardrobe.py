@@ -1,5 +1,6 @@
 """Fit shaded costume components to each animated body, preserving foreground paws."""
 from collections import OrderedDict
+from ghost_cloak import dress_ghost
 from PIL import Image, ImageChops, ImageDraw, ImageOps
 
 
@@ -103,6 +104,8 @@ class Wardrobe:
         if geometry is None:
             return image
         head,torso,profile,left=geometry
+        if theme == "spooky":
+            return dress_ghost(image, self.part(theme, "full_profile" if profile else "full_front"), geometry, key)
         out=image.copy()
         l,t,r,b=torso
         hl,ht,hr,hb=head

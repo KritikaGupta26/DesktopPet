@@ -1,6 +1,6 @@
 """Render a closed bedsheet ghost; expose only its face and activity props."""
 import math
-from PIL import Image, ImageChops, ImageDraw, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageOps, ImageFilter
 
 
 def dress_ghost(image, cloth, geometry, key):
@@ -85,17 +85,17 @@ def dress_ghost(image, cloth, geometry, key):
             brown=r>90 and r>g*1.15 and g>b*1.3
             prop=((glass and blue) or (bamboo and green)
                   or (hoop and tt-15<=y<=tb and (blue or green or (r>135 and r>g*1.8 and r>b*1.8)))
-                  or ((wood or watch) and brown)
+                  or ((wood and y>=tb+1 or watch) and brown)
                   or (pumpkin and y>110 and r>150 and r>g*1.25 and g>b*1.5)
                   or (pumpkin and 70<x<112 and 115<y<145 and max(r,g,b)>130 and max(r,g,b)-min(r,g,b)<22))
             values.append(255 if a>=128 and prop else 0)
             if glass and a>=128 and blue:
                 glass_pixels.append((x,y))
-            if wood and a>=128 and brown and y>=max(hb+3,tt):
+            if wood and a>=128 and brown and y>=tb+1:
                 wood_pixels.append((x,y))
     preserve.putdata(values)
-    draw=ImageDraw.Draw(preserve)
     if glass_pixels:
+        draw=ImageDraw.Draw(preserve)
         # Preserve clear glass rim and water, not only saturated blue marks.
         xs,ys=zip(*glass_pixels)
         draw.rectangle((min(xs)-1,min(ys)-1,max(xs)+1,max(ys)+1),fill=255)
@@ -106,6 +106,20 @@ def dress_ghost(image, cloth, geometry, key):
                 r,g,b,a=image.getpixel((x,y))
                 if a>=128 and (max(r,g,b)>110 or r>50 and r>g*1.15 and g>b*1.15):
                     preserve.putpixel((x,y),255)
+    # Dark neutral fur belongs to the concealed panda, even when it overlaps
+    # a prop's rectangle. Close small gaps and fill paw-pad/belly holes so those
+    # are not accidentally restored along with glass or wood grain.
+    concealed=Image.new('L',image.size)
+    concealed.putdata([255 if a>=128 and max(r,g,b)<125 and max(r,g,b)-min(r,g,b)<35 and y>hb-2 else 0
+                      for y in range(image.height) for x in range(image.width)
+                      for r,g,b,a in [image.getpixel((x,y))]])
+    concealed=concealed.filter(ImageFilter.MaxFilter(3))
+    outside=ImageChops.invert(concealed)
+    ImageDraw.floodfill(outside,(0,0),128)
+    holes=outside.point(lambda value:255 if value==255 else 0)
+    concealed=ImageChops.lighter(concealed,holes)
+    preserve=ImageChops.subtract(preserve,concealed)
+    draw=ImageDraw.Draw(preserve)
     if profile:
         draw.ellipse((hl-8 if left else hl+(hr-hl)*.20,ht+(hb-ht)*.14,
                       hr-(hr-hl)*.20 if left else hr+8,hb+2),fill=255)

@@ -187,7 +187,9 @@ class Wardrobe:
                 face=Image.new("L",image.size)
                 face_draw=ImageDraw.Draw(face)
                 if profile:
-                    face_draw.ellipse((hl+int((hr-hl)*.30),ht+int((hb-ht)*.22),hr+2,hb-3),fill=255)
+                    face_draw.ellipse((hl-8 if left else hl+int((hr-hl)*.20),
+                                       ht+int((hb-ht)*.14),
+                                       hr-int((hr-hl)*.20) if left else hr+8,hb+2),fill=255)
                 else:
                     face_draw.ellipse((hl+int((hr-hl)*.14),ht+int((hb-ht)*.24),hr-int((hr-hl)*.14),hb-3),fill=255)
                 cap_layer.putalpha(ImageChops.subtract(cap_layer.getchannel("A"),face))

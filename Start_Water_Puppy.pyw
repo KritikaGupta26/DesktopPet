@@ -45,6 +45,19 @@ ACTIVITY_LABELS = {
     "peekaboo":"Peekaboo", "clap":"Clap", "blow_kiss":"Blow a kiss",
     "hiccup":"Hiccup", "victory":"Celebrate",
 }
+THEME_EFFECT_LABELS = {"diwali": "Festival fireworks", "new_year": "New Year fireworks",
+                       "holi": "Throw Holi colours", "birthday": "Birthday fireworks"}
+
+
+def theme_activity_options(theme, manifest, effects_enabled=True):
+    if theme not in PROP_KEYS or theme not in manifest:
+        return ()
+    options = [("scene", manifest[theme]["title"], True)]
+    if theme in THEME_EFFECT_LABELS:
+        options.append(("effect", THEME_EFFECT_LABELS[theme], bool(effects_enabled)))
+    return tuple(options)
+
+
 ACTIVITY_ALIASES = {
     "ear_rub":"groom", "wash_face":"groom", "belly_scratch":"groom",
     "yawn_stretch":"wind_down", "lazy_stretch":"wind_down", "sleep":"wind_down", "side_roll":"forward_roll", "eat_bamboo":"feed", "wiggle":"dance", "greeting":"wave", "snore_sleep":"wind_down",
@@ -159,7 +172,7 @@ def windows_menu_active(thread_id: int | None = None) -> bool:
 
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 33
+APP_VERSION = 34
 REMINDER_MINUTES = 30
 WATER_DECLINE_SECONDS = 8
 WALK_FRAME_ORDER = tuple(range(8))
@@ -2331,6 +2344,8 @@ class WaterPet:
         if not self.active_alert_kind:
             self._update_inactivity_behavior(now)
         self._check_theme_activity(now)
+        if self._studio_is_open():
+            self._refresh_theme_activities()
         self._update_hunger(now)
         self._update_idle_mood(now)
         self._check_cursor_reaction(now)
@@ -2461,6 +2476,50 @@ class WaterPet:
         self._play_test_animation("theme:"+key, scene_duration(self.scene_manifest[key]))
         if hasattr(self,"desktop_effects") and self.theme_effects_enabled.get():
             self.desktop_effects.play(key,self._screen_bounds(),(self.pet_x+90,self.pet_y+105))
+
+    def _play_theme_effect(self, key: str) -> None:
+        if (key not in THEME_EFFECT_LABELS or not self.theme_effects_enabled.get()
+                or self.prompt_visible or self.active_alert_kind or self.dragging or self.state == "sad"):
+            return
+        self._close_chatter_card()
+        self._resize_anchored(SMALL_WIDTH, SMALL_HEIGHT)
+        self._play_test_animation("pack:dance" if key == "holi" else "pack:victory", 7.0)
+        self.desktop_effects.play(key, self._screen_bounds(), (self.pet_x+90, self.pet_y+105))
+
+    def _refresh_theme_activities(self) -> None:
+        section = getattr(self, "theme_activity_section", None)
+        if section is None or not section.winfo_exists():
+            return
+        key = self._current_theme()
+        effects = self.theme_effects_enabled.get()
+        blocked = bool(self.prompt_visible or self.active_alert_kind or self.dragging or self.state == "sad")
+        signature = (key, effects, blocked)
+        if signature == getattr(self, "theme_activity_signature", None):
+            return
+        self.theme_activity_signature = signature
+        for child in section.winfo_children():
+            child.destroy()
+        self.theme_activity_buttons = {}
+        ttk.Label(section, text=THEMES[key][0] + " activities", style="CardTitle.TLabel").pack(anchor="w")
+        options = theme_activity_options(key, self.scene_manifest, effects)
+        for kind, label, enabled in options:
+            callback = self._play_theme_scene if kind == "scene" else self._play_theme_effect
+            button = ttk.Button(section, text=label,
+                                command=lambda action=callback, theme=key: self._launch_home_activity(lambda: action(theme)))
+            button.pack(fill="x", pady=(8, 0))
+            button.configure(state="normal" if enabled and not blocked else "disabled")
+            self.theme_activity_buttons[kind] = button
+        message = ("Snooze or finish the current reminder before playing." if blocked else
+                   "Choose a seasonal theme to see its activities here." if not options else
+                   "Desktop effects are off. Enable them in Seasons & festivals." if key in THEME_EFFECT_LABELS and not effects else
+                   "These activities match your active theme. Automatic timing is in Seasons & festivals.")
+        ttk.Label(section, text=message, style="CardSub.TLabel").pack(anchor="w", pady=(8, 8))
+        ttk.Button(section, text="Choose theme / timing", command=lambda: self.studio_notebook.select(6)).pack(anchor="w", pady=(0, 12))
+        preview = getattr(self, "theme_preview_button", None)
+        if preview is not None:
+            preview.configure(state="normal" if options and not blocked else "disabled")
+        for button in getattr(self, "activity_buttons", ()):
+            button.configure(state="disabled" if blocked else "normal")
 
     def _draw_scene(self, key: str, elapsed: float) -> None:
         index = scene_pose(self.scene_manifest[key],elapsed)
@@ -4017,6 +4076,7 @@ class WaterPet:
         if self.idle_mood.startswith("theme:"):
             self.idle_mood="";self.idle_mood_until=None
         self.theme_feedback.set(f"Active: {THEMES[self._current_theme()][0]}. Changes saved.")
+        self._refresh_theme_activities()
         self._draw()
 
     def _build_themes_page(self, page) -> None:
@@ -4035,7 +4095,8 @@ class WaterPet:
             self.theme_mode.set(next(key for key,label in labels.items() if label == choice.get()))
             self._theme_settings_changed()
         box.bind("<<ComboboxSelected>>", selected)
-        ttk.Button(body, text="Preview celebration", command=lambda: self._launch_home_activity(self._preview_theme)).pack(anchor="w", pady=6)
+        self.theme_preview_button = ttk.Button(body, text="Preview celebration", command=lambda: self._launch_home_activity(self._preview_theme))
+        self.theme_preview_button.pack(anchor="w", pady=6)
         for label, variable, options in (("Season calendar", self.theme_hemisphere, ("Northern","Southern")),
                                          ("Thanksgiving", self.thanksgiving_region, ("US","Canada"))):
             row = ttk.Frame(body)
@@ -4125,6 +4186,7 @@ class WaterPet:
         if self.history_window is not None and self.history_window.winfo_exists():
             self._refresh_history()
             self.history_window.deiconify()
+            self._refresh_theme_activities()
             if not self.prompt_visible and not self.active_alert_kind:
                 self._close_chatter_card()
                 self.root.withdraw()
@@ -4357,6 +4419,10 @@ class WaterPet:
             text="Choose an activity and Panda Home will hide while your panda performs it.",
             style="Sub.TLabel",
         ).pack(anchor="w", pady=(2, 18))
+        self.theme_activity_section = ttk.Frame(activities_frame, style="Glass.TFrame")
+        self.theme_activity_section.pack(fill="x")
+        ttk.Label(activities_frame, text="Everyday activities", style="CardTitle.TLabel").pack(anchor="w", pady=(4, 12))
+        self.activity_buttons = []
         activity_grid = ttk.Frame(activities_frame, style="Glass.TFrame")
         activity_grid.pack(fill="both", expand=True)
         activities = tuple((label,lambda chosen=key:self._play_activity(chosen)) for key,label in ACTIVITY_LABELS.items())
@@ -4373,8 +4439,10 @@ class WaterPet:
                 padx=(0 if index % 2 == 0 else 8, 0),
                 pady=(0, 8),
             )
+            self.activity_buttons.append(button)
         for column in range(2):
             activity_grid.columnconfigure(column, weight=1)
+        self._refresh_theme_activities()
 
         bind_page_wheel(window, [*self.home_pages, nav_page])
         switcher.select(0)

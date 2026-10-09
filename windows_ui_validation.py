@@ -291,6 +291,51 @@ def run_validation(pet_type, output_path: Path) -> None:
                 app.root.update_idletasks()
                 check(f"Activity dispatch and render: {key}", True)
 
+            # Exercise the actual Home buttons, not merely the scene helper.
+            automatic_scenes = app.theme_activity_enabled.get()
+            app.theme_activity_enabled.set(False)
+            for theme in from_module.PROP_KEYS:
+                clear_action()
+                app.theme_mode.set(theme)
+                app.show_history()
+                app.studio_notebook.select(4)
+                app.home_pages[4].canvas.yview_moveto(0)
+                app.root.update()
+                expected = from_module.theme_activity_options(theme, app.scene_manifest, True)
+                check(f"Theme activity entries update: {theme}",
+                      tuple(app.theme_activity_buttons) == tuple(item[0] for item in expected)
+                      and app.theme_activity_buttons["scene"].cget("text") == app.scene_manifest[theme]["title"])
+                snapshot(f"activities_theme_{theme}", app.history_window)
+                app.theme_activity_buttons["scene"].invoke()
+                deadline = time.monotonic()+.20
+                while time.monotonic()<deadline:
+                    app.root.update(); time.sleep(.01)
+                check(f"Home button launches themed scene: {theme}", app.idle_mood == "theme:"+theme)
+                check(f"Home hides for themed performance: {theme}", not app.history_window.winfo_viewable() and app.root.winfo_viewable())
+                if theme in from_module.THEME_EFFECT_LABELS:
+                    clear_action()
+                    app.show_history(); app.studio_notebook.select(4); app.root.update()
+                    app.theme_activity_buttons["effect"].invoke()
+                    deadline = time.monotonic()+.20
+                    while time.monotonic()<deadline:
+                        app.root.update(); time.sleep(.01)
+                    check(f"Home button launches distinct effect: {theme}", app.desktop_effects.window is not None and app.idle_mood.startswith("pack:"))
+            clear_action()
+            app.theme_mode.set("holi")
+            app.theme_effects_enabled.set(False)
+            app.show_history(); app.studio_notebook.select(4); app._refresh_theme_activities()
+            check("Disabled effects visible but disabled in Activities", app.theme_activity_buttons["effect"].instate(["disabled"]) and not app.theme_activity_buttons["scene"].instate(["disabled"]))
+            app.prompt_visible=True
+            app._refresh_theme_activities()
+            check("Activities respect active reminders", all(button.instate(["disabled"]) for button in (*app.theme_activity_buttons.values(), *app.activity_buttons)))
+            app.prompt_visible=False; app.theme_effects_enabled.set(True)
+            app.theme_mode.set("classic"); app._refresh_theme_activities()
+            check("Classic has no fake themed activities", not app.theme_activity_buttons and app.theme_preview_button.instate(["disabled"]))
+            app.theme_mode.set("Auto"); app._refresh_theme_activities()
+            resolved = app._current_theme()
+            check("Auto activities match resolved calendar theme", bool(app.theme_activity_buttons) == (resolved != "classic"))
+            app.theme_activity_enabled.set(automatic_scenes)
+            app._hide_studio()
             clear_action()
             left, top, right, bottom = app._screen_bounds()
             app.pet_x = float(left+20)

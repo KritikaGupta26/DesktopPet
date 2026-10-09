@@ -1,10 +1,10 @@
-# Water Panda v33: complete replication and continuation prompt
+# Water Panda v34: complete replication and continuation prompt
 
 Copy the instruction below into a coding agent with the full DesktopPet repository and original assets available. A prompt alone cannot recreate identical generated artwork; source sheets and exported assets are part of the specification. Continue the existing repository rather than starting an unrelated pet.
 
 ## Current version requirements take precedence
 
-This is the v33 contract. Original source inventory below documents supplied compatibility assets, not exposed features or mandatory old routes. Remove Fetch. Use eight active walk/run phases. Retain selected thematic attire during all actions. All Home pages must have correct margins and usable scrolling. Deliver only after local checks, full wardrobe audit and packaged Windows regression, with actual build evidence. Good original poses are retained and dressed; do not claim every source sheet was regenerated.
+This is the v34 contract. Original source inventory below documents supplied compatibility assets, not exposed features or mandatory old routes. Remove Fetch. Use eight active walk/run phases. Retain selected thematic attire during all actions. All Home pages must have correct margins and usable scrolling. Deliver only after local checks, full wardrobe audit and packaged Windows regression, with actual build evidence. Good original poses are retained and dressed; do not claim every source sheet was regenerated.
 
 ## Instruction to the implementing agent
 
@@ -26,7 +26,7 @@ The latest requirement supersedes the old water behaviour: **Not yet reacts for 
 | R008 | Visuals and animation | Preserve complete ears, feet, paws, body curves and props. No flat cropped base, painted floor line or cut character. |
 | R009 | Visuals and animation | Walking must use full coherent poses, opposite arm/leg coordination, readable contacts, passing phases and controlled cadence. Do not animate separated limb parts or translate one fixed pose. |
 | R010 | Visuals and animation | Use all eight v32 whole-body walk poses in order 0–7, with exact left mirrors, 180 ms Balanced cadence and gait-matched horizontal travel. Running uses eight newly generated v33 contact/compression/passing/flight poses, 140 ms cadence and its own stride-matched travel. |
-| R011 | Visuals and animation | Keep v33 Run distinct from walking and use opposite near/far arm-leg phases. Follow and Avoid move the real desktop window horizontally. Avoid chooses a reachable side even directly above/below the panda or at an edge. |
+| R011 | Visuals and animation | Keep v34 Run distinct from walking and use opposite near/far arm-leg phases. Follow and Avoid move the real desktop window horizontally. Avoid chooses a reachable side even directly above/below the panda or at an edge. |
 | R012 | Visuals and animation | Jump has anticipation, airborne and landing poses with enough transparent vertical clearance to avoid clipped ears. |
 | R013 | Visuals and animation | Wave with the same paw across frames; use a genuine torso bow with readable depth. |
 | R014 | Visuals and animation | Keep one recognizable somersault. Remove the redundant side-roll control rather than offering the same animation under two names. |
@@ -96,7 +96,7 @@ Python 3.12, Tkinter transparent canvas, Pillow RGBA sprite rendering, SQLite lo
 - Start_Water_Puppy.pyw: WaterPet runtime, WindowsTray, settings, cloud drawing, history, activity routing and scheduling.
 - assets/: normalized sprite exports, icon and sprite_collection_manifest.json.
 - sprites/: 17 original sprite sheets. artwork/v32/: accepted walk and seasonal scenes. artwork/v33/: new running, pillar scene and shaded garment sources; old walk exports remain archived.
-- tools/integrate_sprite_collection.py: original-sheet export pipeline. tools/prepare_walk32.py and tools/prepare_scenes32.py: current walk and scene exporters. Preserve the v33 exported running, pillar and wardrobe assets and their manifests. Historical prepare_walk25.py/prepare_walk31.py exports are superseded; do not overwrite current assets with them.
+- tools/integrate_sprite_collection.py: original-sheet export pipeline. tools/prepare_walk32.py and tools/prepare_scenes32.py: current walk and scene exporters. Preserve the v34 exported running, pillar and wardrobe assets and their manifests. Historical prepare_walk25.py/prepare_walk31.py exports are superseded; do not overwrite current assets with them.
 - windows_ui_validation.py: isolated real Windows executable validation, screenshots and JSON results.
 - tests/: regression checks. WaterPanda.spec, installer/WaterPanda.iss and .github/workflows/build-windows.yml: packaging and native CI.
 
@@ -171,7 +171,7 @@ Compatibility aliases are migrations/routes, not proof that different source pos
 16. 16_fetch, 4×2: fetch.
 17. 17_somersault, 4×2: forward_roll.
 
-These are draft generated sheets, originally 240 frame slots and 47 rows (45 groups plus two alternatives). Continuity is not automatically certified. All are accounted for in the current manifest below. The active walk row uses eight side-profile phases from artwork/v32/walk, at 180 ms per phase. The run row uses eight new v33 phases at 140 ms per phase. Preserve old files under artwork/v24_walk; exclude rig_walk_* and walk_rig_motion.json from the installed bundle.
+These are draft generated sheets, originally 240 frame slots and 47 rows (45 groups plus two alternatives). Continuity is not automatically certified. All are accounted for in the current manifest below. The active walk row uses eight side-profile phases from artwork/v32/walk, at 180 ms per phase. The run row uses eight new v34 phases at 140 ms per phase. Preserve old files under artwork/v24_walk; exclude rig_walk_* and walk_rig_motion.json from the installed bundle.
 
 | Source row | Sheet | Exported frames | Seconds per frame | Playback |
 | --- | --- | --- | --- | --- |
@@ -225,9 +225,9 @@ These are draft generated sheets, originally 240 frame slots and 47 rows (45 gro
 
 ## Current art, outfits and scene contract
 
-The v32 eight-pose walk sources are `artwork/v32/walk_<index>_source.png`, with eight active full-body poses and exact left mirrors. Balanced walk cycle is 1.44 seconds, 180 ms per pose, with source stride estimate 76 pixels. This replaces the historical six-pose gait. The v33 run sources are `artwork/v33/run_<index>_source.png`; all eight phases are used at 140 ms per pose, source stride estimate 92 pixels. No locomotion travels vertically.
+The v32 eight-pose walk sources are `artwork/v32/walk_<index>_source.png`, with eight active full-body poses and exact left mirrors. Balanced walk cycle is 1.44 seconds, 180 ms per pose, with source stride estimate 76 pixels. This replaces the historical six-pose gait. The v34 run sources are `artwork/v33/run_<index>_source.png`; all eight phases are used at 140 ms per pose, source stride estimate 92 pixels. No locomotion travels vertically.
 
-Use all sixteen v32 eight-pose seasonal scene sheets plus log, meditation and the new v33 pillar peekaboo scene. Themes: autumn, spooky, Diwali, Holi, Navratri, Thanksgiving, Christmas, New Year, Valentine, birthday, Ganesh, Krishna, Shiva, spring, summer and winter. Preserve Auto/manual/Classic, event toggles, birthday MM-DD, Northern/Southern seasons, US/Canada Thanksgiving and dated custom ranges. Built-in lunar dates are curated for New Delhi in 2026/2027; local overrides win. Do not invent future lunar dates.
+Use all sixteen v32 eight-pose seasonal scene sheets plus log, meditation and the new v34 pillar peekaboo scene. Themes: autumn, spooky, Diwali, Holi, Navratri, Thanksgiving, Christmas, New Year, Valentine, birthday, Ganesh, Krishna, Shiva, spring, summer and winter. Preserve Auto/manual/Classic, event toggles, birthday MM-DD, Northern/Southern seasons, US/Canada Thanksgiving and dated custom ranges. Built-in lunar dates are curated for New Delhi in 2026/2027; local overrides win. Do not invent future lunar dates.
 
 Persistent wardrobe applies to movement, feeding, reminders, bows, routines, log, meditation and peekaboo. `wardrobe.py` fits generated shaded front/profile garment/scarf and headgear components from `assets/wardrobe_manifest.json` to each pose, with reviewed exceptions for joined or occluded fur. Preserve the glass, watch, bamboo, paws, hoop and pillar as foreground objects. Keep faces readable; handle lying/inverted body orientation. It is pose-dependent rendering, not thousands of newly drawn whole-body sprites. Thematic scene sheets already contain their own matching attire. Classic explicitly disables costumes. Do not restore bare classic action artwork merely because a non-idle action starts.
 
@@ -243,7 +243,7 @@ Artwork was created with the built-in image-generation tool. See `artwork/v33/PR
 
 Double-click opens Home. Home provides history/chart/totals, reminders, activities and settings, including scrollable Behaviour controls. Ordinary panda/chatter must not cover it. Activity selection returns to the pet. Water entries can be undone with a second inline confirmation within ten seconds; export CSV with UTF-8 BOM. Display pats and adoption days. Use normal requested save-file picker but no modal pet reminder or inline-validation error boxes.
 
-Minimal right-click menu: Open Panda Home, roaming toggle, Ask for water now, Pause water for one hour, Resume water, Add personal reminder, Exit. The installed app requires no Python installation and no admin privileges. There is no silent automatic updater in v33; updates are new installers or local Git pulls/builds.
+Minimal right-click menu: Open Panda Home, roaming toggle, Ask for water now, Pause water for one hour, Resume water, Add personal reminder, Exit. The installed app requires no Python installation and no admin privileges. There is no silent automatic updater in v34; updates are new installers or local Git pulls/builds.
 
 ## Complete Windows commands
 
@@ -286,4 +286,10 @@ Install Python 3.12 and Inno Setup 6 only for source builds; family installer us
 
 Run local regressions and diff checks. Build on Windows, exercise the installed executable with isolated data, verify tray registration and actual OS pointer-follow movement, show Not yet recovering without Pause, confirm no accidental water logging, snoozes and deferred alerts, feed bamboo, save settings, open every page, export/undo history and dispatch/render every visible activity. Capture cloud and Home layouts, including text-scaling checks. Inspect screenshots and walk previews. Validate MZ header, ZIP integrity and embedded-installer byte identity; record commit/tag and SHA-256 hashes.
 
-Deliver Water_Panda_v33_Family.zip with installer, installation guide, complete prompt, point-by-point audit, build manifest, walk GIFs and native UI evidence. Provide direct installer separately. Keep original app data. Mark native runner coverage, user-device verification, draft artistic limitations and future optional features honestly in the audit. Do not leave a failed requirement hidden behind “all features added.”
+Deliver Water_Panda_v34_Family.zip with installer, installation guide, complete prompt, point-by-point audit, build manifest, walk GIFs and native UI evidence. Provide direct installer separately. Keep original app data. Mark native runner coverage, user-device verification, draft artistic limitations and future optional features honestly in the audit. Do not leave a failed requirement hidden behind “all features added.”
+
+## v34 integration correction
+
+Activities must expose the active resolved theme scene directly above everyday activities, using its real scene title. All sixteen themes have one complete scene, not duplicate buttons renamed as separate tricks. Diwali, New Year, birthday and Holi additionally have distinct effects-only controls (celebratory/dance poses plus finite desktop effects). The global desktop-effects setting is respected; disabled controls remain visible with a reason. Classic has no invented themed entries. Theme changes and automatic calendar resolution refresh this list while Home is open. Manual themed activity playback works even when automatic seasonal scenes are disabled. Active reminders disable these controls until resolved/snoozed. Clicking an enabled theme activity hides Home and starts the corresponding performance.
+
+Correct the mirrored ghost hood face opening for left travel, preserving eyes/nose in all eight walk and run phases in both directions. Test the actual packaged Home buttons for every theme, rather than only testing scene helper methods. Capture themed Activities pages and regress existing margins/scrolling, reminders, wardrobe, pointer movement and all exported scenes.

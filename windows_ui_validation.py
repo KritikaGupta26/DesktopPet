@@ -431,7 +431,7 @@ def run_validation(pet_type, output_path: Path) -> None:
                 app.pending_edge_action="bored_edge"
                 app.bored_walk_started=time.monotonic()
                 app._draw()
-                raw_bored={str(app.images["panda"][f"pack_bored_shuffle_{i}"]) for i in range(8)}
+                raw_bored={str(app.images["panda"][f"pack_bored_shuffle_{i}"]) for i in range(app.pack_manifest["bored_shuffle"]["frames"])}
                 drawn=[app.canvas.itemcget(i,"image") for i in app.canvas.find_all() if app.canvas.type(i)=="image"]
                 check(f"Persistent outfit during bored walk: {theme}",bool(drawn) and not any(i in raw_bored for i in drawn))
             clear_action()

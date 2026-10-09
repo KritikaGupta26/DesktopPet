@@ -51,7 +51,7 @@ The latest requirement supersedes the old water behaviour: **Not yet reacts for 
 | R033 | Clouds and reminder interaction | Movement reminders show the hula-hooping panda, have a configurable enabled state and interval, and ask the user to move. |
 | R034 | Clouds and reminder interaction | Personal reminders accept a title, date and future local time, including 1 PM, 1:00 PM and 13:00. Store due instants consistently in UTC and display local time. |
 | R035 | Clouds and reminder interaction | Validate reminder input inline. Keep full titles in Home while wrapping and ellipsizing long cloud titles. |
-| R036 | Clouds and reminder interaction | Ensure button labels stay inside cloud buttons under tested text scaling. Clamp window movement to desktop work areas. |
+| R036 | Clouds and reminder interaction | Ensure button labels stay inside cloud buttons under tested text scaling. Clamp window movement to physical monitor bounds while keeping the complete silhouette visible. |
 | R037 | Interaction and automatic behaviour | Allow dragging, petting and double-click opening of Panda Home. |
 | R038 | Interaction and automatic behaviour | Keep right-click and tray menus minimal: Home, roaming on/off, water now, water pause/resume, add reminder and Exit. No old test-automation menu. |
 | R039 | Interaction and automatic behaviour | Default pointer mode is Off. Hover alone must not make the panda escape. |
@@ -95,8 +95,8 @@ Python 3.12, Tkinter transparent canvas, Pillow RGBA sprite rendering, SQLite lo
 
 - Start_Water_Puppy.pyw: WaterPet runtime, WindowsTray, settings, cloud drawing, history, activity routing and scheduling.
 - assets/: normalized sprite exports, icon and sprite_collection_manifest.json.
-- sprites/: 17 original sprite sheets. artwork/: accepted v25 walk atlas and archived old walk exports/previews.
-- tools/integrate_sprite_collection.py: original-sheet export pipeline. tools/prepare_walk25.py: accepted v25 walk export pipeline; run this after original integration so the accepted walk is restored.
+- sprites/: 17 original sprite sheets. artwork/v32/: accepted walk and seasonal scenes. artwork/v33/: new running, pillar scene and shaded garment sources; old walk exports remain archived.
+- tools/integrate_sprite_collection.py: original-sheet export pipeline. tools/prepare_walk32.py and tools/prepare_scenes32.py: current walk and scene exporters. Preserve the v33 exported running, pillar and wardrobe assets and their manifests. Historical prepare_walk25.py/prepare_walk31.py exports are superseded; do not overwrite current assets with them.
 - windows_ui_validation.py: isolated real Windows executable validation, screenshots and JSON results.
 - tests/: regression checks. WaterPanda.spec, installer/WaterPanda.iss and .github/workflows/build-windows.yml: packaging and native CI.
 

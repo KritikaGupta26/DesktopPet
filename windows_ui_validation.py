@@ -47,6 +47,7 @@ def run_validation(pet_type, output_path: Path) -> None:
             report.setdefault("capture_warnings", []).append(str(error))
 
     def clear_action():
+        if hasattr(app,"desktop_effects"):app.desktop_effects.stop()
         app.prompt_visible = False
         app.active_alert_kind = ""
         app.active_alert_id = None
@@ -232,6 +233,25 @@ def run_validation(pet_type, output_path: Path) -> None:
                 app.root.update_idletasks()
                 snapshot(f"page_{name}", app.history_window)
                 check(f"Panda Home navigation: {name}", True)
+            original_geometry=app.history_window.geometry()
+            app.history_window.geometry("660x440+30+30")
+            app.root.update_idletasks()
+            for index,name in enumerate(("home","history","reminders","settings","activities","behaviour","themes")):
+                app.studio_notebook.select(index)
+                page=app.home_pages[index]
+                app.root.update_idletasks()
+                page.canvas.yview_moveto(0)
+                controls=page.body.winfo_children()
+                target=controls[-1] if controls else page.canvas
+                before=page.canvas.yview()[0]
+                for _ in range(20):target.event_generate("<MouseWheel>",delta=-120)
+                app.root.update_idletasks()
+                overflowing=page.body.winfo_reqheight()>page.canvas.winfo_height()
+                check(f"Small Home wheel routes over controls: {name}",not overflowing or page.canvas.yview()[0]>before)
+                check(f"Small Home content viewport stays inside window: {name}",page.canvas.winfo_rootx()>=app.history_window.winfo_rootx() and page.canvas.winfo_rootx()+page.canvas.winfo_width()<=app.history_window.winfo_rootx()+app.history_window.winfo_width())
+                snapshot(f"small_page_{name}",app.history_window)
+            app.history_window.geometry(original_geometry)
+            app.root.update_idletasks()
             app.behavior_canvas.yview_moveto(1)
             app.root.update_idletasks()
             snapshot("behaviour_bottom", app.history_window)
@@ -360,7 +380,7 @@ def run_validation(pet_type, output_path: Path) -> None:
             snapshot("theme_diwali_idle")
             app.show_prompt()
             app._draw()
-            check("Seasonal costume yields to water offer", not app.canvas.find_withtag("season_body"))
+            check("Seasonal outfit remains during water offer", bool(app.canvas.find_withtag("outfit_diwali")))
             check("Festival tint reaches water cloud", any(app.canvas.itemcget(i,"fill") == "#FFF2D9" for i in app.canvas.find_withtag("cloud") if app.canvas.type(i)=="polygon"))
             snapshot("theme_diwali_water")
             app.answer_not_yet()
@@ -369,27 +389,53 @@ def run_validation(pet_type, output_path: Path) -> None:
                 app.theme_mode.set(key)
                 app._draw()
                 check(f"Full-body theme loaded: {key}", bool(app.canvas.find_withtag("season_body")))
+            for theme in ("diwali","spooky","holi","christmas","winter"):
+                app.theme_mode.set(theme)
+                for key in ("walk","run","water_offer","bow","sleep","eat_bamboo","hula_hoop","watch"):
+                    image=app._pack_image(key,index=0)
+                    raw=app.images["panda"][f"pack_{key}_0"]
+                    check(f"Persistent outfit: {theme}:{key}",str(image)!=str(raw))
+                clear_action()
+                app.theme_mode.set(theme)
+                app.motion_mode="escaping"
+                app.walk_direction="right"
+                app._draw();snapshot(f"outfit_{theme}_running")
+            clear_action()
+            app.theme_mode.set("diwali")
+            app._play_theme_scene("diwali")
+            app.root.update()
+            check("Diwali desktop effects start",app.desktop_effects.window is not None)
+            effect_window=app.desktop_effects.window
+            hwnd=ctypes.windll.user32.GetAncestor(effect_window.winfo_id(),2)
+            get_style=getattr(ctypes.windll.user32,"GetWindowLongPtrW",ctypes.windll.user32.GetWindowLongW)
+            style=get_style(hwnd,-20)
+            check("Desktop effects are click-through and nonactivating",bool(style & 0x20) and bool(style & 0x08000000))
+            snapshot("diwali_desktop_fireworks",effect_window)
+            app.show_prompt()
+            check("Water cancels desktop effects",app.desktop_effects.window is None)
+            clear_action()
             # Verify every exported pose through the packaged renderer, then
             # capture a sheet of actual Windows output for each scene.
             app.theme_mode.set("classic")
             for key,metadata in app.scene_manifest.items():
                 clear_action()
-                app._resize_anchored(180,184)
-                contact=Image.new("RGB",(720,368),"#f4eadd")
+                scene_width=360 if key=="peekaboo" else 180
+                app._resize_anchored(scene_width,184)
+                contact=Image.new("RGB",(scene_width*4,368),"#f4eadd")
                 seen=set();elapsed=0
                 for index,seconds in metadata["timeline"]:
                     if index not in seen:
                         seen.add(index)
-                        app.idle_mood="log_play" if key=="log" else "meditate" if key=="meditate" else "theme:"+key
+                        app.idle_mood="log_play" if key=="log" else "meditate" if key=="meditate" else "peekaboo_pillar" if key=="peekaboo" else "theme:"+key
                         app.idle_mood_until=datetime.now()+timedelta(minutes=1)
                         app.idle_mood_started_at=datetime.now()-timedelta(seconds=elapsed+seconds/2)
                         app._draw();app.root.update_idletasks()
                         body=app.canvas.find_withtag("scene_body")
                         check(f"Packaged scene pose: {key}:{index}",len(body)==1 and app.canvas.itemcget(body[0],"image")==str(app.scene_images[key][index]))
-                        check(f"Scene canvas bounds: {key}:{index}",app.canvas.bbox(body[0])==(0,4,180,184))
+                        check(f"Scene canvas bounds: {key}:{index}",app.canvas.bbox(body[0])==(0,4,scene_width,184))
                         ctypes.windll.dwmapi.DwmFlush()
-                        shot=ImageGrab.grab(bbox=(app.root.winfo_rootx(),app.root.winfo_rooty(),app.root.winfo_rootx()+180,app.root.winfo_rooty()+184),all_screens=True)
-                        contact.paste(shot,((index%4)*180,(index//4)*184))
+                        shot=ImageGrab.grab(bbox=(app.root.winfo_rootx(),app.root.winfo_rooty(),app.root.winfo_rootx()+scene_width,app.root.winfo_rooty()+184),all_screens=True)
+                        contact.paste(shot,((index%4)*scene_width,(index//4)*184))
                     elapsed+=seconds
                 filename=f"scene_{key}_all_poses.png";contact.save(output_path/filename)
                 report["screenshots"].append(filename)

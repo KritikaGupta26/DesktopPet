@@ -15,7 +15,7 @@ WaterPet=runpy.run_path(str(ROOT/'Start_Water_Puppy.pyw'))['WaterPet']
 
 class SceneTests(unittest.TestCase):
     def test_all_themes_and_repaired_core_scenes_are_present(self):
-        self.assertEqual(set(SCENES),set(PROP_KEYS)|{'log','meditate'})
+        self.assertEqual(set(SCENES),set(PROP_KEYS)|{'log','meditate','peekaboo'})
         for key,meta in SCENES.items():
             self.assertEqual(meta['frames'],8)
             self.assertEqual(set(i for i,_ in meta['timeline']),set(range(8)),key)
@@ -27,11 +27,11 @@ class SceneTests(unittest.TestCase):
             hashes=set()
             for index in range(meta['frames']):
                 with Image.open(ROOT/f'assets/scene_{key}_{index}.png') as im:
-                    self.assertEqual(im.size,(512,512));self.assertEqual(im.mode,'RGBA')
+                    self.assertEqual(im.size,tuple(meta.get('canvas_size',[512,512])));self.assertEqual(im.mode,'RGBA')
                     alpha=im.getchannel('A').point(lambda a:255 if a>=128 else 0)
                     box=alpha.getbbox();self.assertIsNotNone(box)
                     self.assertGreaterEqual(box[0],16,key);self.assertGreaterEqual(box[1],16,key)
-                    self.assertLessEqual(box[2],496,key);self.assertLessEqual(box[3],496,key)
+                    self.assertLessEqual(box[2],im.width-16,key);self.assertLessEqual(box[3],496,key)
                     self.assertEqual(alpha.getpixel((0,0)),0)
                     hashes.add(im.tobytes())
             self.assertEqual(len(hashes),8,key)

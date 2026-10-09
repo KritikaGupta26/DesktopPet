@@ -27,12 +27,17 @@ from tkinter import filedialog, messagebox, ttk
 
 from PIL import Image, ImageTk
 from scene_playback import scene_pose, scene_duration
+from home_layout import HomePage, bind_page_wheel
+from locomotion import escape_target, run_step
+from wardrobe import Wardrobe
+from desktop_effects import DesktopEffects
+from collections import OrderedDict
 from seasonal_themes import THEMES, PROP_KEYS, LUNAR_KEYS, resolve_theme, valid_birthday, normalize_custom_dates, festival_ranges
 
 
 ACTIVITY_LABELS = {
     "feed":"Feed bamboo", "walk":"Walk", "run":"Run", "jump":"Jump", "cursor_follow":"Follow cursor",
-    "cursor_avoid":"Avoid cursor", "fetch":"Fetch", "log":"Play on log", "bamboo_hang":"Hang on bamboo",
+    "cursor_avoid":"Avoid cursor", "log":"Play on log", "bamboo_hang":"Hang on bamboo",
     "kung_fu":"Kung fu", "wind_down":"Wind down",
     "sneeze":"Sneeze", "meditate":"Meditate", "sploot":"Sploot", "dance":"Dance",
     "forward_roll":"Somersault", "petting":"Petting", "bow":"Bow", "water":"Water reminder",
@@ -46,9 +51,9 @@ ACTIVITY_ALIASES = {
     "sit_on_log":"log", "balance_on_log":"log", "bored_shuffle":"log", "sit_down":"sploot",
     "wake_up":"wind_down", "carry_bamboo":"feed", "water_offer":"water", "alternate_offer":"water",
     "drink_water":"water", "alternate_hoop":"movement", "hula_hoop":"movement",
-    "chase_ball":"fetch", "catch_ball":"fetch", "happy_idle":"wave", "sad":"bow",
+     "happy_idle":"wave", "sad":"bow",
 }
-ROUTINE_ACTIVITIES = ("groom", "wind_down", "meditate", "log", "dance", "kung_fu", "peekaboo", "fetch", "bamboo_hang", "jump", "wave", "sploot", "petting", "bow", "clap", "blow_kiss", "sneeze", "hiccup", "victory")
+ROUTINE_ACTIVITIES = ("groom", "wind_down", "meditate", "log", "dance", "kung_fu", "peekaboo", "bamboo_hang", "jump", "wave", "sploot", "petting", "bow", "clap", "blow_kiss", "sneeze", "hiccup", "victory")
 GENTLE_ACTIVITIES = ROUTINE_ACTIVITIES[:2]
 GROOM_SEQUENCE = (("wash_face", 3.0), ("ear_rub", 3.0), ("belly_scratch", 3.0))
 WIND_DOWN_SEQUENCE = (("yawn_stretch", 3.0), ("lazy_stretch", 3.0), ("sleep", 18.0), ("wake_up", 4.0))
@@ -154,7 +159,7 @@ def windows_menu_active(thread_id: int | None = None) -> bool:
 
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 32
+APP_VERSION = 33
 REMINDER_MINUTES = 30
 WATER_DECLINE_SECONDS = 8
 WALK_FRAME_ORDER = tuple(range(8))
@@ -807,6 +812,8 @@ class WaterPet:
         self.thanksgiving_region = tk.StringVar(value=self.settings["thanksgiving_region"])
         self.theme_activity_minutes = tk.IntVar(value=self.settings["theme_activity_minutes"])
         self.theme_activity_enabled = tk.BooleanVar(value=self.settings["theme_activity_enabled"])
+        self.theme_effects_enabled = tk.BooleanVar(value=self.settings["theme_effects_enabled"])
+        self.desktop_effects = DesktopEffects(self.root)
         self.theme_enabled = {key: tk.BooleanVar(value=key in self.settings["theme_enabled"]) for key in PROP_KEYS}
         self.theme_feedback = tk.StringVar(value="")
         self.next_theme_activity = datetime.now() + timedelta(minutes=self.theme_activity_minutes.get())
@@ -984,6 +991,9 @@ class WaterPet:
 
     def _load_images(self) -> dict[str, dict[str, ImageTk.PhotoImage]]:
         assets = self.app_dir / "assets"
+        self.image_pil = {}
+        self.wardrobe = Wardrobe(assets)
+        self.styled_photos = OrderedDict()
         loaded: dict[str, dict[str, ImageTk.PhotoImage]] = {}
         for pet in PET_LABELS:
             loaded[pet] = {}
@@ -1004,6 +1014,7 @@ class WaterPet:
                     lambda alpha: 255 if alpha >= 128 else 0
                 ))
                 loaded[pet][state] = ImageTk.PhotoImage(canvas)
+                if pet == "panda":self.image_pil[state] = canvas.copy()
         with Image.open(assets / "panda_somersault.png") as opened:
             rolling = opened.convert("RGBA")
         rolling.thumbnail((132, 132), Image.Resampling.LANCZOS)
@@ -1014,6 +1025,7 @@ class WaterPet:
             canvas.alpha_composite(sprite, ((180-sprite.width)//2, (180-sprite.height)//2))
             canvas.putalpha(canvas.getchannel("A").point(lambda a: 255 if a >= 128 else 0))
             loaded["panda"][f"roll_{frame}"] = ImageTk.PhotoImage(canvas)
+            self.image_pil[f"roll_{frame}"] = canvas.copy()
         self.pack_manifest = json.loads((assets / "sprite_collection_manifest.json").read_text(encoding="utf-8"))
         for key, metadata in self.pack_manifest.items():
             row_scale = 1.0
@@ -1036,16 +1048,33 @@ class WaterPet:
                     sprite = sprite.resize((180,180), Image.Resampling.LANCZOS)
                     sprite.putalpha(sprite.getchannel("A").point(lambda a: 255 if a >= 128 else 0))
                     loaded["panda"][f"pack_{variant}_{i}"] = ImageTk.PhotoImage(sprite)
+                    self.image_pil[f"pack_{variant}_{i}"] = sprite.copy()
         self.scene_manifest = json.loads((assets / "scene_manifest.json").read_text(encoding="utf-8"))
         self.scene_images = {}
         for key, metadata in self.scene_manifest.items():
             self.scene_images[key] = []
             for index in range(metadata["frames"]):
                 with Image.open(assets / f"scene_{key}_{index}.png") as opened:
-                    sprite = opened.convert("RGBA").resize((180,180), Image.Resampling.LANCZOS)
+                    sprite = opened.convert("RGBA").resize((360 if key == "peekaboo" else 180,180), Image.Resampling.LANCZOS)
                 sprite.putalpha(sprite.getchannel("A").point(lambda a:255 if a>=128 else 0))
                 self.scene_images[key].append(ImageTk.PhotoImage(sprite))
+                self.image_pil[f"scene_{key}_{index}"] = sprite.copy()
         return loaded
+
+    def _styled_image(self, name):
+        if not hasattr(self,"wardrobe") or self._current_theme() == "classic":
+            if name.startswith("scene_"):
+                key,index = name[6:].rsplit("_",1)
+                return self.scene_images[key][int(index)]
+            return self.images["panda"][name]
+        theme = self._current_theme()
+        cache_key = (theme,name)
+        if cache_key not in self.styled_photos:
+            sprite=self.wardrobe.dress(self.image_pil[name],theme,name)
+            self.styled_photos[cache_key]=ImageTk.PhotoImage(sprite)
+            while len(self.styled_photos)>96:self.styled_photos.popitem(last=False)
+        self.styled_photos.move_to_end(cache_key)
+        return self.styled_photos[cache_key]
 
     def _pack_image(self, key: str, elapsed: float = 0.0, index: int | None = None):
         metadata = self.pack_manifest[key]
@@ -1067,7 +1096,7 @@ class WaterPet:
         if index is None:
             index = max(0, int(elapsed / metadata["seconds_per_frame"]))
             index = index % metadata["frames"] if metadata["mode"] == "loop" else min(metadata["frames"]-1,index)
-        return self.images["panda"][f"pack_{key}_{index}"]
+        return self._styled_image(f"pack_{key}_{index}")
 
     def _image(self, state: str) -> ImageTk.PhotoImage:
         now = datetime.now()
@@ -1082,10 +1111,10 @@ class WaterPet:
                 # Use complete coordinated key poses, never assembled limb pieces.
                 index=WALK_FRAME_ORDER[(int(parts[2])-1)%len(WALK_FRAME_ORDER)]
                 variant="walk_left" if parts[1]=="left" else "walk"
-                return self.images["panda"][f"pack_{variant}_{index}"]
+                return self._styled_image(f"pack_{variant}_{index}")
             index = (int(parts[2]) - 1) % self.pack_manifest[key]["frames"]
             variant = key + "_left" if parts[1] == "left" else key
-            return self.images["panda"][f"pack_{variant}_{index}"]
+            return self._styled_image(f"pack_{variant}_{index}")
         for prefix,key in (("offer_","water_offer"),("hoop_","hula_hoop"),("clock_","watch")):
             if state.startswith(prefix):
                 return self._pack_image(key,index=int(state.rsplit("_",1)[1]))
@@ -1099,7 +1128,7 @@ class WaterPet:
             if state in ("normal","blink","sad"):elapsed=now.timestamp()
             return self._pack_image(aliases[state],elapsed)
         if state == "meditate":state="meditate_hd"
-        return self.images[self.pet_type.get()][state]
+        return self._styled_image(state)
 
     def _play_pack_animation(self, key: str) -> None:
         if self.prompt_visible or self.active_alert_kind or self.dragging or self.state == "sad":
@@ -1132,9 +1161,12 @@ class WaterPet:
         if key == "wind_down":self._play_test_animation("wind_down",sum(duration for _,duration in WIND_DOWN_SEQUENCE))
         elif key == "groom":self._play_test_animation("groom",sum(duration for _,duration in GROOM_SEQUENCE))
         elif key == "feed":self.feed_panda()
-        elif key == "fetch":self.start_fetch()
+        elif key in ("fetch", "chase_ball", "catch_ball"):return
         elif key == "log":self._play_test_animation("log_play",scene_duration(self.scene_manifest["log"]))
         elif key == "meditate":self._play_test_animation("meditate",scene_duration(self.scene_manifest["meditate"]))
+        elif key == "peekaboo":
+            self._play_test_animation("peekaboo_pillar",scene_duration(self.scene_manifest["peekaboo"]))
+            self._resize_anchored(360,SMALL_HEIGHT)
         elif key == "water":self.show_prompt()
         elif key == "watch":self.show_reminders()
         elif key == "movement":
@@ -1167,6 +1199,7 @@ class WaterPet:
             "theme_hemisphere": "Northern",
             "thanksgiving_region": "US",
             "theme_activity_enabled": True,
+            "theme_effects_enabled": True,
             "theme_activity_minutes": 20,
             "theme_enabled": list(PROP_KEYS),
             "festival_dates": {},
@@ -1313,6 +1346,7 @@ class WaterPet:
             "theme_hemisphere": self.theme_hemisphere.get(),
             "thanksgiving_region": self.thanksgiving_region.get(),
             "theme_activity_enabled": self.theme_activity_enabled.get(),
+            "theme_effects_enabled": self.theme_effects_enabled.get(),
             "theme_activity_minutes": self.theme_activity_minutes.get(),
             "theme_enabled": [key for key, value in self.theme_enabled.items() if value.get()],
             "festival_dates": self.settings.get("festival_dates", {}),
@@ -1677,7 +1711,7 @@ class WaterPet:
 
     def _mouse_enter(self, _event: tk.Event) -> None:
         self.hovering = True
-        if not self._context_menu_active() and self.motion_mode == "idle" and self.state == "normal" and not self.prompt_visible and not self.active_alert_kind and not self.dragging and not self.idle_mood and not self.chatter_until:
+        if not getattr(self,"cursor_session_kind","") and not (hasattr(self,"cursor_mode") and self.cursor_mode.get() == "Avoid") and not self._context_menu_active() and self.motion_mode == "idle" and self.state == "normal" and not self.prompt_visible and not self.active_alert_kind and not self.dragging and not self.idle_mood and not self.chatter_until:
             self._show_chatter(f"{self.pet_name.get()} ♡  Today {self.today_total_cache} ml", seconds=3.5)
 
     def _mouse_leave(self, _event: tk.Event) -> None:
@@ -1704,6 +1738,7 @@ class WaterPet:
         left, top, right, bottom = self._screen_bounds()
         x = max(left, min(x, right - SMALL_WIDTH))
         y = max(top, min(y, bottom - SMALL_HEIGHT))
+        self.pet_x, self.pet_y = float(x), float(y)
         expanded = self.height > SMALL_HEIGHT
         self.cloud_left = self.width > SMALL_WIDTH and x + self.width > right
         self.cloud_below = expanded and y - 140 < top
@@ -1792,6 +1827,7 @@ class WaterPet:
             pass
 
     def show_prompt(self, *, automatic: bool = False) -> None:
+        if hasattr(self,"desktop_effects"):self.desktop_effects.stop()
         if self.active_alert_kind:
             return
         if automatic and not self._water_window_active(datetime.now()):
@@ -2408,16 +2444,12 @@ class WaterPet:
                              self.thanksgiving_region.get())
 
     def _draw_theme_prop(self) -> None:
-        # A themed full-body idle pose replaces the body, never a tiny sticker.
         key = self._current_theme()
-        if (key == "classic" or self.prompt_visible or self.active_alert_kind or self.dragging
-                or self.motion_mode != "idle" or self.idle_mood or self.state != "normal"):
-            return
-        frames = getattr(self, "scene_images", {}).get(key)
-        if frames:
-            body = next((item for item in self.canvas.find_all() if self.canvas.type(item)=="image"),None)
+        if key != "classic":
+            body=next((item for item in self.canvas.find_all() if self.canvas.type(item)=="image"),None)
             if body:
-                self.canvas.itemconfigure(body, image=frames[0], tags="season_body")
+                tags=self.canvas.gettags(body)
+                self.canvas.itemconfigure(body,tags=(*tags,"season_body","outfit_"+key))
 
     def _play_theme_scene(self, key: str) -> None:
         if key not in getattr(self, "scene_manifest", {}):
@@ -2426,11 +2458,13 @@ class WaterPet:
             return
         self._close_chatter_card()
         self._play_test_animation("theme:"+key, scene_duration(self.scene_manifest[key]))
+        if hasattr(self,"desktop_effects") and self.theme_effects_enabled.get():
+            self.desktop_effects.play(key,self._screen_bounds(),(self.pet_x+90,self.pet_y+105))
 
     def _draw_scene(self, key: str, elapsed: float) -> None:
         index = scene_pose(self.scene_manifest[key],elapsed)
-        self.canvas.create_image(SMALL_WIDTH//2,PET_CENTER_Y,
-                                 image=self.scene_images[key][index], tags=("scene_body", "scene_"+key))
+        self.canvas.create_image(180 if key == "peekaboo" else SMALL_WIDTH//2,PET_CENTER_Y,
+                                 image=(self._styled_image(f"scene_{key}_{index}") if key in ("log","meditate","peekaboo") else self.scene_images[key][index]), tags=("scene_body", "scene_"+key))
 
     def _check_theme_activity(self, now: datetime) -> None:
         if not hasattr(self, "theme_activity_enabled") or not self.theme_activity_enabled.get():
@@ -2567,7 +2601,7 @@ class WaterPet:
             self.cursor_session_kind="";self.cursor_session_until=None
             if self.motion_mode=="following":self.motion_mode="idle"
         mode=getattr(self,"cursor_session_kind","") or (self.cursor_mode.get() if hasattr(self,"cursor_mode") else "Avoid" if self.cursor_games.get() else "Off")
-        if mode=="Avoid" and not getattr(self,"cursor_session_kind","") and not self.roam_enabled.get():
+        if not hasattr(self,"cursor_mode") and not getattr(self,"cursor_session_kind","") and not self.roam_enabled.get():
             return
         if mode=="Off" or self.active_alert_kind or self.prompt_visible or self.dragging or self.state!="normal" or self.idle_mood or getattr(self,"chatter_until",None) or self._studio_is_open():
             return
@@ -2591,8 +2625,6 @@ class WaterPet:
             self.pet_x += step if tx >= self.pet_x else -step
             self._move_root(round(self.pet_x), round(self.pet_y))
             return
-        if not getattr(self,"cursor_session_kind","") and not self.roam_enabled.get():
-            return
         if (
             now < self.next_cursor_reaction
             or self.prompt_visible
@@ -2608,35 +2640,19 @@ class WaterPet:
             self.next_cursor_reaction = now + timedelta(seconds=15)
             return
         distance = math.hypot(
-            pointer_x - (self.root.winfo_x() + SMALL_WIDTH / 2),
-            pointer_y - (self.root.winfo_y() + SMALL_HEIGHT / 2),
+            pointer_x - (self.pet_x + SMALL_WIDTH / 2),
+            pointer_y - (self.pet_y + SMALL_HEIGHT / 2),
         )
         if distance <= 145:
-            center_x = self.root.winfo_x() + SMALL_WIDTH / 2
-            center_y = self.root.winfo_y() + SMALL_HEIGHT / 2
-            away_x = center_x - pointer_x
-            away_y = center_y - pointer_y
-            length = math.hypot(away_x, away_y)
-            if length < 1:
-                angle = random.uniform(0, math.tau)
-                away_x, away_y = math.cos(angle), math.sin(angle)
-                length = 1.0
             left, top, right, bottom = self._screen_bounds()
-            escape_distance = random.uniform(190, 285)
-            self.target_x = max(
-                left,
-                min(
-                    self.pet_x + (away_x / length) * escape_distance,
-                    right - SMALL_WIDTH,
-                ),
-            )
+            self.target_x = escape_target(self.pet_x, pointer_x, left, right)
             self.target_y = self.pet_y
             self.walk_direction = "right" if self.target_x >= self.pet_x else "left"
             self.walk_speed = random.uniform(6.5, 8.5)
             self.motion_mode = "escaping"
             self.cursor_escape_until = now + timedelta(seconds=4)
             # Do not open chatter here: it pauses movement and used to stall the escape.
-            self.next_cursor_reaction = now + timedelta(seconds=4)
+            self.next_cursor_reaction = now + timedelta(seconds=1)
         else:
             self.next_cursor_reaction = now + timedelta(seconds=1)
 
@@ -2685,6 +2701,7 @@ class WaterPet:
     ) -> None:
         if self.active_alert_kind or self.prompt_visible:
             return
+        if hasattr(self,"desktop_effects"):self.desktop_effects.stop()
         self._close_chatter_card()
         self.alert_previous_state = self.state
         self.active_alert_id = reminder_id
@@ -2904,6 +2921,10 @@ class WaterPet:
             self._choose_destination()
             return
 
+        if self.motion_mode == "escaping" and self.cursor_escape_until and now >= self.cursor_escape_until:
+            self.motion_mode = "idle"
+            self.idle_until = now + timedelta(seconds=.4)
+            return
         self.target_y = self.pet_y
         dx = self.target_x - self.pet_x
         dy = 0.0
@@ -2941,6 +2962,9 @@ class WaterPet:
                 if self.pending_edge_action == "bored_edge":
                     step_speed=1.1
                 step_speed=min(distance,step_speed)
+            if self.motion_mode == "escaping":
+                cycle = self.pack_manifest["run"]["frames"] * .14
+                step_speed = min(distance, run_step(cycle, tick_seconds=ACTIVE_TICK_MILLISECONDS/1000))
             self.pet_x += (dx / distance) * step_speed
             self.pet_y += (dy / distance) * step_speed
 
@@ -3159,7 +3183,7 @@ class WaterPet:
         if getattr(self,"gait_signature",None) != signature:
             self.gait_signature = signature
             self.gait_started = now
-        milliseconds = self.walk_frame_ms.get() if kind == "walk" else 110
+        milliseconds = self.walk_frame_ms.get() if kind == "walk" else 140
         count = len(WALK_FRAME_ORDER) if kind == "walk" else self.pack_manifest[kind]["frames"]
         interval = self._walk_cycle_seconds()/count if kind == "walk" else milliseconds/1000
         return 1 + int((now-self.gait_started)/interval) % count
@@ -3363,6 +3387,9 @@ class WaterPet:
         elapsed = (datetime.now()-self.idle_mood_started_at).total_seconds()
         if self.idle_mood.startswith("theme:"):
             self._draw_scene(self.idle_mood.split(":",1)[1], elapsed)
+            return
+        if self.idle_mood == "peekaboo_pillar":
+            self._draw_scene("peekaboo",elapsed)
             return
         if self.idle_mood == "log_play":
             self._draw_scene("log", elapsed)
@@ -3984,6 +4011,7 @@ class WaterPet:
             self.theme_feedback.set(str(error))
             return
         self._save_settings()
+        if hasattr(self,"desktop_effects"):self.desktop_effects.stop()
         self.next_theme_activity=datetime.now()+timedelta(minutes=self.theme_activity_minutes.get())
         if self.idle_mood.startswith("theme:"):
             self.idle_mood="";self.idle_mood_until=None
@@ -3991,19 +4019,12 @@ class WaterPet:
         self._draw()
 
     def _build_themes_page(self, page) -> None:
-        canvas = tk.Canvas(page, bg=GLASS["surface"], highlightthickness=0)
-        scrollbar = ttk.Scrollbar(page, orient="vertical", command=canvas.yview)
-        canvas.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side="right", fill="y")
-        canvas.pack(side="left", fill="both", expand=True)
-        body = ttk.Frame(canvas, style="Glass.TFrame")
-        item = canvas.create_window(0, 0, window=body, anchor="nw")
-        body.bind("<Configure>", lambda event: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.bind("<Configure>", lambda event: canvas.itemconfigure(item, width=event.width))
-        self.themes_canvas = canvas
+        body = page
+        self.themes_canvas = self.home_pages[6].canvas
         ttk.Label(body, text="Seasons & celebrations", style="Hero.TLabel").pack(anchor="w")
         ttk.Label(body, text="Costumes and full seasonal scenes: ghost play, pumpkin carving, flowers, dancing and more.",
                   style="Sub.TLabel", wraplength=510).pack(anchor="w", pady=(4,14))
+        ttk.Checkbutton(body,text="Desktop fireworks and Holi colour puffs",variable=self.theme_effects_enabled,command=self._theme_settings_changed).pack(anchor="w",pady=(0,8))
         labels = {"Auto": "Auto", **{key: value[0] for key, value in THEMES.items()}}
         choice = tk.StringVar(value=labels[self.theme_mode.get()])
         ttk.Label(body, text="Theme", style="CardTitle.TLabel").pack(anchor="w")
@@ -4116,14 +4137,14 @@ class WaterPet:
         window.title(f"{self.pet_name.get()} · Panda Home v{APP_VERSION}")
         screen_width = window.winfo_screenwidth()
         screen_height = window.winfo_screenheight()
-        studio_width = min(880, max(740, screen_width - 120))
-        studio_height = min(650, max(580, screen_height - 120))
+        studio_width = min(1040, max(1, screen_width - 48))
+        studio_height = min(760, max(1, screen_height - 88))
         studio_x = max(20, (screen_width - studio_width) // 2)
         studio_y = max(20, (screen_height - studio_height) // 2)
         window.geometry(
             f"{studio_width}x{studio_height}{studio_x:+d}{studio_y:+d}"
         )
-        window.minsize(min(740, studio_width), min(580, studio_height))
+        window.minsize(min(660, studio_width), min(440, studio_height))
         window.configure(bg=GLASS["window"])
         window.protocol("WM_DELETE_WINDOW", self._hide_studio)
         window.bind("<Escape>", lambda _event: self._hide_studio())
@@ -4136,6 +4157,7 @@ class WaterPet:
         label_font = ("Segoe UI Variable Text", 10)
         style.configure("TFrame", background=GLASS["surface"])
         style.configure("Glass.TFrame", background=GLASS["surface"])
+        style.configure("Rail.TFrame", background=GLASS["rail"])
         style.configure("Studio.TFrame", background=GLASS["surface"])
         style.configure("TLabel", background=GLASS["surface"], foreground=GLASS["text"], font=label_font)
         style.configure("Hero.TLabel", background=GLASS["surface"], foreground=GLASS["text"], font=("Segoe UI Variable Display", 23, "bold"))
@@ -4160,7 +4182,10 @@ class WaterPet:
 
         shell = tk.Frame(window, bg=GLASS["window"])
         shell.pack(fill="both", expand=True, padx=1, pady=1)
-        rail = tk.Frame(shell, width=168, bg=GLASS["rail"])
+        rail_font = tkfont.Font(window, family="Segoe UI Variable Text", size=10)
+        rail_title_font = tkfont.Font(window, family="Segoe UI Variable Display", size=15, weight="bold")
+        rail_width = max(194, rail_font.measure("Seasons & festivals") + 76, rail_title_font.measure("Water Panda") + 36)
+        rail = tk.Frame(shell, width=rail_width, bg=GLASS["rail"])
         rail.pack(side="left", fill="y")
         rail.pack_propagate(False)
         content = tk.Frame(shell, bg=GLASS["surface"])
@@ -4168,36 +4193,24 @@ class WaterPet:
 
         tk.Label(rail, text="●", bg=GLASS["rail"], fg=GLASS["aqua"], font=("Segoe UI", 12)).pack(anchor="w", padx=18, pady=(22, 2))
         tk.Label(rail, text="Water Panda", bg=GLASS["rail"], fg=GLASS["text"], font=("Segoe UI Variable Display", 15, "bold")).pack(anchor="w", padx=18)
-        tk.Label(rail, text=f"v{APP_VERSION} · Your quiet companion", bg=GLASS["rail"], fg=GLASS["muted"], font=("Segoe UI Variable Text", 8)).pack(anchor="w", padx=18, pady=(2, 20))
+        tk.Label(rail, text=f"v{APP_VERSION} · Your quiet companion", bg=GLASS["rail"], fg=GLASS["muted"], font=("Segoe UI Variable Text", 8), wraplength=rail_width-36, justify="left").pack(anchor="w", padx=18, pady=(2, 20))
 
         page_host = tk.Frame(content, bg=GLASS["surface"])
-        page_host.pack(fill="both", expand=True, padx=30, pady=26)
-        overview_frame = ttk.Frame(page_host, style="Glass.TFrame")
-        history_frame = ttk.Frame(page_host, style="Glass.TFrame")
-        reminder_frame = ttk.Frame(page_host, style="Glass.TFrame")
-        pet_frame = ttk.Frame(page_host, style="Glass.TFrame")
-        activities_frame = ttk.Frame(page_host, style="Glass.TFrame")
-        behavior_page = ttk.Frame(page_host, style="Glass.TFrame")
-        behavior_canvas = tk.Canvas(behavior_page, bg=GLASS["surface"], highlightthickness=0)
-        behavior_scroll = ttk.Scrollbar(behavior_page, orient="vertical", command=behavior_canvas.yview)
-        behavior_canvas.configure(yscrollcommand=behavior_scroll.set)
-        behavior_scroll.pack(side="right",fill="y")
-        behavior_canvas.pack(side="left",fill="both",expand=True)
-        behavior_frame = ttk.Frame(behavior_canvas, style="Glass.TFrame")
-        behavior_window = behavior_canvas.create_window(0,0,window=behavior_frame,anchor="nw")
-        behavior_frame.bind("<Configure>",lambda event: behavior_canvas.configure(scrollregion=behavior_canvas.bbox("all")))
-        behavior_canvas.bind("<Configure>",lambda event: behavior_canvas.itemconfigure(behavior_window,width=event.width))
-        self.behavior_canvas = behavior_canvas
-        themes_page = ttk.Frame(page_host, style="Glass.TFrame")
+        page_host.pack(fill="both", expand=True, padx=20, pady=18)
+        self.home_pages = [HomePage(page_host, GLASS["surface"]) for _ in range(7)]
+        overview_frame, history_frame, reminder_frame, pet_frame, activities_frame, behavior_frame, themes_page = [page.body for page in self.home_pages]
+        self.behavior_canvas = self.home_pages[5].canvas
         self._build_themes_page(themes_page)
-        pages = [overview_frame, history_frame, reminder_frame, pet_frame, activities_frame, behavior_page, themes_page]
+        pages = self.home_pages
         for page in pages:
             page.place(relx=0, rely=0, relwidth=1, relheight=1)
 
+        nav_page = HomePage(rail, GLASS["rail"], style="Rail.TFrame", padding=(0,0,0,4))
+        nav_page.pack(fill="both", expand=True)
         nav_buttons: list[tk.Button] = []
         for label in ("Home", "Water history", "Reminders", "Panda settings", "Panda activities", "Behaviour", "Seasons & festivals"):
             button = tk.Button(
-                rail,
+                nav_page.body,
                 text=label,
                 anchor="w",
                 bd=0,
@@ -4341,18 +4354,8 @@ class WaterPet:
             text="Choose an activity and Panda Home will hide while your panda performs it.",
             style="Sub.TLabel",
         ).pack(anchor="w", pady=(2, 18))
-        activity_host = ttk.Frame(activities_frame, style="Glass.TFrame")
-        activity_host.pack(fill="both", expand=True)
-        activity_canvas = tk.Canvas(activity_host, bg=GLASS["surface"], highlightthickness=0)
-        activity_scroll = ttk.Scrollbar(activity_host, orient="vertical", command=activity_canvas.yview)
-        activity_canvas.configure(yscrollcommand=activity_scroll.set)
-        activity_scroll.pack(side="right",fill="y")
-        activity_canvas.pack(side="left",fill="both",expand=True)
-        activity_grid = ttk.Frame(activity_canvas, style="Glass.TFrame")
-        activity_window = activity_canvas.create_window(0,0,window=activity_grid,anchor="nw")
-        activity_grid.bind("<Configure>",lambda event: activity_canvas.configure(scrollregion=activity_canvas.bbox("all")))
-        activity_canvas.bind("<Configure>",lambda event: activity_canvas.itemconfigure(activity_window,width=event.width))
-        activity_canvas.bind("<MouseWheel>",lambda event: activity_canvas.yview_scroll(-int(event.delta/120),"units"))
+        activity_grid = ttk.Frame(activities_frame, style="Glass.TFrame")
+        activity_grid.pack(fill="both", expand=True)
         activities = tuple((label,lambda chosen=key:self._play_activity(chosen)) for key,label in ACTIVITY_LABELS.items())
         for index, (label, callback) in enumerate(activities):
             button = ttk.Button(
@@ -4370,16 +4373,7 @@ class WaterPet:
         for column in range(2):
             activity_grid.columnconfigure(column, weight=1)
 
-        def bind_scroll(widget, scroll_canvas):
-            def scroll(event):
-                scroll_canvas.yview_scroll(-int(event.delta/120),"units")
-                return "break"
-            widget.bind("<MouseWheel>", scroll, add="+")
-            for child in widget.winfo_children():
-                bind_scroll(child, scroll_canvas)
-        bind_scroll(behavior_frame, behavior_canvas)
-        bind_scroll(themes_page, self.themes_canvas)
-        bind_scroll(activity_grid, activity_canvas)
+        bind_page_wheel(window, [*self.home_pages, nav_page])
         switcher.select(0)
         if not self.prompt_visible and not self.active_alert_kind:
             self._close_chatter_card()
@@ -4870,6 +4864,7 @@ class WaterPet:
         self.history_feedback_var.set("Water history exported.")
 
     def close(self) -> None:
+        if hasattr(self,"desktop_effects"):self.desktop_effects.stop()
         self._save_settings()
         self._close_chatter_card()
         self.tray.stop()

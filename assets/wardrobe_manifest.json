@@ -1,0 +1,82 @@
+{
+  "autumn": {
+    "front": "wardrobe_autumn_front.png",
+    "profile": "wardrobe_autumn_profile.png"
+  },
+  "spooky": {
+    "front": "wardrobe_spooky_front.png",
+    "profile": "wardrobe_spooky_profile.png",
+    "head_front": "wardrobe_spooky_head_front.png",
+    "head_profile": "wardrobe_spooky_head_profile.png"
+  },
+  "diwali": {
+    "front": "wardrobe_diwali_front.png",
+    "profile": "wardrobe_diwali_profile.png"
+  },
+  "holi": {
+    "front": "wardrobe_holi_front.png",
+    "profile": "wardrobe_holi_profile.png"
+  },
+  "navratri": {
+    "front": "wardrobe_navratri_front.png",
+    "profile": "wardrobe_navratri_profile.png",
+    "head_front": "wardrobe_navratri_head_front.png",
+    "head_profile": "wardrobe_navratri_head_profile.png"
+  },
+  "thanksgiving": {
+    "front": "wardrobe_thanksgiving_front.png",
+    "profile": "wardrobe_thanksgiving_profile.png"
+  },
+  "christmas": {
+    "front": "wardrobe_christmas_front.png",
+    "profile": "wardrobe_christmas_profile.png",
+    "head_front": "wardrobe_christmas_head_front.png",
+    "head_profile": "wardrobe_christmas_head_profile.png"
+  },
+  "new_year": {
+    "front": "wardrobe_new_year_front.png",
+    "profile": "wardrobe_new_year_profile.png",
+    "head_front": "wardrobe_new_year_head_front.png",
+    "head_profile": "wardrobe_new_year_head_profile.png"
+  },
+  "valentine": {
+    "front": "wardrobe_valentine_front.png",
+    "profile": "wardrobe_valentine_profile.png"
+  },
+  "birthday": {
+    "front": "wardrobe_birthday_front.png",
+    "profile": "wardrobe_birthday_profile.png",
+    "head_front": "wardrobe_birthday_head_front.png",
+    "head_profile": "wardrobe_birthday_head_profile.png"
+  },
+  "ganesh": {
+    "front": "wardrobe_ganesh_front.png",
+    "profile": "wardrobe_ganesh_profile.png"
+  },
+  "krishna": {
+    "front": "wardrobe_krishna_front.png",
+    "profile": "wardrobe_krishna_profile.png",
+    "head_front": "wardrobe_krishna_head_front.png",
+    "head_profile": "wardrobe_krishna_head_profile.png"
+  },
+  "shiva": {
+    "front": "wardrobe_shiva_front.png",
+    "profile": "wardrobe_shiva_profile.png"
+  },
+  "spring": {
+    "front": "wardrobe_spring_front.png",
+    "profile": "wardrobe_spring_profile.png"
+  },
+  "summer": {
+    "front": "wardrobe_summer_front.png",
+    "profile": "wardrobe_summer_profile.png",
+    "head_front": "wardrobe_summer_head_front.png",
+    "head_profile": "wardrobe_summer_head_profile.png"
+  },
+  "winter": {
+    "front": "wardrobe_winter_front.png",
+    "profile": "wardrobe_winter_profile.png",
+    "head_front": "wardrobe_winter_head_front.png",
+    "head_profile": "wardrobe_winter_head_profile.png"
+  }
+}

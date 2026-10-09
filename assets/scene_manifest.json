@@ -858,5 +858,52 @@
       2
     ],
     "description": "Orange festive jacket. Greeting, seated beside modak-style sweets and marigolds, selects a sweet, arranges sweets, adds flowers, presents bowl, polite appreciative tilt, smiling with bowl. Panda stays panda."
+  },
+  "peekaboo": {
+    "title": "Too wide to hide",
+    "frames": 8,
+    "source": "artwork/v33/peekaboo_source.png",
+    "timeline": [
+      [
+        0,
+        0.8
+      ],
+      [
+        1,
+        0.7
+      ],
+      [
+        2,
+        1.5
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        4,
+        0.8
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        6,
+        0.7
+      ],
+      [
+        7,
+        1.3
+      ]
+    ],
+    "grid": [
+      4,
+      2
+    ],
+    "canvas_size": [
+      1024,
+      512
+    ]
   }
 }

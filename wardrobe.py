@@ -59,6 +59,9 @@ def landmarks(image, key):
         "pack_sploot_2":((45,133,125,177),(114,144,162,172)),
         "pack_sploot_3":((48,137,123,178),(122,146,162,172)),
         "pack_wake_up_0":((43,114,109,166),(103,123,139,164)),
+        "pack_fetch_1":((37,57,136,122),(76,121,127,151)),
+        "pack_fetch_2":((45,49,140,122),(68,123,126,157)),
+        "scene_log_3":((50,64,135,132),(66,124,125,137)),
         "pack_forward_roll_1":((46,48,128,115),(62,116,111,146)),
         "pack_forward_roll_2":((44,83,138,156),(61,58,120,87)),
         "pack_forward_roll_3":((102,68,164,160),(59,60,115,109)),
@@ -129,13 +132,17 @@ class Wardrobe:
         # Keep dark foreground limbs, glasses, bamboo, and the peekaboo pillar.
         protect=Image.new("L",image.size)
         protected=[]
+        props=[]
         for red,green,blue,alpha in image.getdata():
             dark=max(red,green,blue)<120 and not (lying or inverted)
             blue_prop=blue>red*1.10 and blue>green*.95
             bamboo=green>red*1.10 and green>blue*1.10
             saturated=max(red,green,blue)>=160 and max(red,green,blue)-min(red,green,blue)>90 and min(red,green,blue)<130
             pillar=key.startswith("scene_peekaboo") and red>green*1.15 and green>blue*1.3
-            protected.append(255 if alpha>=128 and (dark or blue_prop or bamboo or pillar or saturated) else 0)
+            wood=key.startswith(("scene_log_","pack_sit_on_log_","pack_balance_on_log_")) and red>90 and red>green*1.15 and green>blue*1.3
+            prop=blue_prop or bamboo or pillar or saturated or wood
+            protected.append(255 if alpha>=128 and (dark or prop) else 0)
+            props.append(255 if alpha>=128 and prop else 0)
         protect.putdata(protected)
         if key.startswith("pack_water_offer_"):
             index=int(key.rsplit("_",1)[1])
@@ -149,6 +156,11 @@ class Wardrobe:
             # crossed foreground paws elsewhere.
             collar=ImageDraw.Draw(protect)
             collar.rectangle((l+3,max(0,hb-6),r-3,min(image.height-1,hb+8)), fill=0)
+        prop_mask=Image.new("L",image.size)
+        prop_mask.putdata(props)
+        protect=ImageChops.lighter(protect,prop_mask)
+        if key.startswith("pack_water_offer_") and glass:
+            ImageDraw.Draw(protect).rectangle(glass,fill=255)
         mask=ImageChops.subtract(mask,protect)
         face_mask=Image.new("L",image.size)
         ImageDraw.Draw(face_mask).ellipse((hl,ht,hr,hb-3),fill=255)

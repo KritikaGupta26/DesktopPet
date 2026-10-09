@@ -7,7 +7,7 @@ class HomePage(ttk.Frame):
     def __init__(self, parent, background, style="Glass.TFrame", padding=(4, 4, 12, 20)):
         super().__init__(parent, style=style)
         self.canvas = tk.Canvas(self, bg=background, highlightthickness=0,
-                                borderwidth=0, yscrollincrement=24)
+                                borderwidth=0, width=1, height=1, yscrollincrement=24)
         self.vertical = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
         self.horizontal = ttk.Scrollbar(self, orient="horizontal", command=self.canvas.xview)
         self.canvas.configure(yscrollcommand=self.vertical.set, xscrollcommand=self.horizontal.set)

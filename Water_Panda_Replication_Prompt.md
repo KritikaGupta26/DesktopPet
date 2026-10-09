@@ -1,74 +1,10 @@
-## Current gait specification
-Use six approved opposite-half-cycle poses [0,1,2,4,5,6] from artwork/walk_v31_first_half.png and artwork/walk_v31_opposite_half.png. Never play the anatomically incorrect generated fourth-cell candidates. Package slots 3 and 7 as held valid contacts, excluded from playback. Mirror entire full-body RGBA frames for leftward movement, share 489px ground and 286px head anchors, maximum source body height 450px per half-cycle. Balanced gait cycle 1.44s, six phases 240ms, source stride estimate 100px. Preserve pre-v31 exports in artwork/v30_walk. No cutout limb rig is used. Ground movement never changes logical pet_y, including obsolete saved targets, following/avoidance/fetch/running. Only explicit drag/jump/throw may change height.
-
-# v31: seasons, festivals and horizontal ground movement
-
-This section supersedes historical movement/art instructions below.
-
-- Ground walking, roaming, following, avoidance, running and fetch stay on the current horizontal lane. The cursor's vertical position cannot pull the panda upward/downward. Left/right physical edges remain reachable. Dragging and explicit jump/throw physics may change height. No rope-climbing feature is added.
-- Keep a soft, weighty animated-film panda, using Kung Fu Panda as motion/personality inspiration. Retain the existing baby-panda identity. Opposite-side arm/leg swing must be reviewed in actual loop previews; automated alpha/scale tests do not establish anatomical correctness.
-- Add Auto, all individual themes, and Classic panda under a separate scrollable Seasons & festivals page. Persist choice, optional birthday MM-DD, enabled themes, Northern/Southern seasons, US/Canada Thanksgiving and custom dated lunar ranges. Include Preview celebration and a separately switchable themed activity every 20 minutes when free.
-- Themes: Autumn, Spooky, Diwali, Holi, both Chaitra and Sharad Navratri, Thanksgiving, Christmas, New Year, Valentine, Birthday, Ganesh Chaturthi, Krishna Janmashtami, Maha Shivaratri, Spring, Summer, Winter.
-- Theme visuals are 16 high-resolution generated transparent props, a coordinated cloud fill/outline and original greetings. Props appear beside the grounded idle panda; hide during movement, activities, dragging and active reminders. Keep paws/face unobstructed. This release does not include full-body festival costumes or new dandiya/flute animations. Familiar dance, celebration, bow, meditation, grooming, wave or wind-down poses are reused intentionally as thematic actions, not exposed as duplicate activity names.
-- Birthday has priority over lunar festivals, which have priority over fixed festivals and seasons. Manual selection overrides Auto and theme enable switches until the user selects Auto again. Disabled Auto themes fall through to an enabled season or Classic.
-- Lunar dates are a curated New Delhi, India table for 2026 and 2027 only, sourced from Drik Panchang. They are not a perpetual lunar calendar. Never repeat a prior year's lunar dates into unknown years. Custom exact YYYY-MM-DD start/end ranges override built-in dates for that festival/year. Other traditions/locations require custom dates. Fixed holiday ranges recur algorithmically every year; leap-day birthdays observe February 28 in non-leap years, including 2100.
-- Do not disturb reminders: water, movement, personal alerts, hungry feed, dragging, Home and current activities block the themed scheduler. Birthday is optional, local-only and stores no birth year. Theme greetings cannot replace the content or response buttons of an active reminder.
-
-Calendar sources:
-https://www.drikpanchang.com/calendars/hindu/hinducalendar.html?geoname-id=1261481&year=2026
-https://www.drikpanchang.com/calendars/hindu/hinducalendar.html?geoname-id=1261481&year=2027
-
-## v30.0.2 interaction-size correction
-
-Idle, drag/cursor-follow, petting and sad rows now share the walk row's 450px maximum full-body height and 489px ground baseline at the 512px source canvas. Use one scale per entire row, preserving genuine bending between frames. Previously idle was slightly too large and the drag/petting rows were smaller. This is runtime scaling of the existing full-resolution artwork, not regenerated art. Unit checks verify scale, ground alignment and unclipped alpha bounds for every frame in these four rows.
-
-# v30 transition fix
-
-The 11:11 recording showed vertical jumps around cloud resizing and the right-click menu. Previous checks only verified the settled layout and missed a stale image displayed at the new window origin before the next tick. Rebuild and flush the scene synchronously during resize. Close ordinary chatter before posting the context menu; suppress hover, movement and scheduled behavior while the menu is posted. Keep previous v29 fixes.
-
-Regression: 85 unit tests pass. Native Windows validation now checks the immediate rendered anchor across 20 cloud open/close cycles and posted-menu behavior, in addition to existing reminder, activity and edge checks. No new artwork is included. Artistic consistency and physical multi-monitor gaps remain limitations.
-
-# v29 audit and fixes
-
-The 9 October 10:24 recording showed hover interruptions during movement. The audit also found geometry, stale-action, Windows API and malformed-settings defects.
-
-| Area | Finding / result |
-| --- | --- |
-| Hover and cursor follow | Hover total cloud now opens only while idle. It no longer interrupts walking, following or escaping. Deliberate chatter still pauses travel and displays standing. |
-| Cloud anchoring | Opening and closing a cloud preserves the panda's screen position. Use upper-right normally, left near the right edge and below near the top. Same canvas, no new popup. Buttons and text keep their readable orientation/order. |
-| Dragging with clouds | Drag uses screen-pointer displacement from the panda anchor, rather than switching between root-window and panda coordinates. Can reach all edges with the cloud open. |
-| Bored approach | Removed unreachable duplicate branch that hid the slow full-body shuffle. Ordinary Walk also clears a stale pending edge action. |
-| Ledges | Clamp destinations to the desktop; a window near the top cannot send the panda above the screen. |
-| Throw and jump | Upward throws bounce at the top. Jump displacement respects available space above the panda. |
-| Fetch and reminders | Fetch waits while a general reminder is active. |
-| Settings | Invalid list/dict activity values are discarded rather than raising an unhashable-value startup exception. |
-| Windows integration | Use absolute Win32 placement for negative monitor coordinates; explicitly type pointer-sized arguments for fullscreen/ledge checks. Correct idle-time calculation across the 32-bit last-input tick wrap. |
-| Water | Reviewed 100/200/300 logging-once, Not yet 8-second recovery, Snooze 10 minutes, Pause/Resume, daily/overnight windows, manual override and personal-reminder preemption. Regression and native checks retained. |
-| Other reminders | Reviewed personal due-date storage, Done/Snooze, movement timer and shared cloud actions. |
-| All activities / artwork | Existing activity-dispatch/native renderer checks retained. All 262 exported pack PNGs decode and have nonempty alpha bounds inside the canvas. No new artwork is claimed. |
-| Data / UI / packaging | Existing history, totals, CSV, confirmed Undo, Home, tray, persistent settings, icon and installer checks retained. |
-
-Local regression suite: 81 tests passed. Packaged Windows results are recorded in the included report after the build.
-
-Limits: these checks cannot certify perfect artistic gait or every physical multi-monitor/DPI combination. The current bounds are the virtual desktop rectangle; gaps between disjoint monitors remain an unverified limitation. Sprite alpha padding is preserved. No AI services, email access, battery watcher or browser-tab watcher were added.
-
-## v28 recording fix — hover pauses the gait
-
-The 9 October recording showed walking in place under the hover cloud (panda name and today’s water total). Chatter pauses roaming and cursor follow. During that pause, render the standing pose and reset gait phase; after the cloud closes, resume the existing travel destination with a fresh walk cycle. Apply this to walking, following and escaping. Cursor follow also stands at its target distance. Keep all v27 screen-edge and v26 water-hour behavior.
-
-# v27 edge-travel update
-
-Supersedes previous 42px bottom clearance and manual walking side inset. Ordinary roaming can visit all four edges. Cursor Follow uses zero additional standoff near the screen boundary while keeping the interior 140px distance. Clamp the complete 180×184 pet canvas within physical desktop bounds, including negative virtual-desktop coordinates. Preserve artwork padding, reminder cloud bounds, v26 water hours and all other behaviours. No walk artwork is replaced in this patch.
-
-# v26 update contract
-
-This update supersedes the older v25 log and cloud instructions below. Add persisted optional daily water hours in Behaviour with From/Until fields, validation, overnight support and start-inclusive/end-exclusive boundaries. Equal hours mean all day. Existing installations default to the old all-day behaviour until enabled. Scheduled offers close at the end; snoozes wait for the next window when needed. Manual Water now works at any time. Preserve the eight-second Not yet recovery and water history.
-
-Play on log directly uses cheerful setup for four seconds and balancing for twelve seconds, without bored edge travel. Keep the bored edge routine separate. Increase cloud main/body/button text to readable 15/13/12–14 pixel fonts; compact button labels retain ml context. Do not claim unrelated walking defects fixed without concrete reproduction.
-
-# Water Panda v25: complete replication and continuation prompt
+# Water Panda v33: complete replication and continuation prompt
 
 Copy the instruction below into a coding agent with the full DesktopPet repository and original assets available. A prompt alone cannot recreate identical generated artwork; source sheets and exported assets are part of the specification. Continue the existing repository rather than starting an unrelated pet.
+
+## Current version requirements take precedence
+
+This is the v33 contract. Original source inventory below documents supplied compatibility assets, not exposed features or mandatory old routes. Remove Fetch. Use eight active walk/run phases. Retain selected thematic attire during all actions. All Home pages must have correct margins and usable scrolling. Deliver only after local checks, full wardrobe audit and packaged Windows regression, with actual build evidence. Good original poses are retained and dressed; do not claim every source sheet was regenerated.
 
 ## Instruction to the implementing agent
 
@@ -83,23 +19,23 @@ The latest requirement supersedes the old water behaviour: **Not yet reacts for 
 | R001 | Product and delivery | Continue the existing standalone Windows desktop panda in KritikaGupta26/DesktopPet. Do not replace it with a ChatGPT Pet or silently rewrite the stack. |
 | R002 | Product and delivery | Deliver a Windows EXE installer with panda-face icon, a shareable family ZIP, full replication prompt and requirement-by-requirement audit. |
 | R003 | Product and delivery | Use GitHub for source and future tagged installer updates. Provide complete clone, pull, build and installer update commands. |
-| R004 | Product and delivery | Close the old running copy before upgrades; preserve settings, water history and personal reminders. Show version 25 in Panda Home. |
+| R004 | Product and delivery | Close the old running copy before upgrades; preserve settings, water history and personal reminders. Show version 33 in Panda Home. |
 | R005 | Product and delivery | Use the Riya Odedara Matchi guide as inspiration for a gentle, cheeky wellness companion and deliberate privacy. Its product-access claims are not app requirements. |
 | R006 | Visuals and animation | Keep the established soft cream and charcoal panda identity, expressive face, rounded proportions and polished 3D animated-film style. Avoid pixel art and green outlines. |
 | R007 | Visuals and animation | Use high-resolution transparent source poses, high-quality downsampling and consistent perceived body scale across standing, walking, sitting, resting and meditation. |
 | R008 | Visuals and animation | Preserve complete ears, feet, paws, body curves and props. No flat cropped base, painted floor line or cut character. |
 | R009 | Visuals and animation | Walking must use full coherent poses, opposite arm/leg coordination, readable contacts, passing phases and controlled cadence. Do not animate separated limb parts or translate one fixed pose. |
-| R010 | Visuals and animation | Use the current v31 side-profile walk phases from the new atlas, mirror them for left travel and synchronize ground travel with the animation cycle. |
-| R011 | Visuals and animation | Keep the original run distinct from walking; make follow and avoid change actual desktop position rather than only pose. |
+| R010 | Visuals and animation | Use all eight v32 whole-body walk poses in order 0–7, with exact left mirrors, 180 ms Balanced cadence and gait-matched horizontal travel. Running uses eight newly generated v33 contact/compression/passing/flight poses, 140 ms cadence and its own stride-matched travel. |
+| R011 | Visuals and animation | Keep v33 Run distinct from walking and use opposite near/far arm-leg phases. Follow and Avoid move the real desktop window horizontally. Avoid chooses a reachable side even directly above/below the panda or at an edge. |
 | R012 | Visuals and animation | Jump has anticipation, airborne and landing poses with enough transparent vertical clearance to avoid clipped ears. |
 | R013 | Visuals and animation | Wave with the same paw across frames; use a genuine torso bow with readable depth. |
 | R014 | Visuals and animation | Keep one recognizable somersault. Remove the redundant side-roll control rather than offering the same animation under two names. |
 | R015 | Visuals and animation | Use a wristwatch gesture for actual personal reminders and a waist-level hula hoop for movement breaks. |
 | R016 | Visuals and animation | Water glass belongs to the same visual style and stays attached to the paws. Bring it from behind, around the side, then offer with both paws. |
 | R017 | Visuals and animation | Water offer plays once and holds the last pose while awaiting an answer. Drinking triggers a thank-you bow. |
-| R018 | Visuals and animation | Bored approach should be a slow head-down shuffle toward the nearest edge, followed by slow log sitting and balancing. Do not display a bamboo staff randomly in open desktop space. |
+| R018 | Visuals and animation | Bored approach is a slow head-down shuffle toward the nearest edge. Manual Play on log starts cheerful play directly, using the v32 eight-pose climb/sit/brace/stand/balance/sit sequence over 13.7 seconds. Do not display a bamboo staff randomly in open desktop space. |
 | R019 | Visuals and animation | Hang on bamboo at an edge, with correct travel direction and screen bounds. |
-| R020 | Visuals and animation | Meditation uses the high-resolution seated pose with gentle breathing. Do not promise new settle/exit artwork unless it is actually created and verified. |
+| R020 | Visuals and animation | Meditation uses the v32 eight-pose standing/namaste/crouch/settle/breathing/eye-opening/standing sequence over 17.35 seconds. |
 | R021 | Visuals and animation | Inspect every source sheet, exported pose, playback route, scale, alpha edge, clipping and timing. Code tests alone cannot certify artistic perfection. |
 | R022 | Water reminders | Ask for water every 30 minutes and provide Ask for water now. |
 | R023 | Water reminders | Offer 100, 200 and 300 ml choices; each accepted click logs once. No fixed daily intake target. |
@@ -119,21 +55,21 @@ The latest requirement supersedes the old water behaviour: **Not yet reacts for 
 | R037 | Interaction and automatic behaviour | Allow dragging, petting and double-click opening of Panda Home. |
 | R038 | Interaction and automatic behaviour | Keep right-click and tray menus minimal: Home, roaming on/off, water now, water pause/resume, add reminder and Exit. No old test-automation menu. |
 | R039 | Interaction and automatic behaviour | Default pointer mode is Off. Hover alone must not make the panda escape. |
-| R040 | Interaction and automatic behaviour | Persistent Follow and Avoid settings must perform actual motion; manual activity actions are temporary. Follow can run when ordinary roaming is disabled. |
+| R040 | Interaction and automatic behaviour | Persistent Follow and Avoid settings must perform actual motion; manual activity actions are temporary. Explicit Follow and Avoid modes work when ordinary roaming is disabled; legacy cursor-games toggle retains its earlier roaming dependency. |
 | R041 | Interaction and automatic behaviour | Roaming works independently of hover. Provide rest interval and walk cadence settings. |
 | R042 | Interaction and automatic behaviour | Provide Calm, Balanced and Playful personalities with deliberate pacing and behaviour choices. |
 | R043 | Interaction and automatic behaviour | Use configurable Gentle routine, Selected routine or Manual only. Let users select the automatic activity pool and its interval. |
 | R044 | Interaction and automatic behaviour | Automatic activities must not repeatedly replace a manual action or reminder. Pause ambient activity while the user configures Panda Home. |
 | R045 | Interaction and automatic behaviour | Group wash face, ear rub and belly scratch as one Grooming sequence. |
 | R046 | Interaction and automatic behaviour | Group yawn/stretch, lazy stretch, sleep and wake-up as one Wind down sequence. |
-| R047 | Interaction and automatic behaviour | Group bored edge approach, sitting on log and balancing as one Play on log activity. |
+| R047 | Interaction and automatic behaviour | Keep manual log play independent of bored inactivity. Use one coherent log sheet for sitting, bracing, standing and balancing. |
 | R048 | Interaction and automatic behaviour | Keep feed, water, movement, pointer control and locomotion out of the generic automatic activity pool. Their own controls and schedules govern them. |
 | R049 | Interaction and automatic behaviour | Add configurable hunger reminders. Hungry panda asks for bamboo; one click feeds it and resets hunger timing. |
 | R050 | Interaction and automatic behaviour | Use a coherent bamboo eating sequence and a separate hunger deadline, not arbitrary repeated eating animations. |
-| R051 | Interaction and automatic behaviour | Keep fetch as chase, pickup/catch, return/offer and celebration. Keep peekaboo as the supplied animation; do not claim an advanced window-occlusion game. |
+| R051 | Interaction and automatic behaviour | Remove Fetch from activity controls, aliases and routine selections. Legacy Fetch calls must not start it. Peekaboo uses a narrow fixed pillar: approach, squeeze behind it with ears/belly visible, peek left/right, step out and proud finish. No real-window occlusion/scoring is claimed. |
 | R052 | Interaction and automatic behaviour | Keep kung fu, sploot, dance, sneeze, hiccup, clap, kiss, wave, bow, petting, meditation and celebration useful through selected automatic routines or direct controls. |
 | R053 | Interaction and automatic behaviour | Apply fullscreen hiding and inactivity settings. Keep important alerts visible according to the implemented priority. |
-| R054 | Interaction and automatic behaviour | Panda Home should not be covered by the ordinary pet window. Make Behaviour settings scrollable on smaller screens. |
+| R054 | Interaction and automatic behaviour | Panda Home should not be covered by the ordinary pet window. Give all seven pages a unified scrollable viewport, measured sidebar width, responsive wrapped labels and mouse-wheel routing over controls. Small windows retain reachable content through scrollbars. |
 | R055 | History, reliability and privacy | Keep water totals, entry history, recent daily chart, seven-day summaries and CSV export in Home. |
 | R056 | History, reliability and privacy | Undo asks for inline confirmation and deletes only the latest entry after confirmation; no disruptive modal confirmation. |
 | R057 | History, reliability and privacy | Persist name, personality, routines, timing, pointer mode, roaming, sound, fullscreen, sleep and hunger preferences. |
@@ -180,7 +116,7 @@ Window priority: timed personal reminders can temporarily preempt water; water r
 
 Personal reminder title limit 120 characters. Date selector supports today through the next 180 days, future-time validation and the time formats above. Keep full text in the reminder list; compact cloud title uses pixel wrapping up to three lines with ellipsis. Chatter uses up to five compact lines. Default pet canvas is 180×184. Alert canvas is 360×324 with the panda lower left and compact cloud upper right. Standalone jumps use extra vertical clearance. Cloud widths are 156 pixels; water/movement clouds are about 153–158 pixels high. Use transparent margins, no colored fringe. Exports are generally 512px RGBA; do not enlarge a low-resolution pose to fake quality.
 
-## Visible activity catalog (27 controls)
+## Visible activity catalog (26 controls)
 
 | Runtime key | User label |
 | --- | --- |
@@ -190,7 +126,6 @@ Personal reminder title limit 120 characters. Date selector supports today throu
 | `jump` | Jump |
 | `cursor_follow` | Follow cursor |
 | `cursor_avoid` | Avoid cursor |
-| `fetch` | Fetch |
 | `log` | Play on log |
 | `bamboo_hang` | Hang on bamboo |
 | `kung_fu` | Kung fu |
@@ -212,14 +147,14 @@ Personal reminder title limit 120 characters. Date selector supports today throu
 | `hiccup` | Hiccup |
 | `victory` | Celebrate |
 
-Selected automatic routine pool (19): `groom`, `wind_down`, `meditate`, `log`, `dance`, `kung_fu`, `peekaboo`, `fetch`, `bamboo_hang`, `jump`, `wave`, `sploot`, `petting`, `bow`, `clap`, `blow_kiss`, `sneeze`, `hiccup`, `victory`.
+Selected automatic routine pool (18): `groom`, `wind_down`, `meditate`, `log`, `dance`, `kung_fu`, `peekaboo`, `bamboo_hang`, `jump`, `wave`, `sploot`, `petting`, `bow`, `clap`, `blow_kiss`, `sneeze`, `hiccup`, `victory`.
 
-Compatibility aliases are migrations/routes, not proof that different source poses are identical. Ear rub/wash face/belly scratch are grouped into Grooming; rest/yawn/sleep/wake into Wind down; side roll into Somersault; log stages into Play on log; chase/catch into Fetch; wiggle into Dance; greeting into Wave. Water and hoop alternatives are source alternatives for actual reminders, not extra activity controls. Watch is used for actual custom reminders, not an inert preview button. Eating/carry-bamboo aliases route to deliberate feeding. Existing happy/sad compatibility labels are not separate gallery features.
+Compatibility aliases are migrations/routes, not proof that different source poses are identical. Ear rub/wash face/belly scratch are grouped into Grooming; rest/yawn/sleep/wake into Wind down; side roll into Somersault; log stages into Play on log; Fetch/chase/catch routes are disabled; wiggle into Dance; greeting into Wave. Water and hoop alternatives are source alternatives for actual reminders, not extra activity controls. Watch is used for actual custom reminders, not an inert preview button. Eating/carry-bamboo aliases route to deliberate feeding. Existing happy/sad compatibility labels are not separate gallery features.
 
 ## Original-sheet inventory
 
 1. 01_water_offer, 4×2: water_offer.
-2. 02_walk, 4×2: walk (replaced by accepted v25 full-body atlas).
+2. 02_walk, 4×2: walk (replaced by the accepted v32 side-profile atlas).
 3. 03_run, 4×2: run.
 4. 04_jump, 4×2: jump.
 5. 05_interactions, 4×4: wave, petting, cursor_follow, cursor_avoid.
@@ -236,7 +171,7 @@ Compatibility aliases are migrations/routes, not proof that different source pos
 16. 16_fetch, 4×2: fetch.
 17. 17_somersault, 4×2: forward_roll.
 
-These are draft generated sheets, originally 240 frame slots and 47 rows (45 groups plus two alternatives). Continuity is not automatically certified. All are accounted for in the current manifest below. The walk row now exports six selected phases (indices 0,1,2,4,5,6) from artwork/walk_v25_source.png. Preserve old files under artwork/v24_walk; exclude rig_walk_* and walk_rig_motion.json from the installed bundle.
+These are draft generated sheets, originally 240 frame slots and 47 rows (45 groups plus two alternatives). Continuity is not automatically certified. All are accounted for in the current manifest below. The active walk row uses eight side-profile phases from artwork/v32/walk, at 180 ms per phase. The run row uses eight new v33 phases at 140 ms per phase. Preserve old files under artwork/v24_walk; exclude rig_walk_* and walk_rig_motion.json from the installed bundle.
 
 | Source row | Sheet | Exported frames | Seconds per frame | Playback |
 | --- | --- | --- | --- | --- |
@@ -288,19 +223,27 @@ These are draft generated sheets, originally 240 frame slots and 47 rows (45 gro
 | `fetch` | sprites/16_fetch.png | 8 | 0.3 | once_hold |
 | `forward_roll` | sprites/17_somersault.png | 8 | 0.3 | once_hold |
 
-## Accepted walk artwork generation handoff
+## Current art, outfits and scene contract
 
-Reference: original panda walk export, preserved at artwork/v24_walk/pack_walk_0.png. Accepted source: artwork/walk_v25_source.png. Requested grid 4×2, transparent RGBA, nominal 2048×1024; actual generated source 1774×887. Export fractional cell bounds, shared scale and ground anchor; use selected six phases only. Exact generation instruction:
+The v32 eight-pose walk sources are `artwork/v32/walk_<index>_source.png`, with eight active full-body poses and exact left mirrors. Balanced walk cycle is 1.44 seconds, 180 ms per pose, with source stride estimate 76 pixels. This replaces the historical six-pose gait. The v33 run sources are `artwork/v33/run_<index>_source.png`; all eight phases are used at 140 ms per pose, source stride estimate 92 pixels. No locomotion travels vertically.
 
-> Create an animation sprite asset from this exact panda character. TRUE SIDE PROFILE biped walking right, camera orthographic SIDE VIEW rather than the reference three-quarter angle. Keep the exact face design, chubby toddler panda proportions, soft cream fur and charcoal limbs, polished 3D animated-movie look. Four columns and two rows, EIGHT frames in strict read order. Genuine transparent RGBA background, no ground/shadow/labels/text, 2048x1024 if possible. Identical head scale, torso scale and position in each cell, complete rounded feet/ears with margins. A real opposite-arm/leg walk like a person, small deliberate steps. NEAR LIMBS larger/charcoal, FAR LIMBS slightly smaller/darker and visibly BEHIND torso. Frame1 near foot FORWARD/RIGHT and far foot BACK/LEFT, near arm BACK/LEFT and far arm FORWARD/RIGHT. Frame2 near foot bearing weight beneath front of hip, far knee swings forward. Frame3 near foot under hip supporting and far shin reaches forward. Frame4 far foot contact FORWARD/RIGHT, near foot BACK/LEFT on toes, near arm FORWARD/RIGHT and far arm BACK/LEFT. Frame5 far foot bearing weight beneath front of hip, near knee swings forward. Frame6 far foot under hip supporting and near shin reaches forward. Frame7 near heel contacts FORWARD/RIGHT, far foot BACK/LEFT, near arm BACK/LEFT again. Frame8 settles halfway toward frame1. Most important: FRAME4 must have LARGE NEAR ARM ON RIGHT and LARGE NEAR FOOT ON LEFT, with SMALL FAR FOOT ON RIGHT; FRAME1 must have LARGE NEAR ARM ON LEFT and LARGE NEAR FOOT ON RIGHT. Frame4 is a completely different opposite stride, not the same legs with changed arms. Exactly two arms/two legs every frame. All pandas right-facing profile, smooth head/no expression drift. No leg kicking high, no hops, no running, no repeated same-leg stride. Draw complete coherent bodies per frame.
+Use all sixteen v32 eight-pose seasonal scene sheets plus log, meditation and the new v33 pillar peekaboo scene. Themes: autumn, spooky, Diwali, Holi, Navratri, Thanksgiving, Christmas, New Year, Valentine, birthday, Ganesh, Krishna, Shiva, spring, summer and winter. Preserve Auto/manual/Classic, event toggles, birthday MM-DD, Northern/Southern seasons, US/Canada Thanksgiving and dated custom ranges. Built-in lunar dates are curated for New Delhi in 2026/2027; local overrides win. Do not invent future lunar dates.
 
-Generated artwork is probabilistic. Review contacts/opposite limbs and reject ambiguous phases; do not assume following the prompt makes a mechanically perfect gait.
+Persistent wardrobe applies to movement, feeding, reminders, bows, routines, log, meditation and peekaboo. `wardrobe.py` fits generated shaded front/profile garment/scarf and headgear components from `assets/wardrobe_manifest.json` to each pose, with reviewed exceptions for joined or occluded fur. Preserve the glass, watch, bamboo, paws, hoop and pillar as foreground objects. Keep faces readable; handle lying/inverted body orientation. It is pose-dependent rendering, not thousands of newly drawn whole-body sprites. Thematic scene sheets already contain their own matching attire. Classic explicitly disables costumes. Do not restore bare classic action artwork merely because a non-idle action starts.
+
+Add silent bounded click-through desktop fireworks for Diwali/New Year/birthday and Holi colour puffs. `desktop_effects.py` owns the transparent nonactivating visual layer, maximum seven seconds, maximum 160 particles and guaranteed timer/window cleanup. Water/personal reminders, changing themes, disabling effects and quitting stop it. Effects have a saved toggle. Do not capture screen content or swallow mouse clicks.
+
+Pillar Peekaboo uses a 1024×512 source canvas rendered at 360×180 while keeping panda body height consistent. A fixed original pillar component is shared across all eight stages, with a finite 7.8-second sequence. Ordinary viewport returns after completion. It is a scripted prop interaction, not hiding behind other desktop apps.
+
+Seasonal actions remain separately switchable and use saved 5–120 minute spacing, default 20 minutes. Busy reminders, hunger, drag, Home and active activities block launch; a due scene waits rather than interrupting.
+
+Artwork was created with the built-in image-generation tool. See `artwork/v33/PROMPTS_AND_REVIEW.md` and source PNGs for references, generation intentions and rejected drafts. Generated imagery is probabilistic; inspect actual poses and GIFs. Tests alone do not establish perfect anatomy.
 
 ## Home, menus and data
 
 Double-click opens Home. Home provides history/chart/totals, reminders, activities and settings, including scrollable Behaviour controls. Ordinary panda/chatter must not cover it. Activity selection returns to the pet. Water entries can be undone with a second inline confirmation within ten seconds; export CSV with UTF-8 BOM. Display pats and adoption days. Use normal requested save-file picker but no modal pet reminder or inline-validation error boxes.
 
-Minimal right-click menu: Open Panda Home, roaming toggle, Ask for water now, Pause water for one hour, Resume water, Add personal reminder, Exit. The installed app requires no Python installation and no admin privileges. There is no silent automatic updater in v25; updates are new installers or local Git pulls/builds.
+Minimal right-click menu: Open Panda Home, roaming toggle, Ask for water now, Pause water for one hour, Resume water, Add personal reminder, Exit. The installed app requires no Python installation and no admin privileges. There is no silent automatic updater in v33; updates are new installers or local Git pulls/builds.
 
 ## Complete Windows commands
 
@@ -343,4 +286,4 @@ Install Python 3.12 and Inno Setup 6 only for source builds; family installer us
 
 Run local regressions and diff checks. Build on Windows, exercise the installed executable with isolated data, verify tray registration and actual OS pointer-follow movement, show Not yet recovering without Pause, confirm no accidental water logging, snoozes and deferred alerts, feed bamboo, save settings, open every page, export/undo history and dispatch/render every visible activity. Capture cloud and Home layouts, including text-scaling checks. Inspect screenshots and walk previews. Validate MZ header, ZIP integrity and embedded-installer byte identity; record commit/tag and SHA-256 hashes.
 
-Deliver Water_Panda_v25_Family.zip with installer, installation guide, complete prompt, point-by-point audit, build manifest, walk GIFs and native UI evidence. Provide direct installer separately. Keep original app data. Mark native runner coverage, user-device verification, draft artistic limitations and future optional features honestly in the audit. Do not leave a failed requirement hidden behind “all features added.”
+Deliver Water_Panda_v33_Family.zip with installer, installation guide, complete prompt, point-by-point audit, build manifest, walk GIFs and native UI evidence. Provide direct installer separately. Keep original app data. Mark native runner coverage, user-device verification, draft artistic limitations and future optional features honestly in the audit. Do not leave a failed requirement hidden behind “all features added.”

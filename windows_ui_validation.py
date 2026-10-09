@@ -235,7 +235,7 @@ def run_validation(pet_type, output_path: Path) -> None:
                 check(f"Panda Home navigation: {name}", True)
             original_geometry=app.history_window.geometry()
             app.history_window.geometry("660x440+30+30")
-            app.root.update_idletasks()
+            app.root.update()
             for index,name in enumerate(("home","history","reminders","settings","activities","behaviour","themes")):
                 app.studio_notebook.select(index)
                 page=app.home_pages[index]
@@ -248,6 +248,7 @@ def run_validation(pet_type, output_path: Path) -> None:
                 app.root.update_idletasks()
                 overflowing=page.body.winfo_reqheight()>page.canvas.winfo_height()
                 check(f"Small Home wheel routes over controls: {name}",not overflowing or page.canvas.yview()[0]>before)
+                snapshot(f"small_page_{name}",app.history_window)
                 check(f"Small Home content viewport stays inside window: {name}",page.canvas.winfo_rootx()>=app.history_window.winfo_rootx() and page.canvas.winfo_rootx()+page.canvas.winfo_width()<=app.history_window.winfo_rootx()+app.history_window.winfo_width())
                 snapshot(f"small_page_{name}",app.history_window)
             app.history_window.geometry(original_geometry)
@@ -314,6 +315,26 @@ def run_validation(pet_type, output_path: Path) -> None:
             snapshot("walk")
             app._mouse_enter(None)
             check("Hover does not interrupt live follow", not app.chatter_until)
+            clear_action()
+            app.cursor_mode.set("Avoid")
+            app.pet_x = float(left + (right-left-180)//2)
+            app.pet_y = float(top+100)
+            app._move_root(round(app.pet_x), round(app.pet_y))
+            lane = app.pet_y
+            pointer = (round(app.pet_x+90), round(app.pet_y+75))
+            ctypes.windll.user32.SetCursorPos(*pointer)
+            app.root.update()
+            app.next_cursor_reaction = datetime.min
+            app._check_cursor_reaction(datetime.now())
+            before_escape = app.pet_x
+            for _ in range(12): app._update_roaming(datetime.now())
+            check("Live cursor avoidance moves away from aligned pointer", abs(app.pet_x-before_escape)>1)
+            check("Cursor avoidance stays on horizontal lane", app.pet_y == lane)
+            app._mouse_enter(None)
+            check("Hover does not interrupt avoidance", not app.chatter_until)
+            snapshot("cursor_avoid")
+            clear_action()
+            app.cursor_mode.set("Follow")
             app._show_chatter("A deliberate pause", seconds=3)
             check("Deliberate chatter pauses locomotion", app._locomotion_paused())
             position = (app.pet_x, app.pet_y)

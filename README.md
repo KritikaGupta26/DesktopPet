@@ -1,3 +1,7 @@
+## v28.0.0
+
+Fixes the walking-in-place behavior seen in the hover recording. The panda stands while its hover cloud pauses travel, then resumes walking when the cloud closes. Existing screen-edge roaming and water-hour settings are retained.
+
 # Water Panda v27 for Windows
 
 A local desktop panda with water tracking, hula-hoop movement breaks, wristwatch personal reminders, bamboo feeding and configurable automatic activities.

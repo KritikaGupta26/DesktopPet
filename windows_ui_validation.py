@@ -248,6 +248,20 @@ def run_validation(pet_type, output_path: Path) -> None:
             check("Live Windows pointer follow moves closer", after < before)
             app._draw()
             snapshot("walk")
+            app._mouse_enter(None)
+            check("Hover total cloud pauses locomotion", app._locomotion_paused())
+            position = (app.pet_x, app.pet_y)
+            app._check_cursor_reaction(datetime.now())
+            check("Hover cloud holds pointer-follow position", position == (app.pet_x, app.pet_y))
+            app._draw()
+            check("Paused locomotion resets walk phase", app.gait_signature is None)
+            snapshot("hover_standing")
+            app.chatter_until = None
+            app.chatter_text = ""
+            app._close_chatter_card()
+            app._check_cursor_reaction(datetime.now())
+            check("Follow resumes after hover cloud closes", position != (app.pet_x, app.pet_y))
+            app._draw()
             for name, point, target in (
                 ("top_left",(left,top),(left,top)),
                 ("bottom_right",(right-1,bottom-1),(right-180,bottom-184)),

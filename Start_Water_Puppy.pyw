@@ -120,7 +120,7 @@ def normalize_standing_sprite(sprite: Image.Image) -> Image.Image:
 
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 27
+APP_VERSION = 28
 REMINDER_MINUTES = 30
 WATER_DECLINE_SECONDS = 8
 WALK_FRAME_ORDER = (0, 1, 2, 4, 5, 6)
@@ -2982,6 +2982,13 @@ class WaterPet:
         interval = self._walk_cycle_seconds()/count if kind == "walk" else milliseconds/1000
         return 1 + int((now-self.gait_started)/interval) % count
 
+    def _locomotion_paused(self) -> bool:
+        # Chatter suspends both roaming and cursor games in _tick. Rendering
+        # must obey that same pause, including hover's water-total cloud.
+        return bool(getattr(self, "chatter_until", None) or self._studio_is_open()
+                    or (self.motion_mode == "following"
+                        and getattr(self, "cursor_at_rest", False)))
+
     def _draw_pet_scene(self) -> None:
         self.canvas.delete("all")
         if self.motion_mode not in ("walking","following","escaping"):
@@ -3000,6 +3007,15 @@ class WaterPet:
                 PET_CENTER_Y,
                 image=self._image("asking"),
             )
+            self._draw_overlays()
+            return
+
+        if (self.state == "normal" and not self.idle_mood
+                and self.motion_mode in ("walking", "following", "escaping")
+                and self._locomotion_paused()):
+            self.gait_signature = None
+            self.canvas.create_image(SMALL_WIDTH // 2, PET_CENTER_Y,
+                                     image=self._image("normal"))
             self._draw_overlays()
             return
 

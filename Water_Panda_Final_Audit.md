@@ -1,3 +1,10 @@
+## v28 recording fix
+
+- Reproduction: hover over a walking/following panda. The total-water cloud stops travel but previously left the walk frames running.
+- Fix: paused locomotion renders standing and resets gait phase. Resume walking after the cloud closes; no artwork replacement in this release.
+- Regression coverage: paused walk/run/follow rendering, resume after chatter, cursor stand-off rest. Native Windows checks include real pointer movement, hover cloud pause, standing capture and movement resume.
+- Previous v27 edge behavior and v26 water hours remain covered.
+
 # v27 edge-travel update
 
 Supersedes previous 42px bottom clearance and manual walking side inset. Ordinary roaming can visit all four edges. Cursor Follow uses zero additional standoff near the screen boundary while keeping the interior 140px distance. Clamp the complete 180×184 pet canvas within physical desktop bounds, including negative virtual-desktop coordinates. Preserve artwork padding, reminder cloud bounds, v26 water hours and all other behaviours. No walk artwork is replaced in this patch.

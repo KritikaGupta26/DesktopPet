@@ -1,3 +1,7 @@
+## v28 recording fix — hover pauses the gait
+
+The 9 October recording showed walking in place under the hover cloud (panda name and today’s water total). Chatter pauses roaming and cursor follow. During that pause, render the standing pose and reset gait phase; after the cloud closes, resume the existing travel destination with a fresh walk cycle. Apply this to walking, following and escaping. Cursor follow also stands at its target distance. Keep all v27 screen-edge and v26 water-hour behavior.
+
 # v27 edge-travel update
 
 Supersedes previous 42px bottom clearance and manual walking side inset. Ordinary roaming can visit all four edges. Cursor Follow uses zero additional standoff near the screen boundary while keeping the interior 140px distance. Clamp the complete 180×184 pet canvas within physical desktop bounds, including negative virtual-desktop coordinates. Preserve artwork padding, reminder cloud bounds, v26 water hours and all other behaviours. No walk artwork is replaced in this patch.

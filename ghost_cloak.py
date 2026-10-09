@@ -75,10 +75,11 @@ def dress_ghost(image, cloth, geometry, key):
     watch = key.startswith('pack_watch_')
     pumpkin = key.startswith('scene_spooky_')
     glass_pixels=[]
+    wood_pixels=[]
     for y in range(image.height):
         for x in range(image.width):
             r,g,b,a=image.getpixel((x,y))
-            blue=b>r*1.10 and b>g*.95
+            blue=b>105 and g>50 and b>r*1.10 and b>g*.95
             green=g>r*1.10 and g>b*1.10
             colour=max(r,g,b)>=160 and max(r,g,b)-min(r,g,b)>90 and min(r,g,b)<130
             brown=r>90 and r>g*1.15 and g>b*1.3
@@ -90,12 +91,21 @@ def dress_ghost(image, cloth, geometry, key):
             values.append(255 if a>=128 and prop else 0)
             if glass and a>=128 and blue:
                 glass_pixels.append((x,y))
+            if wood and a>=128 and brown and y>=max(hb+3,tt):
+                wood_pixels.append((x,y))
     preserve.putdata(values)
     draw=ImageDraw.Draw(preserve)
     if glass_pixels:
         # Preserve clear glass rim and water, not only saturated blue marks.
         xs,ys=zip(*glass_pixels)
         draw.rectangle((min(xs)-1,min(ys)-1,max(xs)+1,max(ys)+1),fill=255)
+    if wood_pixels:
+        xs,ys=zip(*wood_pixels)
+        for y in range(min(ys),max(ys)+1):
+            for x in range(min(xs),max(xs)+1):
+                r,g,b,a=image.getpixel((x,y))
+                if a>=128 and (max(r,g,b)>110 or r>50 and r>g*1.15 and g>b*1.15):
+                    preserve.putpixel((x,y),255)
     if profile:
         draw.ellipse((hl-8 if left else hl+(hr-hl)*.20,ht+(hb-ht)*.14,
                       hr-(hr-hl)*.20 if left else hr+8,hb+2),fill=255)

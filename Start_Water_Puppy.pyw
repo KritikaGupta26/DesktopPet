@@ -111,10 +111,19 @@ def next_water_window_time(now: datetime, start: str, end: str) -> datetime:
     return candidate if candidate > now else candidate + timedelta(days=1)
 
 def normalize_standing_sprite(sprite: Image.Image) -> Image.Image:
-    # One scale for the entire idle row, with the same ground anchor as walking.
-    enlarged = sprite.resize((625, 625), Image.Resampling.LANCZOS)
+    return normalize_pose_sprite(sprite, 450 / 379)
+
+
+def normalize_pose_sprite(sprite: Image.Image, scale: float) -> Image.Image:
+    # Fixed scale for a whole row: retain genuine bending between frames.
+    bbox = sprite.getchannel("A").getbbox()
+    if not bbox:
+        return sprite
+    size = round(512 * scale)
+    enlarged = sprite.resize((size, size), Image.Resampling.LANCZOS)
+    enlarged.putalpha(enlarged.getchannel("A").point(lambda alpha: 255 if alpha >= 128 else 0))
     canvas = Image.new("RGBA", (512, 512))
-    canvas.alpha_composite(enlarged, ((512-625)//2, 489-round(489*625/512)))
+    canvas.alpha_composite(enlarged, ((512-size)//2, 489-round(bbox[3]*size/512)))
     return canvas
 
 
@@ -994,13 +1003,23 @@ class WaterPet:
             loaded["panda"][f"roll_{frame}"] = ImageTk.PhotoImage(canvas)
         self.pack_manifest = json.loads((assets / "sprite_collection_manifest.json").read_text(encoding="utf-8"))
         for key, metadata in self.pack_manifest.items():
+            row_scale = 1.0
+            if key in ("happy_idle", "cursor_follow", "petting", "sad"):
+                heights = []
+                for i in range(metadata["frames"]):
+                    with Image.open(assets / f"pack_{key}_{i}.png") as opened:
+                        bbox = opened.getchannel("A").getbbox()
+                        if bbox:
+                            heights.append(bbox[3]-bbox[1])
+                if heights:
+                    row_scale = 450 / max(heights)
             for i in range(metadata["frames"]):
                 variants = (key, key + "_left") if key in ("walk", "run", "bored_shuffle") else (key,)
                 for variant in variants:
                     with Image.open(assets / f"pack_{variant}_{i}.png") as opened:
                         sprite = opened.convert("RGBA")
-                    if key == "happy_idle":
-                        sprite = normalize_standing_sprite(sprite)
+                    if row_scale != 1.0:
+                        sprite = normalize_pose_sprite(sprite, row_scale)
                     sprite = sprite.resize((180,180), Image.Resampling.LANCZOS)
                     sprite.putalpha(sprite.getchannel("A").point(lambda a: 255 if a >= 128 else 0))
                     loaded["panda"][f"pack_{variant}_{i}"] = ImageTk.PhotoImage(sprite)

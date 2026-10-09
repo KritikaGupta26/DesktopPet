@@ -1,3 +1,7 @@
+## v30.0.2 interaction-size correction
+
+Idle, drag/cursor-follow, petting and sad rows now share the walk row's 450px maximum full-body height and 489px ground baseline at the 512px source canvas. Use one scale per entire row, preserving genuine bending between frames. Previously idle was slightly too large and the drag/petting rows were smaller. This is runtime scaling of the existing full-resolution artwork, not regenerated art. Unit checks verify scale, ground alignment and unclipped alpha bounds for every frame in these four rows.
+
 # v30 transition fix
 
 The 11:11 recording showed vertical jumps around cloud resizing and the right-click menu. Previous checks only verified the settled layout and missed a stale image displayed at the new window origin before the next tick. Rebuild and flush the scene synchronously during resize. Close ordinary chatter before posting the context menu; suppress hover, movement and scheduled behavior while the menu is posted. Keep previous v29 fixes.

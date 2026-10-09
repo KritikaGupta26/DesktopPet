@@ -26,6 +26,14 @@ class HomePage(ttk.Frame):
             for child in widget.winfo_children():
                 if isinstance(child, (ttk.Label, tk.Label)) and not child.cget("width"):
                     child.configure(wraplength=max(100, width - 32))
+                if isinstance(child, ttk.Treeview):
+                    columns = child.cget("columns")
+                    available = max(100, width - 24)
+                    weights = [2 if col in ("time", "title", "message") else 1 for col in columns]
+                    for col, weight in zip(columns, weights):
+                        child.column(col, width=max(40, int(available * weight / sum(weights))), minwidth=40, stretch=True)
+                elif isinstance(child, tk.Canvas):
+                    child.configure(width=max(100, width - 24))
                 wrap(child)
         if width > 80:
             wrap(self.body)

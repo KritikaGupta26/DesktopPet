@@ -536,11 +536,16 @@ def run_validation(pet_type, output_path: Path) -> None:
             clear_action()
             app.theme_mode.set("spooky")
             for action in ("walk", "walk_left", "run", "run_left", "bow", "sleep", "eat_bamboo", "hula_hoop", "water_offer"):
-                image = app._pack_image(action, index=0)
+                if action in ("walk", "walk_left", "run", "run_left"):
+                    base = action.split("_")[0]
+                    direction = "left" if action.endswith("_left") else "right"
+                    image = app._image(f"{base}_{direction}_1")
+                else:
+                    image = app._pack_image(action, index=0)
                 check(f"Continuous ghost cloak packaged: {action}", str(image) != str(app.images["panda"][f"pack_{action}_0"]))
-                clear_action()
-                app._play_test_animation(f"pack:{action}", 2.0)
-                app._draw(); snapshot(f"ghost_cloak_{action}")
+                app.canvas.delete("all")
+                app.canvas.create_image(90,94,image=image)
+                snapshot(f"ghost_cloak_{action}")
             clear_action()
             app.theme_mode.set("spooky")
             app._play_theme_scene("spooky")

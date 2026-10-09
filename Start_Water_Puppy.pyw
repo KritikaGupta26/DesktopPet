@@ -120,7 +120,7 @@ def normalize_standing_sprite(sprite: Image.Image) -> Image.Image:
 
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 29
+APP_VERSION = 30
 REMINDER_MINUTES = 30
 WATER_DECLINE_SECONDS = 8
 WALK_FRAME_ORDER = (0, 1, 2, 4, 5, 6)
@@ -1349,6 +1349,11 @@ class WaterPet:
         self.pet_x = float(pet_x)
         self.pet_y = float(pet_y)
         self._move_root(pet_x, pet_y)
+        # Rebuild the picture in the new coordinate system before Tk commits
+        # the window resize. Waiting for the next tick exposes the old image
+        # at the new window origin, producing a 140px jump or disappearance.
+        self._draw()
+        self.root.update_idletasks()
 
     def _build_menu(self) -> None:
         self.menu = tk.Menu(self.root, tearoff=0)
@@ -1503,10 +1508,18 @@ class WaterPet:
             self._pet_reaction()
 
     def _show_menu(self, event: tk.Event) -> None:
+        if not self.prompt_visible and not self.active_alert_kind:
+            self._close_chatter_card()
         try:
             self.menu.tk_popup(event.x_root, event.y_root)
         finally:
             self.menu.grab_release()
+
+    def _context_menu_active(self) -> bool:
+        try:
+            return bool(self.menu.winfo_ismapped())
+        except (AttributeError, tk.TclError):
+            return False
 
     def start_fetch(self) -> None:
         if self.prompt_visible or self.active_alert_kind or self.dragging or self.state != "normal":
@@ -1562,7 +1575,7 @@ class WaterPet:
 
     def _mouse_enter(self, _event: tk.Event) -> None:
         self.hovering = True
-        if self.motion_mode == "idle" and self.state == "normal" and not self.prompt_visible and not self.active_alert_kind and not self.dragging and not self.idle_mood and not self.chatter_until:
+        if not self._context_menu_active() and self.motion_mode == "idle" and self.state == "normal" and not self.prompt_visible and not self.active_alert_kind and not self.dragging and not self.idle_mood and not self.chatter_until:
             self._show_chatter(f"{self.pet_name.get()} ♡  Today {self.today_total_cache} ml", seconds=3.5)
 
     def _mouse_leave(self, _event: tk.Event) -> None:
@@ -2143,6 +2156,10 @@ class WaterPet:
             self.idle_until = now + timedelta(seconds=self.roam_rest_seconds.get())
 
     def _tick(self) -> None:
+        if self._context_menu_active():
+            self._draw()
+            self.root.after(ACTIVE_TICK_MILLISECONDS, self._tick)
+            return
         now = datetime.now()
         self._update_water_response(now)
         if now.date() != self.cache_date:
@@ -2181,6 +2198,7 @@ class WaterPet:
 
         if (
             self.state == "normal"
+            and not self._context_menu_active()
             and not self.active_alert_kind
             and not self.prompt_visible
             and not self.chatter_until
@@ -2220,7 +2238,7 @@ class WaterPet:
                 seconds=random.uniform(*interval)
             )
 
-        if self.chatter_until and now >= self.chatter_until:
+        if self.chatter_until and now >= self.chatter_until and not self._context_menu_active():
             self.chatter_until = None
             self.chatter_text = ""
             self._close_chatter_card()
@@ -2391,6 +2409,8 @@ class WaterPet:
 
 
     def _check_cursor_reaction(self, now: datetime) -> None:
+        if self._context_menu_active():
+            return
         if getattr(self,"cursor_session_until",None) and now>=self.cursor_session_until:
             self.cursor_session_kind="";self.cursor_session_until=None
             if self.motion_mode=="following":self.motion_mode="idle"
@@ -3033,7 +3053,7 @@ class WaterPet:
     def _locomotion_paused(self) -> bool:
         # Chatter suspends both roaming and cursor games in _tick. Rendering
         # must obey that same pause, including hover's water-total cloud.
-        return bool(getattr(self, "chatter_until", None) or self._studio_is_open()
+        return bool(self._context_menu_active() or getattr(self, "chatter_until", None) or self._studio_is_open()
                     or (self.motion_mode == "following"
                         and getattr(self, "cursor_at_rest", False)))
 

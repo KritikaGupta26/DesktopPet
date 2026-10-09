@@ -83,6 +83,48 @@ def run_validation(pet_type, output_path: Path) -> None:
             check("Tray message loop initialized", bool(app.tray.hwnd))
             snapshot("idle")
 
+            # Inspect the *immediate* scene, without calling _draw or update:
+            # old builds exposed a misplaced cached image until the next tick.
+            app._move_root(300,300)
+            app.root.update_idletasks()
+            app.frame=0
+            app._draw()
+            def image_anchor():
+                item=next(i for i in app.canvas.find_all() if app.canvas.type(i)=="image")
+                x,y=app.canvas.coords(item)
+                return (app.root.winfo_x()+x,app.root.winfo_y()+y)
+            anchor=image_anchor()
+            for i in range(20):
+                app._show_chatter("Transition check",seconds=10)
+                check(f"Immediate cloud opening keeps rendered anchor {i}",image_anchor()==anchor)
+                app._close_chatter_card()
+                check(f"Immediate cloud closing keeps rendered anchor {i}",image_anchor()==anchor)
+            menu_errors=[]
+            from tkinter import BooleanVar
+            menu_finished=BooleanVar(master=app.root,value=False)
+            def inspect_posted_menu():
+                try:
+                    check("Native right-click menu is mapped",app._context_menu_active())
+                    position=(app.pet_x,app.pet_y)
+                    app._tick()
+                    check("Posted menu holds panda position",position==(app.pet_x,app.pet_y))
+                    app._mouse_enter(None)
+                    check("Posted menu does not trigger hover cloud",not app.chatter_until)
+                except Exception as error:
+                    menu_errors.append(error)
+                finally:
+                    app.menu.unpost()
+                    app.menu.grab_release()
+                    menu_finished.set(True)
+            app.root.after(150,inspect_posted_menu)
+            app.menu.post(500,350)
+            if not menu_finished.get():
+                app.root.wait_variable(menu_finished)
+            if menu_errors:
+                raise menu_errors[0]
+            app.root.update_idletasks()
+            check("Menu dismissal resumes behavior",not app._context_menu_active())
+
             app.show_prompt()
             app.attention_started_at = datetime.now() - timedelta(seconds=5)
             app._draw()

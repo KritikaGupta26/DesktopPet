@@ -16,6 +16,7 @@ class Audit29Tests(unittest.TestCase):
         p = WaterPet.__new__(WaterPet)
         p.width, p.height = 180, 184
         p.root, p.canvas = Mock(), Mock()
+        p._draw = Mock()
         p.root.winfo_x.return_value = x
         p.root.winfo_y.return_value = y
         p._screen_bounds = Mock(return_value=(0, 0, 1920, 1080))

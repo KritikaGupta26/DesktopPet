@@ -1,3 +1,9 @@
+# v30 transition fix
+
+The 11:11 recording showed vertical jumps around cloud resizing and the right-click menu. Previous checks only verified the settled layout and missed a stale image displayed at the new window origin before the next tick. Rebuild and flush the scene synchronously during resize. Close ordinary chatter before posting the context menu; suppress hover, movement and scheduled behavior while the menu is posted. Keep previous v29 fixes.
+
+Regression: 85 unit tests pass. Native Windows validation now checks the immediate rendered anchor across 20 cloud open/close cycles and posted-menu behavior, in addition to existing reminder, activity and edge checks. No new artwork is included. Artistic consistency and physical multi-monitor gaps remain limitations.
+
 # v29 audit and fixes
 
 The 9 October 10:24 recording showed hover interruptions during movement. The audit also found geometry, stale-action, Windows API and malformed-settings defects.

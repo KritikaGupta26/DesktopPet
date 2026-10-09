@@ -165,6 +165,7 @@ class FinalReleaseRegressionTests(unittest.TestCase):
     def test_dragging_a_cloud_dialog_preserves_panda_screen_anchor(self):
         pet=WaterPet.__new__(WaterPet);pet.root=Mock();pet.root.winfo_x.return_value=100;pet.root.winfo_y.return_value=60
         pet.width=360;pet.height=324;pet.canvas=Mock();pet._screen_bounds=Mock(return_value=(0,0,1920,1080))
+        pet._draw=Mock()
         pet._resize_anchored(180,184)
         self.assertEqual((pet.pet_x,pet.pet_y),(100.,200.))
 

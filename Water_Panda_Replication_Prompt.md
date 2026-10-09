@@ -19,7 +19,7 @@ The latest requirement supersedes the old water behaviour: **Not yet reacts for 
 | R001 | Product and delivery | Continue the existing standalone Windows desktop panda in KritikaGupta26/DesktopPet. Do not replace it with a ChatGPT Pet or silently rewrite the stack. |
 | R002 | Product and delivery | Deliver a Windows EXE installer with panda-face icon, a shareable family ZIP, full replication prompt and requirement-by-requirement audit. |
 | R003 | Product and delivery | Use GitHub for source and future tagged installer updates. Provide complete clone, pull, build and installer update commands. |
-| R004 | Product and delivery | Close the old running copy before upgrades; preserve settings, water history and personal reminders. Show version 33 in Panda Home. |
+| R004 | Product and delivery | Close the old running copy before upgrades; preserve settings, water history and personal reminders. Show version 34 in Panda Home. |
 | R005 | Product and delivery | Use the Riya Odedara Matchi guide as inspiration for a gentle, cheeky wellness companion and deliberate privacy. Its product-access claims are not app requirements. |
 | R006 | Visuals and animation | Keep the established soft cream and charcoal panda identity, expressive face, rounded proportions and polished 3D animated-film style. Avoid pixel art and green outlines. |
 | R007 | Visuals and animation | Use high-resolution transparent source poses, high-quality downsampling and consistent perceived body scale across standing, walking, sitting, resting and meditation. |

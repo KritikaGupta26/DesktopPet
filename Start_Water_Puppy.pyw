@@ -1736,11 +1736,12 @@ class WaterPet:
 
     def _move_root(self, x: int, y: int) -> None:
         left, top, right, bottom = self._screen_bounds()
-        x = max(left, min(x, right - SMALL_WIDTH))
+        expanded = self.height > SMALL_HEIGHT
+        wide_scene = self.width > SMALL_WIDTH and not expanded
+        x = max(left, min(x, right - (self.width if wide_scene else SMALL_WIDTH)))
         y = max(top, min(y, bottom - SMALL_HEIGHT))
         self.pet_x, self.pet_y = float(x), float(y)
-        expanded = self.height > SMALL_HEIGHT
-        self.cloud_left = self.width > SMALL_WIDTH and x + self.width > right
+        self.cloud_left = not wide_scene and self.width > SMALL_WIDTH and x + self.width > right
         self.cloud_below = expanded and y - 140 < top
         root_x = x - (180 if self.cloud_left else 0)
         root_y = y - (140 if expanded and not self.cloud_below else 0)

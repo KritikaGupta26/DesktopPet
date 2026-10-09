@@ -545,7 +545,12 @@ def run_validation(pet_type, output_path: Path) -> None:
                 check(f"Continuous ghost cloak packaged: {action}", str(image) != str(app.images["panda"][f"pack_{action}_0"]))
                 app.canvas.delete("all")
                 app.canvas.create_image(90,94,image=image)
-                snapshot(f"ghost_cloak_{action}")
+                # Flush paint without processing the live pet's timer, which
+                # could replace this specific frame with an idle frame.
+                app.root.update_idletasks();ctypes.windll.dwmapi.DwmFlush()
+                filename=f"ghost_cloak_{action}.png"
+                shot=ImageGrab.grab(bbox=(app.root.winfo_rootx(),app.root.winfo_rooty(),app.root.winfo_rootx()+180,app.root.winfo_rooty()+184),all_screens=True)
+                shot.save(output_path/filename);report["screenshots"].append(filename)
             clear_action()
             app.theme_mode.set("spooky")
             app._play_theme_scene("spooky")

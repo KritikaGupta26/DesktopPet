@@ -4,8 +4,9 @@ from tkinter import ttk
 
 
 class HomePage(ttk.Frame):
-    def __init__(self, parent, background, style="Glass.TFrame", padding=(4, 4, 12, 20)):
+    def __init__(self, parent, background, style="Glass.TFrame", padding=(4, 4, 12, 20), fit_width=False):
         super().__init__(parent, style=style)
+        self.fit_width = fit_width
         self.canvas = tk.Canvas(self, bg=background, highlightthickness=0,
                                 borderwidth=0, width=1, height=1, yscrollincrement=24)
         self.vertical = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
@@ -37,7 +38,7 @@ class HomePage(ttk.Frame):
                 wrap(child)
         if width > 80:
             wrap(self.body)
-        needed = self.body.winfo_reqwidth()
+        needed = width if self.fit_width else self.body.winfo_reqwidth()
         self.canvas.itemconfigure(self.item, width=max(width, needed))
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
         if needed > width + 2:

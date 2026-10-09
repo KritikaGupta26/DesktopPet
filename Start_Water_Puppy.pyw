@@ -4200,7 +4200,7 @@ class WaterPet:
 
         page_host = tk.Frame(content, bg=GLASS["surface"])
         page_host.pack(fill="both", expand=True, padx=20, pady=18)
-        self.home_pages = [HomePage(page_host, GLASS["surface"]) for _ in range(7)]
+        self.home_pages = [HomePage(page_host, GLASS["surface"], fit_width=index in (0, 1)) for index in range(7)]
         overview_frame, history_frame, reminder_frame, pet_frame, activities_frame, behavior_frame, themes_page = [page.body for page in self.home_pages]
         self.behavior_canvas = self.home_pages[5].canvas
         self._build_themes_page(themes_page)

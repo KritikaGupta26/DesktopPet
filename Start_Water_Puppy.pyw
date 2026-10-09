@@ -118,6 +118,28 @@ def normalize_standing_sprite(sprite: Image.Image) -> Image.Image:
     return canvas
 
 
+class MenuRect(ctypes.Structure):
+    _fields_ = [(name, ctypes.c_long) for name in ("left", "top", "right", "bottom")]
+
+
+class MenuGuiThreadInfo(ctypes.Structure):
+    _fields_ = [("cbSize", ctypes.c_ulong), ("flags", ctypes.c_ulong)] + [
+        (name, ctypes.c_void_p) for name in
+        ("hwndActive", "hwndFocus", "hwndCapture", "hwndMenuOwner", "hwndMoveSize", "hwndCaret")
+    ] + [("rcCaret", MenuRect)]
+
+
+def windows_menu_active(thread_id: int | None = None) -> bool:
+    if os.name != "nt":
+        return False
+    info = MenuGuiThreadInfo()
+    info.cbSize = ctypes.sizeof(info)
+    user32 = ctypes.windll.user32
+    user32.GetGUIThreadInfo.argtypes = [ctypes.c_ulong, ctypes.POINTER(MenuGuiThreadInfo)]
+    thread_id = thread_id or ctypes.windll.kernel32.GetCurrentThreadId()
+    return bool(user32.GetGUIThreadInfo(thread_id, ctypes.byref(info)) and info.flags & 0x14)
+
+
 
 APP_NAME = "WaterPuppy"
 APP_VERSION = 30
@@ -1517,7 +1539,7 @@ class WaterPet:
 
     def _context_menu_active(self) -> bool:
         try:
-            return bool(self.menu.winfo_ismapped())
+            return bool(self.menu.winfo_ismapped() or windows_menu_active())
         except (AttributeError, tk.TclError):
             return False
 

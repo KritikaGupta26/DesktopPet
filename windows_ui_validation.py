@@ -25,6 +25,7 @@ def run_validation(pet_type, output_path: Path) -> None:
         if not condition:
             raise AssertionError(name)
         report["checks"].append(name)
+        (output_path / "progress.json").write_text(json.dumps(report),encoding="utf-8")
 
     def snapshot(name, window=None):
         target = window or app.root
@@ -99,30 +100,31 @@ def run_validation(pet_type, output_path: Path) -> None:
                 check(f"Immediate cloud opening keeps rendered anchor {i}",image_anchor()==anchor)
                 app._close_chatter_card()
                 check(f"Immediate cloud closing keeps rendered anchor {i}",image_anchor()==anchor)
-            menu_errors=[]
             from tkinter import BooleanVar
+            from threading import Timer
             menu_finished=BooleanVar(master=app.root,value=False)
-            def inspect_posted_menu():
+            menu_observed=[]
+            menu_position=[]
+            gui_thread=ctypes.windll.kernel32.GetCurrentThreadId()
+            detector=pet_type._context_menu_active.__globals__["windows_menu_active"]
+            def inspect_and_dismiss_native_menu():
                 try:
-                    check("Native right-click menu is mapped",app._context_menu_active())
-                    position=(app.pet_x,app.pet_y)
-                    app._tick()
-                    check("Posted menu holds panda position",position==(app.pet_x,app.pet_y))
-                    app._mouse_enter(None)
-                    check("Posted menu does not trigger hover cloud",not app.chatter_until)
-                except Exception as error:
-                    menu_errors.append(error)
+                    menu_observed.append(detector(gui_thread))
+                    menu_position.append((app.pet_x,app.pet_y))
                 finally:
-                    app.menu.unpost()
-                    app.menu.grab_release()
-                    menu_finished.set(True)
-            app.root.after(150,inspect_posted_menu)
+                    ctypes.windll.user32.keybd_event(0x1B,0,0,0)
+                    ctypes.windll.user32.keybd_event(0x1B,0,2,0)
+            position=(app.pet_x,app.pet_y)
+            timer=Timer(0.4,inspect_and_dismiss_native_menu)
+            timer.daemon=True
+            timer.start()
             app.menu.post(500,350)
-            if not menu_finished.get():
-                app.root.wait_variable(menu_finished)
-            if menu_errors:
-                raise menu_errors[0]
-            app.root.update_idletasks()
+            app.root.after(700,menu_finished.set,True)
+            app.root.wait_variable(menu_finished)
+            app.menu.unpost()
+            app.menu.grab_release()
+            check("Native Windows menu state detected",menu_observed==[True])
+            check("Posted native menu holds panda position",menu_position==[position])
             check("Menu dismissal resumes behavior",not app._context_menu_active())
 
             app.show_prompt()

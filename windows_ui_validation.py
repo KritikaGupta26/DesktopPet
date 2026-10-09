@@ -293,6 +293,8 @@ def run_validation(pet_type, output_path: Path) -> None:
                 check(f"Water cloud preserves pet at {name}", (app.pet_x, app.pet_y) == position)
                 cloud_bounds = app.canvas.bbox("cloud")
                 check(f"Water cloud visible at {name}", cloud_bounds and cloud_bounds[0]>=0 and cloud_bounds[1]>=0 and cloud_bounds[2]<=app.width and cloud_bounds[3]<=app.height)
+                positions = [app.canvas.bbox(app.canvas.find_withtag(tag)[1])[0] for tag in ("amount_100", "amount_200", "amount_300")]
+                check(f"Water amounts retain reading order at {name}", positions == sorted(positions))
                 snapshot(f"water_edge_{name}")
                 app.snooze_water()
                 app._close_chatter_card()

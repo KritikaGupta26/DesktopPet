@@ -1730,7 +1730,7 @@ class WaterPet:
         self.canvas.create_oval(167, 142, 175, 150, fill=PALETTE["cream"], outline="#E0D4ED", tags=("cloud", "cloud_tail"))
         cloud_font = tkfont.Font(family="Segoe UI",size=-15)
         message = fit_cloud_text(self.chatter_text,cloud_font.measure,126,4)
-        self.canvas.create_text(272, 61, tags="cloud", text=message, width=126,
+        self.canvas.create_text(272, 61, tags=("cloud", "cloud_content"), text=message, width=126,
                                 fill=PALETTE["ink"], font=("Segoe UI", -15), justify="center")
 
     def _position_chatter_card(self) -> None:
@@ -3001,6 +3001,8 @@ class WaterPet:
                 self.canvas.move(item, offset_x, offset_y - (140 if self.height > SMALL_HEIGHT else 0))
         if getattr(self, "cloud_left", False):
             self.canvas.scale("cloud", 180, 0, -1, 1)
+            # Mirror the outline/tail, but preserve reading and button order.
+            self.canvas.scale("cloud_content", 88, 0, -1, 1)
             self.canvas.move("cloud", offset_x - 180, 0)
         else:
             self.canvas.move("cloud", offset_x, 0)
@@ -3655,9 +3657,9 @@ class WaterPet:
             title = fit_cloud_text(self.alert_title,title_font.measure,126,3)
         else:
             title = "Time to move!"
-        self.canvas.create_text(272, 25, tags="cloud", text=title, anchor="n", width=126,
+        self.canvas.create_text(272, 25, tags=("cloud", "cloud_content"), text=title, anchor="n", width=126,
                                 fill=PALETTE["ink"], font=("Segoe UI", -15, "bold"), justify="center")
-        self.canvas.create_text(272, 97, tags="cloud", text=self.alert_subtitle if personal else "Hula, stretch, or take a little walk.",
+        self.canvas.create_text(272, 97, tags=("cloud", "cloud_content"), text=self.alert_subtitle if personal else "Hula, stretch, or take a little walk.",
                                 width=126, fill=PALETTE["muted"], font=("Segoe UI", -13), justify="center")
         self._answer_button(204, 126, 257, 150, "Done", PALETTE["purple"], PALETTE["purple_dark"], "alert_done")
         self._answer_button(263, 126, 340, 150, "10 min", PALETTE["teal"], "#439D87", "alert_snooze")
@@ -3668,8 +3670,8 @@ class WaterPet:
         self._cloud_shape(self.canvas, 194, 6, 350, 159, PALETTE["cream"], "#E0D4ED")
         self.canvas.create_oval(179, 164, 191, 176, fill=PALETTE["cream"], outline="#E0D4ED", tags=("cloud", "cloud_tail"))
         self.canvas.create_oval(167, 185, 175, 193, fill=PALETTE["cream"], outline="#E0D4ED", tags=("cloud", "cloud_tail"))
-        self.canvas.create_text(272, 29, tags="cloud", text="Water time?", fill=PALETTE["ink"], font=("Segoe UI", -15, "bold"))
-        self.canvas.create_text(272, 49, tags="cloud", text=f"Today: {self.today_total_cache} ml", fill=PALETTE["muted"], font=("Segoe UI", -13))
+        self.canvas.create_text(272, 29, tags=("cloud", "cloud_content"), text="Water time?", fill=PALETTE["ink"], font=("Segoe UI", -15, "bold"))
+        self.canvas.create_text(272, 49, tags=("cloud", "cloud_content"), text=f"Today: {self.today_total_cache} ml", fill=PALETTE["muted"], font=("Segoe UI", -13))
         for x, amount, tag, color in ((204,100,"amount_100",PALETTE["teal"]),(251,200,"amount_200","#69B8E8"),(298,300,"amount_300",PALETTE["purple"])):
             self._answer_button(x, 66, x+42, 91, f"{amount}", color, color, tag)
             self.canvas.tag_bind(tag, "<Button-1>", lambda event, ml=amount: self.record_water(ml, event))
@@ -3677,7 +3679,7 @@ class WaterPet:
         self._answer_button(264, 102, 340, 127, "10 min", PALETTE["purple"], PALETTE["purple_dark"], "water_snooze")
         self.canvas.tag_bind("not_yet", "<Button-1>", self.answer_not_yet)
         self.canvas.tag_bind("water_snooze", "<Button-1>", self.snooze_water)
-        self.canvas.create_text(272, 141, tags="cloud", text="Amount in ml", fill=PALETTE["muted"], font=("Segoe UI", -13))
+        self.canvas.create_text(272, 141, tags=("cloud", "cloud_content"), text="Amount in ml", fill=PALETTE["muted"], font=("Segoe UI", -13))
         elapsed = (datetime.now() - self.attention_started_at).total_seconds() if self.attention_started_at else 0
         if elapsed < 0.88:
             image = self._pack_image("jump",index=min(7,int(elapsed/0.11)))
@@ -3702,7 +3704,7 @@ class WaterPet:
         outline: str,
         tag: str,
     ) -> None:
-        tags = (tag, "answer_button", "cloud")
+        tags = (tag, "answer_button", "cloud", "cloud_content")
         self._rounded_rectangle(
             x1,
             y1,

@@ -1,3 +1,27 @@
+# v29 audit and fixes
+
+The 9 October 10:24 recording showed hover interruptions during movement. The audit also found geometry, stale-action, Windows API and malformed-settings defects.
+
+| Area | Finding / result |
+| --- | --- |
+| Hover and cursor follow | Hover total cloud now opens only while idle. It no longer interrupts walking, following or escaping. Deliberate chatter still pauses travel and displays standing. |
+| Cloud anchoring | Opening and closing a cloud preserves the panda's screen position. Use upper-right normally, left near the right edge and below near the top. Same canvas, no new popup. Buttons and text keep their readable orientation/order. |
+| Dragging with clouds | Drag uses screen-pointer displacement from the panda anchor, rather than switching between root-window and panda coordinates. Can reach all edges with the cloud open. |
+| Bored approach | Removed unreachable duplicate branch that hid the slow full-body shuffle. Ordinary Walk also clears a stale pending edge action. |
+| Ledges | Clamp destinations to the desktop; a window near the top cannot send the panda above the screen. |
+| Throw and jump | Upward throws bounce at the top. Jump displacement respects available space above the panda. |
+| Fetch and reminders | Fetch waits while a general reminder is active. |
+| Settings | Invalid list/dict activity values are discarded rather than raising an unhashable-value startup exception. |
+| Windows integration | Use absolute Win32 placement for negative monitor coordinates; explicitly type pointer-sized arguments for fullscreen/ledge checks. Correct idle-time calculation across the 32-bit last-input tick wrap. |
+| Water | Reviewed 100/200/300 logging-once, Not yet 8-second recovery, Snooze 10 minutes, Pause/Resume, daily/overnight windows, manual override and personal-reminder preemption. Regression and native checks retained. |
+| Other reminders | Reviewed personal due-date storage, Done/Snooze, movement timer and shared cloud actions. |
+| All activities / artwork | Existing activity-dispatch/native renderer checks retained. All 262 exported pack PNGs decode and have nonempty alpha bounds inside the canvas. No new artwork is claimed. |
+| Data / UI / packaging | Existing history, totals, CSV, confirmed Undo, Home, tray, persistent settings, icon and installer checks retained. |
+
+Local regression suite: 81 tests passed. Packaged Windows results are recorded in the included report after the build.
+
+Limits: these checks cannot certify perfect artistic gait or every physical multi-monitor/DPI combination. The current bounds are the virtual desktop rectangle; gaps between disjoint monitors remain an unverified limitation. Sprite alpha padding is preserved. No AI services, email access, battery watcher or browser-tab watcher were added.
+
 ## v28 recording fix — hover pauses the gait
 
 The 9 October recording showed walking in place under the hover cloud (panda name and today’s water total). Chatter pauses roaming and cursor follow. During that pause, render the standing pose and reset gait phase; after the cloud closes, resume the existing travel destination with a fresh walk cycle. Apply this to walking, following and escaping. Cursor follow also stands at its target distance. Keep all v27 screen-edge and v26 water-hour behavior.

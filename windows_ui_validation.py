@@ -249,7 +249,9 @@ def run_validation(pet_type, output_path: Path) -> None:
             app._draw()
             snapshot("walk")
             app._mouse_enter(None)
-            check("Hover total cloud pauses locomotion", app._locomotion_paused())
+            check("Hover does not interrupt live follow", not app.chatter_until)
+            app._show_chatter("A deliberate pause", seconds=3)
+            check("Deliberate chatter pauses locomotion", app._locomotion_paused())
             position = (app.pet_x, app.pet_y)
             app._check_cursor_reaction(datetime.now())
             check("Hover cloud holds pointer-follow position", position == (app.pet_x, app.pet_y))
@@ -278,6 +280,24 @@ def run_validation(pet_type, output_path: Path) -> None:
                       left<=app.pet_x<=right-180 and top<=app.pet_y<=bottom-184)
                 app._draw()
                 snapshot(f"edge_{name}")
+
+            clear_action()
+            for name, position in (
+                ("top_left", (left, top)), ("top_right", (right-180, top)),
+                ("bottom_left", (left, bottom-184)), ("bottom_right", (right-180, bottom-184)),
+            ):
+                app._move_root(*position)
+                app.root.update_idletasks()
+                app.show_prompt()
+                app._draw()
+                check(f"Water cloud preserves pet at {name}", (app.pet_x, app.pet_y) == position)
+                cloud_bounds = app.canvas.bbox("cloud")
+                check(f"Water cloud visible at {name}", cloud_bounds and cloud_bounds[0]>=0 and cloud_bounds[1]>=0 and cloud_bounds[2]<=app.width and cloud_bounds[3]<=app.height)
+                snapshot(f"water_edge_{name}")
+                app.snooze_water()
+                app._close_chatter_card()
+                app.root.update_idletasks()
+                check(f"Closing cloud preserves pet at {name}", (app.pet_x, app.pet_y) == position)
 
 
             clear_action()

@@ -157,6 +157,7 @@ class FinalReleaseRegressionTests(unittest.TestCase):
         _,x1,y1,x2,y2,*_=pet._cloud_shape.call_args.args
         self.assertLess(x2-x1,180);self.assertLess(y2-y1,180)
         pet.pet_name=Mock();pet.pet_name.get.return_value='Mochi';pet.water_prompt_text='Water?';pet.today_total_cache=200
+        pet.pet_y=300;pet._screen_bounds=Mock(return_value=(0,0,1920,1080))
         pet._draw_prompt()
         _,x1,y1,x2,y2,*_=pet._cloud_shape.call_args.args
         self.assertLess(x2-x1,180);self.assertLess(y2-y1,180)

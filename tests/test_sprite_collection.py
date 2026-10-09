@@ -38,6 +38,8 @@ class SpriteCollectionTests(unittest.TestCase):
         pet=WaterPet.__new__(WaterPet);pet.pack_manifest=MANIFEST
         pet.canvas=Mock();pet._pack_image=Mock(return_value='sprite')
         for key in MANIFEST:
+            pet.pet_y = 300
+            pet._screen_bounds = Mock(return_value=(0,0,1920,1080))
             pet._draw_pack_animation(key,0.5)
             self.assertEqual(pet._pack_image.call_args.args,(key,0.5))
 

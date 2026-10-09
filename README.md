@@ -1,3 +1,7 @@
+# Water Panda v29 for Windows
+
+Fixes hover interruptions, cloud-induced position shifts, expanded-cloud dragging, stale bored-walk state, offscreen ledge destinations and malformed activity settings. See Water_Panda_Final_Audit.md for the complete audit and limits.
+
 ## v28.0.0
 
 Fixes the walking-in-place behavior seen in the hover recording. The panda stands while its hover cloud pauses travel, then resumes walking when the cloud closes. Existing screen-edge roaming and water-hour settings are retained.

@@ -120,7 +120,7 @@ def normalize_standing_sprite(sprite: Image.Image) -> Image.Image:
 
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 28
+APP_VERSION = 29
 REMINDER_MINUTES = 30
 WATER_DECLINE_SECONDS = 8
 WALK_FRAME_ORDER = (0, 1, 2, 4, 5, 6)
@@ -1083,7 +1083,8 @@ class WaterPet:
         y = PET_CENTER_Y
         if key == "jump":
             duration=self.pack_manifest[key]["frames"]*self.pack_manifest[key]["seconds_per_frame"]
-            y -= int(32*math.sin(min(1.0,elapsed/duration)*math.pi))
+            available = max(0, self.pet_y - self._screen_bounds()[1])
+            y -= int(min(32, available)*math.sin(min(1.0,elapsed/duration)*math.pi))
         if key in ("sleep","snore_sleep"):
             y += int(math.sin(elapsed*1.8)*2)
         self.canvas.create_image(SMALL_WIDTH//2,y,image=self._pack_image(key,elapsed))
@@ -1175,10 +1176,11 @@ class WaterPet:
         except (ValueError,TypeError):
             defaults["hunger_minutes"] = 120
         selected = defaults.get("routine_activities",list(GENTLE_ACTIVITIES))
-        defaults["routine_activities"] = list(dict.fromkeys(ACTIVITY_ALIASES.get(key,key) for key in selected if ACTIVITY_ALIASES.get(key,key) in ROUTINE_ACTIVITIES)) if isinstance(selected,list) else list(GENTLE_ACTIVITIES)
+        defaults["routine_activities"] = list(dict.fromkeys(ACTIVITY_ALIASES.get(key,key) for key in selected if isinstance(key,str) and ACTIVITY_ALIASES.get(key,key) in ROUTINE_ACTIVITIES)) if isinstance(selected,list) else list(GENTLE_ACTIVITIES)
         if defaults.get("cursor_mode") not in ("Off","Follow","Avoid"):
             defaults["cursor_mode"] = "Off"
-        old = defaults["auto_activity"]
+        old = str(defaults["auto_activity"])
+        defaults["auto_activity"] = old
         old_labels={"Rub ears":"groom", "Wash face":"groom", "Belly scratch":"groom", "Stretch":"wind_down", "Sleep":"wind_down", "Yawn and stretch":"wind_down", "Side roll":"forward_roll", "Play on log":"log"}
         if old in old_labels:
             defaults["auto_activity"] = ACTIVITY_LABELS[old_labels[old]]
@@ -1293,7 +1295,7 @@ class WaterPet:
             y = max(top, bottom - SMALL_HEIGHT)
         self.pet_x = float(x)
         self.pet_y = float(y)
-        self.root.geometry(f"{SMALL_WIDTH}x{SMALL_HEIGHT}{x:+d}{y:+d}")
+        self._move_root(x, y)
 
     def _screen_bounds(self) -> tuple[int, int, int, int]:
         if os.name == "nt":
@@ -1338,19 +1340,15 @@ class WaterPet:
 
     def _resize_anchored(self, width: int, height: int) -> None:
         self.root.update_idletasks()
-        left = self.root.winfo_x()
-        old_gutter = 140 if self.height > SMALL_HEIGHT else 0
-        new_gutter = 140 if height > SMALL_HEIGHT else 0
-        top = self.root.winfo_y() + old_gutter - new_gutter
-        screen_left, screen_top, screen_right, screen_bottom = self._screen_bounds()
-        x = max(screen_left, min(left, screen_right - width))
-        y = max(screen_top, min(top, screen_bottom - height))
+        offset_x, offset_y = getattr(self, "pet_canvas_offset", (0, 140 if self.height > SMALL_HEIGHT else 0))
+        pet_x = self.root.winfo_x() + offset_x
+        pet_y = self.root.winfo_y() + offset_y
         self.width = width
         self.height = height
         self.canvas.configure(width=width, height=height)
-        self.root.geometry(f"{width}x{height}{x:+d}{y:+d}")
-        self.pet_x = float(x)
-        self.pet_y = float(y + new_gutter)
+        self.pet_x = float(pet_x)
+        self.pet_y = float(pet_y)
+        self._move_root(pet_x, pet_y)
 
     def _build_menu(self) -> None:
         self.menu = tk.Menu(self.root, tearoff=0)
@@ -1409,6 +1407,8 @@ class WaterPet:
             self.walk_direction = "left"
         self.target_y = self.pet_y
         self.walk_speed = 2.8
+        self.pending_edge_action = None
+        self.current_action = None
         self.idle_mood = ""
         self.motion_mode = "walking"
 
@@ -1450,33 +1450,35 @@ class WaterPet:
         self.drag_offset_x = event.x
         self.drag_offset_y = event.y
         self.drag_start_root = (event.x_root, event.y_root)
-        self.drag_samples = [(datetime.now(), self.root.winfo_x(), self.root.winfo_y())]
+        self.drag_start_pet = (self.pet_x, self.pet_y)
+        self.drag_samples = [(datetime.now(), int(self.pet_x), int(self.pet_y))]
 
     def _drag(self, event: tk.Event) -> None:
         if "answer_button" in self.canvas.gettags("current"):
             return
-        x = self.root.winfo_x() + event.x - self.drag_offset_x
-        y = self.root.winfo_y() + event.y - self.drag_offset_y
+        x = self.drag_start_pet[0] + event.x_root - self.drag_start_root[0]
+        y = self.drag_start_pet[1] + event.y_root - self.drag_start_root[1]
         left, top, right, bottom = self._screen_bounds()
-        x = max(left, min(x, right - self.width))
-        y = max(top, min(y, bottom - self.height))
+        x = max(left, min(x, right - SMALL_WIDTH))
+        y = max(top, min(y, bottom - SMALL_HEIGHT))
         if math.hypot(
             event.x_root - self.drag_start_root[0],
             event.y_root - self.drag_start_root[1],
         ) > 5:
             self.drag_moved = True
         self.pet_x = float(x)
-        self.pet_y = float(y + (140 if self.height > SMALL_HEIGHT else 0))
+        self.pet_y = float(y)
         self.drag_samples.append((datetime.now(), int(x), int(y)))
         self.drag_samples = self.drag_samples[-6:]
-        self._move_root(x, y)
+        self._move_root(round(self.pet_x), round(self.pet_y))
 
     def _end_drag(self, _event: tk.Event) -> None:
         if not self.dragging:
             return
         self.dragging = False
-        self.pet_x = float(self.root.winfo_x())
-        self.pet_y = float(self.root.winfo_y() + (140 if self.height > SMALL_HEIGHT else 0))
+        offset_x, offset_y = getattr(self, "pet_canvas_offset", (0, 140 if self.height > SMALL_HEIGHT else 0))
+        self.pet_x = float(self.root.winfo_x() + offset_x)
+        self.pet_y = float(self.root.winfo_y() + offset_y)
         if self.drag_moved:
             self.settings["home_x"] = int(self.pet_x)
             self.settings["home_y"] = int(self.pet_y)
@@ -1507,7 +1509,7 @@ class WaterPet:
             self.menu.grab_release()
 
     def start_fetch(self) -> None:
-        if self.prompt_visible or self.dragging or self.state != "normal":
+        if self.prompt_visible or self.active_alert_kind or self.dragging or self.state != "normal":
             self._show_chatter("After this reminder, promise!", seconds=3)
             return
         try:
@@ -1542,8 +1544,9 @@ class WaterPet:
         self.tray.roaming_enabled = self.roam_enabled.get()
         self.motion_mode = "idle"
         self.current_action = None
-        self.pet_x = float(self.root.winfo_x())
-        self.pet_y = float(self.root.winfo_y() + (140 if self.height > SMALL_HEIGHT else 0))
+        offset_x, offset_y = getattr(self, "pet_canvas_offset", (0, 140 if self.height > SMALL_HEIGHT else 0))
+        self.pet_x = float(self.root.winfo_x() + offset_x)
+        self.pet_y = float(self.root.winfo_y() + offset_y)
         self.idle_until = datetime.now() + timedelta(seconds=1)
 
     def _settings_changed(self) -> None:
@@ -1559,7 +1562,7 @@ class WaterPet:
 
     def _mouse_enter(self, _event: tk.Event) -> None:
         self.hovering = True
-        if self.state == "normal" and not self.prompt_visible and not self.active_alert_kind and not self.dragging and not self.idle_mood and not self.chatter_until:
+        if self.motion_mode == "idle" and self.state == "normal" and not self.prompt_visible and not self.active_alert_kind and not self.dragging and not self.idle_mood and not self.chatter_until:
             self._show_chatter(f"{self.pet_name.get()} ♡  Today {self.today_total_cache} ml", seconds=3.5)
 
     def _mouse_leave(self, _event: tk.Event) -> None:
@@ -1577,13 +1580,34 @@ class WaterPet:
             if not ctypes.windll.user32.GetLastInputInfo(ctypes.byref(info)):
                 return 0.0
             ctypes.windll.kernel32.GetTickCount64.restype = ctypes.c_ulonglong
-            elapsed_ms = ctypes.windll.kernel32.GetTickCount64() - info.dwTime
+            elapsed_ms = (ctypes.windll.kernel32.GetTickCount64() - info.dwTime) & 0xFFFFFFFF
             return max(0.0, float(elapsed_ms) / 1000.0)
         except (AttributeError, OSError, ctypes.ArgumentError):
             return 0.0
 
     def _move_root(self, x: int, y: int) -> None:
-        self.root.geometry(f"{int(x):+d}{int(y):+d}")
+        left, top, right, bottom = self._screen_bounds()
+        x = max(left, min(x, right - SMALL_WIDTH))
+        y = max(top, min(y, bottom - SMALL_HEIGHT))
+        expanded = self.height > SMALL_HEIGHT
+        self.cloud_left = self.width > SMALL_WIDTH and x + self.width > right
+        self.cloud_below = expanded and y - 140 < top
+        root_x = x - (180 if self.cloud_left else 0)
+        root_y = y - (140 if expanded and not self.cloud_below else 0)
+        root_x = max(left, min(root_x, right - self.width))
+        root_y = max(top, min(root_y, bottom - self.height))
+        self.pet_canvas_offset = (x - root_x, y - root_y)
+        self.root.geometry(f"{self.width}x{self.height}{int(root_x):+d}{int(root_y):+d}")
+        # Tk negative geometry means distance from the right/bottom edge.
+        # Win32 takes absolute coordinates, including a monitor left of primary.
+        if os.name == "nt" and (root_x < 0 or root_y < 0):
+            user32 = ctypes.windll.user32
+            user32.GetAncestor.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+            user32.GetAncestor.restype = ctypes.c_void_p
+            user32.SetWindowPos.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_uint]
+            self.root.update_idletasks()
+            hwnd = user32.GetAncestor(self.root.winfo_id(), 2)
+            user32.SetWindowPos(hwnd, None, int(root_x), int(root_y), self.width, self.height, 0x0014)
 
     def reset_timer(self) -> None:
         self.next_reminder = datetime.now() + timedelta(
@@ -1702,11 +1726,11 @@ class WaterPet:
         if not self.chatter_text:
             return
         self._cloud_shape(self.canvas, 194, 12, 350, 112, PALETTE["cream"], "#E0D4ED")
-        self.canvas.create_oval(179, 123, 191, 135, fill=PALETTE["cream"], outline="#E0D4ED")
-        self.canvas.create_oval(167, 142, 175, 150, fill=PALETTE["cream"], outline="#E0D4ED")
+        self.canvas.create_oval(179, 123, 191, 135, fill=PALETTE["cream"], outline="#E0D4ED", tags=("cloud", "cloud_tail"))
+        self.canvas.create_oval(167, 142, 175, 150, fill=PALETTE["cream"], outline="#E0D4ED", tags=("cloud", "cloud_tail"))
         cloud_font = tkfont.Font(family="Segoe UI",size=-15)
         message = fit_cloud_text(self.chatter_text,cloud_font.measure,126,4)
-        self.canvas.create_text(272, 61, text=message, width=126,
+        self.canvas.create_text(272, 61, tags="cloud", text=message, width=126,
                                 fill=PALETTE["ink"], font=("Segoe UI", -15), justify="center")
 
     def _position_chatter_card(self) -> None:
@@ -2602,6 +2626,8 @@ class WaterPet:
             return False
         try:
             user32 = ctypes.windll.user32
+            user32.GetClassNameW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p, ctypes.c_int]
+            user32.GetWindowThreadProcessId.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_ulong)]
             user32.GetForegroundWindow.restype = ctypes.c_void_p
             foreground = user32.GetForegroundWindow()
             if not foreground or foreground == self.root.winfo_id():
@@ -2799,7 +2825,7 @@ class WaterPet:
             safe_right = min(max_x, ledge_right - SMALL_WIDTH - 8)
             if safe_right >= safe_left:
                 self.target_x = float(random.randint(safe_left, safe_right))
-                self.target_y = float(ledge_top - SMALL_HEIGHT + 8)
+                self.target_y = float(max(top, min(ledge_top - SMALL_HEIGHT + 8, max_y)))
                 self.walk_direction = (
                     "right" if self.target_x >= self.pet_x else "left"
                 )
@@ -2839,11 +2865,14 @@ class WaterPet:
         self.motion_mode = "walking"
 
     def _update_falling(self, now: datetime) -> None:
-        left, _top, right, bottom = self._screen_bounds()
+        left, top, right, bottom = self._screen_bounds()
         self.velocity_y += 0.72
         self.velocity_x *= 0.985
         next_x = self.pet_x + self.velocity_x
         next_y = self.pet_y + self.velocity_y
+        if next_y < top:
+            next_y = float(top)
+            self.velocity_y = abs(self.velocity_y) * 0.68
 
         if next_x <= left:
             next_x = float(left)
@@ -2918,6 +2947,7 @@ class WaterPet:
             user32.IsWindowVisible.argtypes = [ctypes.c_void_p]
             user32.IsIconic.argtypes = [ctypes.c_void_p]
             user32.GetWindowTextLengthW.argtypes = [ctypes.c_void_p]
+            user32.GetWindowThreadProcessId.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_ulong)]
             user32.GetWindowRect.argtypes = [
                 ctypes.c_void_p,
                 ctypes.POINTER(Rect),
@@ -2965,6 +2995,22 @@ class WaterPet:
             self.canvas.move("all", 0, 140)
         if self.chatter_until and self.chatter_text and not self.prompt_visible and not self.active_alert_kind:
             self._render_chatter_card()
+        offset_x, offset_y = getattr(self, "pet_canvas_offset", (0, 140 if self.height > SMALL_HEIGHT else 0))
+        for item in self.canvas.find_all():
+            if "cloud" not in self.canvas.gettags(item):
+                self.canvas.move(item, offset_x, offset_y - (140 if self.height > SMALL_HEIGHT else 0))
+        if getattr(self, "cloud_left", False):
+            self.canvas.scale("cloud", 180, 0, -1, 1)
+            self.canvas.move("cloud", offset_x - 180, 0)
+        else:
+            self.canvas.move("cloud", offset_x, 0)
+        if getattr(self, "cloud_below", False):
+            self.canvas.move("cloud", 0, 164 + offset_y)
+            for item, y in zip(self.canvas.find_withtag("cloud_tail"), (130, 149)):
+                coords = self.canvas.coords(item)
+                self.canvas.coords(item, coords[0], y + offset_y, coords[2], y + offset_y + 10)
+        else:
+            self.canvas.move("cloud", 0, offset_y - (140 if self.height > SMALL_HEIGHT else 0))
 
     def _walk_cycle_seconds(self) -> float:
         personality = self.personality.get() if hasattr(self,"personality") else "Balanced"
@@ -3075,18 +3121,6 @@ class WaterPet:
             self._draw_ground_shadow()
             if self.motion_mode=="following" and getattr(self,"cursor_at_rest",False):
                 self.canvas.create_image(SMALL_WIDTH//2,PET_CENTER_Y,image=self._image("normal"))
-                self._draw_overlays()
-                return
-            if self.pending_edge_action == "bored_edge":
-                tired_frame = 1 + ((self.frame // 4) % 2)
-                tired_bob = (0, 1, 2, 1)[(self.frame // 2) % 4]
-                self.canvas.create_image(
-                    SMALL_WIDTH // 2,
-                    PET_CENTER_Y - tired_bob,
-                    image=self._image(
-                        f"bored_walk_{self.walk_direction}_{tired_frame}"
-                    ),
-                )
                 self._draw_overlays()
                 return
             # One phase drives the actual stride. The sheet already contains
@@ -3606,12 +3640,12 @@ class WaterPet:
                    (0.61,0.93),(0.49,0.99),(0.32,0.94),(0.18,0.96),(0.10,0.82),
                    (0.02,0.75),(0.04,0.59)]
         points = [v for x,y in contour for v in (x1+x*(x2-x1),y1+y*(y2-y1))]
-        canvas.create_polygon(points, smooth=True, splinesteps=24, fill=fill, outline=outline, width=1)
+        canvas.create_polygon(points, smooth=True, splinesteps=24, fill=fill, outline=outline, width=1, tags="cloud")
 
     def _draw_cloud_alert(self) -> None:
         self._cloud_shape(self.canvas, 194, 6, 350, 164, PALETTE["cream"], "#E0D4ED")
-        self.canvas.create_oval(179, 166, 191, 178, fill=PALETTE["cream"], outline="#E0D4ED")
-        self.canvas.create_oval(167, 185, 175, 193, fill=PALETTE["cream"], outline="#E0D4ED")
+        self.canvas.create_oval(179, 166, 191, 178, fill=PALETTE["cream"], outline="#E0D4ED", tags=("cloud", "cloud_tail"))
+        self.canvas.create_oval(167, 185, 175, 193, fill=PALETTE["cream"], outline="#E0D4ED", tags=("cloud", "cloud_tail"))
         personal = "personal" in self.active_alert_kind
         elapsed = (datetime.now() - self.attention_started_at).total_seconds() if self.attention_started_at else 0
         pose = f"clock_{min(5, int(elapsed / 0.22))}" if personal else f"hoop_{int(elapsed / 0.22) % 8}"
@@ -3621,9 +3655,9 @@ class WaterPet:
             title = fit_cloud_text(self.alert_title,title_font.measure,126,3)
         else:
             title = "Time to move!"
-        self.canvas.create_text(272, 25, text=title, anchor="n", width=126,
+        self.canvas.create_text(272, 25, tags="cloud", text=title, anchor="n", width=126,
                                 fill=PALETTE["ink"], font=("Segoe UI", -15, "bold"), justify="center")
-        self.canvas.create_text(272, 97, text=self.alert_subtitle if personal else "Hula, stretch, or take a little walk.",
+        self.canvas.create_text(272, 97, tags="cloud", text=self.alert_subtitle if personal else "Hula, stretch, or take a little walk.",
                                 width=126, fill=PALETTE["muted"], font=("Segoe UI", -13), justify="center")
         self._answer_button(204, 126, 257, 150, "Done", PALETTE["purple"], PALETTE["purple_dark"], "alert_done")
         self._answer_button(263, 126, 340, 150, "10 min", PALETTE["teal"], "#439D87", "alert_snooze")
@@ -3632,10 +3666,10 @@ class WaterPet:
 
     def _draw_prompt(self) -> None:
         self._cloud_shape(self.canvas, 194, 6, 350, 159, PALETTE["cream"], "#E0D4ED")
-        self.canvas.create_oval(179, 164, 191, 176, fill=PALETTE["cream"], outline="#E0D4ED")
-        self.canvas.create_oval(167, 185, 175, 193, fill=PALETTE["cream"], outline="#E0D4ED")
-        self.canvas.create_text(272, 29, text="Water time?", fill=PALETTE["ink"], font=("Segoe UI", -15, "bold"))
-        self.canvas.create_text(272, 49, text=f"Today: {self.today_total_cache} ml", fill=PALETTE["muted"], font=("Segoe UI", -13))
+        self.canvas.create_oval(179, 164, 191, 176, fill=PALETTE["cream"], outline="#E0D4ED", tags=("cloud", "cloud_tail"))
+        self.canvas.create_oval(167, 185, 175, 193, fill=PALETTE["cream"], outline="#E0D4ED", tags=("cloud", "cloud_tail"))
+        self.canvas.create_text(272, 29, tags="cloud", text="Water time?", fill=PALETTE["ink"], font=("Segoe UI", -15, "bold"))
+        self.canvas.create_text(272, 49, tags="cloud", text=f"Today: {self.today_total_cache} ml", fill=PALETTE["muted"], font=("Segoe UI", -13))
         for x, amount, tag, color in ((204,100,"amount_100",PALETTE["teal"]),(251,200,"amount_200","#69B8E8"),(298,300,"amount_300",PALETTE["purple"])):
             self._answer_button(x, 66, x+42, 91, f"{amount}", color, color, tag)
             self.canvas.tag_bind(tag, "<Button-1>", lambda event, ml=amount: self.record_water(ml, event))
@@ -3643,11 +3677,12 @@ class WaterPet:
         self._answer_button(264, 102, 340, 127, "10 min", PALETTE["purple"], PALETTE["purple_dark"], "water_snooze")
         self.canvas.tag_bind("not_yet", "<Button-1>", self.answer_not_yet)
         self.canvas.tag_bind("water_snooze", "<Button-1>", self.snooze_water)
-        self.canvas.create_text(272, 141, text="Amount in ml", fill=PALETTE["muted"], font=("Segoe UI", -13))
+        self.canvas.create_text(272, 141, tags="cloud", text="Amount in ml", fill=PALETTE["muted"], font=("Segoe UI", -13))
         elapsed = (datetime.now() - self.attention_started_at).total_seconds() if self.attention_started_at else 0
         if elapsed < 0.88:
             image = self._pack_image("jump",index=min(7,int(elapsed/0.11)))
-            y = 234-int(28*math.sin(elapsed/0.88*math.pi))
+            available = max(0, self.pet_y - self._screen_bounds()[1])
+            y = 234-int(min(28, available)*math.sin(elapsed/0.88*math.pi))
         elif elapsed < 1.68:
             image = self._pack_image("wave",index=min(3,int((elapsed-0.88)/0.2)))
             y = 234
@@ -3667,7 +3702,7 @@ class WaterPet:
         outline: str,
         tag: str,
     ) -> None:
-        tags = (tag, "answer_button")
+        tags = (tag, "answer_button", "cloud")
         self._rounded_rectangle(
             x1,
             y1,

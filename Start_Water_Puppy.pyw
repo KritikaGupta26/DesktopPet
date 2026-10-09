@@ -2496,7 +2496,10 @@ class WaterPet:
         signature = (key, effects, blocked)
         if signature == getattr(self, "theme_activity_signature", None):
             return
+        previous = getattr(self, "theme_activity_signature", None)
         self.theme_activity_signature = signature
+        if previous is not None and previous[0] != key:
+            self.home_pages[4].canvas.yview_moveto(0)
         for child in section.winfo_children():
             child.destroy()
         self.theme_activity_buttons = {}

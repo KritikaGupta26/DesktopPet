@@ -296,11 +296,14 @@ def run_validation(pet_type, output_path: Path) -> None:
             app.theme_activity_enabled.set(False)
             for theme in from_module.PROP_KEYS:
                 clear_action()
+                old_theme = app._current_theme()
+                app.home_pages[4].canvas.yview_moveto(1)
                 app.theme_mode.set(theme)
                 app.show_history()
                 app.studio_notebook.select(4)
-                app.home_pages[4].canvas.yview_moveto(0)
                 app.root.update()
+                check(f"Theme switch reveals new activity controls: {theme}", old_theme == theme or app.home_pages[4].canvas.yview()[0] == 0)
+                app.home_pages[4].canvas.yview_moveto(0)
                 expected = from_module.theme_activity_options(theme, app.scene_manifest, True)
                 check(f"Theme activity entries update: {theme}",
                       tuple(app.theme_activity_buttons) == tuple(item[0] for item in expected)

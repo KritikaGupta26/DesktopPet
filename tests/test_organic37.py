@@ -5,7 +5,8 @@ import tempfile
 import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
+from contextlib import ExitStack
 
 from organic_behavior import OrganicQueue, activity_delay, clock_in_window
 from wardrobe import front_surface, headgear_geometry
@@ -23,6 +24,26 @@ def variable(value):
 
 
 class Organic37Tests(unittest.TestCase):
+    def test_themes_page_constructs_without_behaviour_page_locals(self):
+        pet=WaterPet.__new__(WaterPet)
+        pet.home_pages=[Mock() for _ in range(7)]
+        pet.theme_mode=variable("classic")
+        pet.theme_effects_enabled=variable(True)
+        pet.theme_hemisphere=variable("Northern")
+        pet.thanksgiving_region=variable("US")
+        pet.birthday=variable("")
+        pet.theme_activity_enabled=variable(True)
+        pet.theme_activity_minutes=variable(20)
+        pet.theme_enabled={key:variable(True) for key in M["PROP_KEYS"]}
+        pet.theme_feedback=Mock()
+        pet.settings={}
+        with ExitStack() as stack:
+            for name in ("Label", "Checkbutton", "Combobox", "Button", "Frame", "Entry", "Spinbox"):
+                stack.enter_context(patch.object(M["ttk"],name,Mock()))
+            stack.enter_context(patch.object(M["tk"],"Text",Mock()))
+            stack.enter_context(patch.object(M["tk"],"StringVar",side_effect=lambda **kwargs:variable(kwargs.get("value",""))))
+            pet._build_themes_page(Mock())
+
     def test_queue_visits_every_action_before_repeating_and_avoids_boundary_repeat(self):
         pool = M["ROUTINE_ACTIVITIES"]
         queue = OrganicQueue(random.Random(7))

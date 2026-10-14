@@ -4329,17 +4329,6 @@ class WaterPet:
         box.bind("<<ComboboxSelected>>", selected)
         self.theme_preview_button = ttk.Button(body, text="Preview celebration", command=lambda: self._launch_home_activity(self._preview_theme))
         self.theme_preview_button.pack(anchor="w", pady=6)
-        ttk.Checkbutton(behavior_frame, text="Night rest, even while I work", variable=self.night_enabled, command=self._night_settings_changed).pack(anchor="w", pady=3)
-        night_row = ttk.Frame(behavior_frame, style="Glass.TFrame")
-        night_row.pack(fill="x", pady=8)
-        for label, variable in (("Sleep at", self.night_start), ("Wake at", self.night_end)):
-            ttk.Label(night_row, text=label).pack(side="left", padx=(0, 6))
-            entry = ttk.Entry(night_row, textvariable=variable, width=7)
-            entry.pack(side="left", padx=(0, 12))
-            entry.bind("<FocusOut>", lambda _event: self._night_settings_changed())
-            entry.bind("<Return>", lambda _event: self._night_settings_changed())
-        ttk.Label(behavior_frame, text="Use HH:MM. Quiet check-ins return to sleep; personal and water reminders still take priority.", style="Sub.TLabel", wraplength=500).pack(anchor="w")
-        ttk.Label(behavior_frame, textvariable=self.night_feedback, style="Sub.TLabel", wraplength=500).pack(anchor="w")
         for label, variable, options in (("Season calendar", self.theme_hemisphere, ("Northern","Southern")),
                                          ("Thanksgiving", self.thanksgiving_region, ("US","Canada"))):
             row = ttk.Frame(body)
@@ -4633,6 +4622,17 @@ class WaterPet:
 
         ttk.Checkbutton(behavior_frame, text="Ask for bamboo when hungry", variable=self.hunger_enabled, command=self._behavior_settings_changed).pack(anchor="w",pady=3)
         ttk.Checkbutton(behavior_frame, text="Sleep when the computer is inactive", variable=self.sleep_enabled, command=self._behavior_settings_changed).pack(anchor="w", pady=3)
+        ttk.Checkbutton(behavior_frame, text="Night rest, even while I work", variable=self.night_enabled, command=self._night_settings_changed).pack(anchor="w", pady=3)
+        night_row = ttk.Frame(behavior_frame, style="Glass.TFrame")
+        night_row.pack(fill="x", pady=8)
+        for label, variable in (("Sleep at", self.night_start), ("Wake at", self.night_end)):
+            ttk.Label(night_row, text=label).pack(side="left", padx=(0, 6))
+            entry = ttk.Entry(night_row, textvariable=variable, width=7)
+            entry.pack(side="left", padx=(0, 12))
+            entry.bind("<FocusOut>", lambda _event: self._night_settings_changed())
+            entry.bind("<Return>", lambda _event: self._night_settings_changed())
+        ttk.Label(behavior_frame, text="Use HH:MM. Quiet check-ins return to sleep; personal and water reminders still take priority.", style="Sub.TLabel", wraplength=500).pack(anchor="w")
+        ttk.Label(behavior_frame, textvariable=self.night_feedback, style="Sub.TLabel", wraplength=500).pack(anchor="w")
         for label, variable, options in (
             ("Night corner", self.night_corner, ("Nearest", "Bottom left", "Bottom right")),
             ("Night check-in (minutes)", self.night_check_minutes, (10,15,20,30,45,60)),

@@ -1,3 +1,15 @@
+# Water Panda v37.0.0
+
+This update enables a complete Organic routine on the first upgrade. All 21 everyday activities get a turn in a shuffled queue, including Somersault, Mirror surprise and Boo. Timing varies around the chosen interval and with personality; pranks have a 15-minute cooldown. Ordinary roaming cannot starve routines. Short spontaneous runs belong to locomotion, and edge activities approach an edge first. Water, movement and hunger keep their dedicated schedules and do not create random water-history records.
+
+Night rest defaults to 22:00–07:00 in the computer's local time, even while you work. The panda approaches the nearest lower corner, settles, sleeps with breathing, briefly checks in roughly every 20 minutes and returns to sleep. Behaviour lets you choose hours, corner and check-in interval or disable night rest. Personal/water reminders take priority, and manual actions complete before returning to rest. Equal start/end times are rejected. Subsequent saved Behaviour choices, including Manual only, are preserved.
+
+Headgear now fits the head and turns with the actual pose. Sleep artwork keeps a mostly upright head despite a sideways torso. Reviewed inner garment/turban linings are removed from the foreground; faces and props remain visible. The original character artwork and ghost bedsheet are retained.
+
+Install the new Windows installer after exiting the old running copy. Settings, water history and personal reminders stay in the existing WaterPuppy data folder. This release includes source and build instructions. Automated Windows evidence covers the runner's monitor; it cannot establish appearance on every Windows 11 DPI arrangement.
+
+## Earlier features and architecture
+
 # Water Panda v36 for Windows
 
 A small animated desktop panda with water/custom reminders, local history, feeding, configurable routines and sixteen seasonal themes.

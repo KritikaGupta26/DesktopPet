@@ -1,7 +1,69 @@
 """Fit shaded costume components to each animated body, preserving foreground paws."""
 from collections import OrderedDict
+import math
 from ghost_cloak import dress_ghost
 from PIL import Image, ImageChops, ImageDraw, ImageOps
+
+
+# Reviewed source coordinates: inner linings belong behind the panda, not on
+# top of its face/chest. Coordinates are fractions of each original cutout.
+REAR_SURFACES = {
+    ("navratri", "front"): ((.29,.04),(.71,.04),(.59,.97),(.43,.97)),
+    ("navratri", "profile"): ((.26,.24),(.48,.20),(.61,.30),(.62,.49),(.53,.61),(.33,.58),(.23,.44)),
+    ("diwali", "front"): ((.29,.01),(.72,.01),(.64,.065),(.40,.065)),
+    ("diwali", "profile"): ((.25,.01),(.61,.01),(.54,.06),(.32,.06)),
+    ("holi", "front"): ((.30,.01),(.70,.01),(.61,.07),(.41,.07)),
+    ("krishna", "front"): ((.29,.02),(.71,.02),(.54,.35),(.46,.35)),
+    ("krishna", "profile"): ((.11,.22),(.25,.18),(.37,.26),(.39,.42),(.28,.55),(.13,.49),(.07,.35)),
+    ("new_year", "front"): ((.30,.01),(.71,.01),(.62,.095),(.40,.095)),
+    ("new_year", "profile"): ((.12,.25),(.26,.22),(.39,.33),(.40,.46),(.30,.59),(.14,.53),(.08,.39)),
+    ("ganesh", "front"): ((.31,.015),(.70,.015),(.58,.13),(.41,.13)),
+    ("ganesh", "profile"): ((.12,.21),(.26,.18),(.38,.27),(.39,.42),(.28,.54),(.13,.48),(.07,.34)),
+    ("navratri", "head_profile"): ((.70,.67),(.98,.64),(.92,.99),(.76,.91)),
+}
+
+
+def front_surface(part, theme, name):
+    """Remove occluded rear source surfaces before fitting, without repainting."""
+    polygon = REAR_SURFACES.get((theme, name))
+    if not polygon:
+        return part
+    out = part.copy()
+    mask = out.getchannel("A")
+    ImageDraw.Draw(mask).polygon([(round(x*part.width), round(y*part.height)) for x,y in polygon], fill=0)
+    out.putalpha(mask)
+    return out
+
+
+def headgear_geometry(head, torso, cap_size, theme, key):
+    """Fit a crown to the local head axis and rotate it with the whole pose."""
+    hl,ht,hr,hb = head
+    l,t,r,b = torso
+    cx,cy = (hl+hr)/2, (ht+hb)/2
+    tx,ty = (l+r)/2, (t+b)/2
+    # Ordinary head tilts are small. Large rotations are reserved for poses
+    # whose torso is sideways or above the head.
+    sideways = key.startswith(("pack_sleep_", "pack_snore_sleep_")) or key in ("pack_sploot_2", "pack_sploot_3", "pack_wake_up_0", "pack_wake_up_1")
+    inverted = key in ("pack_forward_roll_2", "pack_forward_roll_3", "pack_forward_roll_4", "pack_forward_roll_6", "pack_sploot_0", "pack_sploot_1")
+    angle = math.degrees(math.atan2(tx-cx, ty-cy)) if sideways or inverted else max(-16, min(16, math.degrees(math.atan2(tx-cx, max(1,ty-cy)))))
+    # These sleep drawings roll the torso onto its side while keeping the
+    # face almost upright. Using the body axis would put a hat on its cheek.
+    if key.startswith(("pack_sleep_", "pack_snore_sleep_")) or key in ("pack_wake_up_0", "pack_wake_up_1"):
+        angle = -12
+    radians = math.radians(angle)
+    cross = abs(math.cos(radians))*(hr-hl)+abs(math.sin(radians))*(hb-ht)
+    depth = abs(math.cos(radians))*(hb-ht)+abs(math.sin(radians))*(hr-hl)
+    ratio = {"navratri": .82, "krishna": .60, "christmas": .82, "summer": 1.02, "winter": .88, "birthday": .46, "new_year": .46}.get(theme, .80)
+    width = max(12, round(cross*ratio))
+    height = max(10, round(width*cap_size[1]/cap_size[0]))
+    # Preserve source proportions, but keep tall crowns inside the pose canvas.
+    max_height = depth*(.85 if theme in ("birthday", "new_year") else .78)
+    if height > max_height:
+        width = max(12, round(width*max_height/height))
+        height = max(10, round(max_height))
+    # The lower rim fits the forehead, rather than floating above the head.
+    anchor = (cx-math.sin(radians)*depth*.20, cy-math.cos(radians)*depth*.20)
+    return width, height, angle, anchor
 
 
 def fur_components(image):
@@ -60,6 +122,7 @@ def landmarks(image, key):
         "pack_sploot_2":((45,133,125,177),(114,144,162,172)),
         "pack_sploot_3":((48,137,123,178),(122,146,162,172)),
         "pack_wake_up_0":((43,114,109,166),(103,123,139,164)),
+        "pack_wake_up_1":((44,112,115,166),(112,124,149,168)),
         "pack_fetch_1":((37,57,136,122),(76,121,127,151)),
         "pack_fetch_2":((45,49,140,122),(68,123,126,157)),
         "scene_log_3":((50,64,135,132),(66,124,125,137)),
@@ -96,7 +159,7 @@ class Wardrobe:
         cache_key=(theme,name)
         if cache_key not in self.parts:
             path=self.assets/f"wardrobe_{theme}_{name}.png"
-            self.parts[cache_key]=Image.open(path).convert("RGBA") if path.exists() else None
+            self.parts[cache_key]=front_surface(Image.open(path).convert("RGBA"), theme, name) if path.exists() else None
         return self.parts[cache_key]
 
     def dress(self, image, theme, key):
@@ -178,28 +241,29 @@ class Wardrobe:
         if key in ("scene_peekaboo_2","scene_peekaboo_4"):
             cap=None
         if cap is not None:
-            cap_width=max(12,int((hr-hl)*(.60 if theme!="spooky" else 1.20)))
-            if theme=="spooky":
-                cap_height=max(12,int((hb-ht)*1.20))
-                cap_top=ht-4
-            else:
-                cap_height=max(10,round(cap_width*cap.height/cap.width))
-                cap_top=max(2,ht-int(cap_height*.50))
-            cap=cap.resize((cap_width,cap_height),Image.Resampling.LANCZOS)
+            cap_width, cap_height, angle, anchor = headgear_geometry(head, torso, cap.size, theme, key)
+            cap = cap.resize((cap_width, cap_height), Image.Resampling.LANCZOS)
             if left:
-                cap=ImageOps.mirror(cap)
-            cap_layer=Image.new("RGBA",image.size)
-            cap_layer.alpha_composite(cap,(int((hl+hr-cap_width)/2),cap_top))
-            if theme=="spooky":
-                face=Image.new("L",image.size)
-                face_draw=ImageDraw.Draw(face)
-                if profile:
-                    face_draw.ellipse((hl-8 if left else hl+int((hr-hl)*.20),
-                                       ht+int((hb-ht)*.14),
-                                       hr-int((hr-hl)*.20) if left else hr+8,hb+2),fill=255)
-                else:
-                    face_draw.ellipse((hl+int((hr-hl)*.14),ht+int((hb-ht)*.24),hr-int((hr-hl)*.14),hb-3),fill=255)
+                cap = ImageOps.mirror(cap)
+            # Rotate around the fitted lower rim, not the unrotated image centre.
+            local = Image.new("RGBA", (cap_width*3, cap_height*3))
+            local.alpha_composite(cap, (cap_width, round(cap_height*.5)))
+            local = local.rotate(angle, resample=Image.Resampling.BICUBIC, expand=False)
+            cap_layer = Image.new("RGBA", image.size)
+            px = round(anchor[0]-local.width/2)
+            py = round(anchor[1]-local.height/2)
+            # In the default 180px canvas some jumping/gait crowns reach the
+            # top edge. Keep the entire crown visible, never slice its crest.
+            bounds = local.getchannel("A").getbbox()
+            if bounds:
+                px = max(2-bounds[0], min(px, image.width-2-bounds[2]))
+                py = max(2-bounds[1], min(py, image.height-2-bounds[3]))
+            cap_layer.alpha_composite(local, (px,py))
+            # The forehead/eyes remain unobstructed underneath hollow hats.
+            face = Image.new("L", image.size)
+            ImageDraw.Draw(face).ellipse((hl+int((hr-hl)*.08), ht+int((hb-ht)*.33), hr-int((hr-hl)*.08), hb-2), fill=255)
+            if not inverted:
                 cap_layer.putalpha(ImageChops.subtract(cap_layer.getchannel("A"),face))
-            out=Image.alpha_composite(out,cap_layer)
+            out = Image.alpha_composite(out,cap_layer)
         out.putalpha(out.getchannel("A").point(lambda a:255 if a>=128 else 0))
         return out

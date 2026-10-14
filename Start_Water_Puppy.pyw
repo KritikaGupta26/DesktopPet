@@ -30,6 +30,7 @@ from scene_playback import scene_pose, scene_duration
 from home_layout import HomePage, bind_page_wheel
 from locomotion import escape_target, run_step
 from wardrobe import Wardrobe
+from organic_behavior import OrganicQueue, clock_in_window, activity_delay
 from desktop_effects import DesktopEffects
 from playful_activities import compose_mirror, mirror_pose, MIRROR_DURATION, BOO_DURATION, PRANK_COOLDOWN_MINUTES, boo_phase
 from collections import OrderedDict
@@ -67,7 +68,7 @@ ACTIVITY_ALIASES = {
     "drink_water":"water", "alternate_hoop":"movement", "hula_hoop":"movement",
      "happy_idle":"wave", "sad":"bow",
 }
-ROUTINE_ACTIVITIES = ("groom", "wind_down", "meditate", "log", "dance", "kung_fu", "peekaboo", "bamboo_hang", "jump", "wave", "sploot", "petting", "bow", "clap", "blow_kiss", "sneeze", "hiccup", "victory", "mirror", "boo")
+ROUTINE_ACTIVITIES = ("groom", "wind_down", "meditate", "log", "dance", "kung_fu", "peekaboo", "bamboo_hang", "jump", "wave", "sploot", "petting", "bow", "clap", "blow_kiss", "sneeze", "hiccup", "victory", "mirror", "boo", "forward_roll")
 GENTLE_ACTIVITIES = ROUTINE_ACTIVITIES[:2]
 GROOM_SEQUENCE = (("wash_face", 3.0), ("ear_rub", 3.0), ("belly_scratch", 3.0))
 WIND_DOWN_SEQUENCE = (("yawn_stretch", 3.0), ("lazy_stretch", 3.0), ("sleep", 18.0), ("wake_up", 4.0))
@@ -173,7 +174,7 @@ def windows_menu_active(thread_id: int | None = None) -> bool:
 
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 36
+APP_VERSION = 37
 REMINDER_MINUTES = 30
 WATER_DECLINE_SECONDS = 8
 WALK_FRAME_ORDER = tuple(range(8))
@@ -852,9 +853,21 @@ class WaterPet:
         self.pranks_enabled = tk.BooleanVar(value=self.settings["pranks_enabled"])
         self.next_prank = datetime.now() + timedelta(minutes=PRANK_COOLDOWN_MINUTES)
         self.playful_photos = OrderedDict()
+        self.manual_motion_until = None
         self.routine_index = 0
+        self.organic_queue = OrganicQueue()
+        self.night_enabled = tk.BooleanVar(value=self.settings["night_enabled"])
+        self.night_start = tk.StringVar(value=self.settings["night_start"])
+        self.night_end = tk.StringVar(value=self.settings["night_end"])
+        self.night_check_minutes = tk.IntVar(value=self.settings["night_check_minutes"])
+        self.night_corner = tk.StringVar(value=self.settings["night_corner"])
+        self.night_active = False
+        self.night_phase = ""
+        self.night_next_check = None
+        self.night_manual_until = None
+        self.night_feedback = tk.StringVar(value="")
         self.activity_minutes = tk.IntVar(value=self.settings["activity_minutes"])
-        self.next_idle_activity = datetime.now() + timedelta(minutes=self.activity_minutes.get())
+        self.next_idle_activity = datetime.now() + timedelta(seconds=activity_delay(self.activity_minutes.get(), self.personality.get()))
         self.movement_enabled = tk.BooleanVar(
             value=self.settings["movement_enabled"]
         )
@@ -1163,6 +1176,7 @@ class WaterPet:
             return
         metadata = self.pack_manifest[key]
         if key in ("walk", "run"):
+            self.manual_motion_until = datetime.now() + timedelta(minutes=5)
             self._test_walk_across_screen()
             if key == "run":
                 self.walk_speed = 7.5
@@ -1182,6 +1196,12 @@ class WaterPet:
     def _play_activity(self, key: str, automatic: bool = False) -> None:
         if self.prompt_visible or self.active_alert_kind or self.dragging or self.state == "sad":
             return
+        if not automatic and hasattr(self, "night_manual_until"):
+            self.night_manual_until = datetime.now() + timedelta(minutes=1)
+            if self.idle_mood in ("night_sleep", "night_check", "night_settle"):
+                self.idle_mood = ""
+                self.idle_mood_until = None
+            self.night_phase = ""
         if key in ("mirror", "boo"):
             now=datetime.now()
             if automatic and (not self.pranks_enabled.get() or now < self.next_prank):
@@ -1234,7 +1254,13 @@ class WaterPet:
             "thanksgiving_region": "US",
             "theme_activity_enabled": True,
             "theme_effects_enabled": True,
-            "pranks_enabled": False,
+            "pranks_enabled": True,
+            "organic_schema": 1,
+            "night_enabled": True,
+            "night_start": "22:00",
+            "night_end": "07:00",
+            "night_check_minutes": 20,
+            "night_corner": "Nearest",
             "theme_activity_minutes": 20,
             "theme_enabled": list(PROP_KEYS),
             "festival_dates": {},
@@ -1248,11 +1274,11 @@ class WaterPet:
             "roam_rest_seconds": 30,
             "sleep_after_minutes": 3,
             "yawn_after_seconds": 60,
-            "auto_activity": "Gentle routine",
+            "auto_activity": "Organic routine",
             "walk_frame_ms": 180,
             "hunger_enabled": True,
             "hunger_minutes": 120,
-            "routine_activities": list(GENTLE_ACTIVITIES),
+            "routine_activities": list(ROUTINE_ACTIVITIES),
             "activity_minutes": 5,
             "personality": "Balanced",
             "home_x": None,
@@ -1271,6 +1297,28 @@ class WaterPet:
                 defaults.update(data)
         except (OSError, ValueError, TypeError):
             pass
+        # This release enables the requested complete organic routine once.
+        # Subsequent changes made in Behaviour are preserved by the schema flag.
+        if defaults.get("organic_schema") != 1 or ('data' in locals() and isinstance(data, dict) and "organic_schema" not in data):
+            old_mode = defaults.get("auto_activity")
+            known_modes = ("Organic routine", "Gentle routine", "Selected routine", "Manual only", "Meditate", "Rub ears", "Wash face", "Belly scratch", "Stretch", "Sleep", "Yawn and stretch", "Side roll", *ACTIVITY_LABELS.values())
+            if isinstance(old_mode, str) and old_mode in known_modes:
+                defaults["auto_activity"] = "Organic routine"
+                defaults["routine_activities"] = list(ROUTINE_ACTIVITIES)
+                defaults["pranks_enabled"] = True
+            defaults["organic_schema"] = 1
+        defaults["night_enabled"] = bool(defaults.get("night_enabled", True))
+        for key, fallback in (("night_start", "22:00"), ("night_end", "07:00")):
+            try:
+                defaults[key] = parse_water_clock(defaults[key])
+            except (ValueError, TypeError):
+                defaults[key] = fallback
+        try:
+            defaults["night_check_minutes"] = max(10, min(60, int(defaults["night_check_minutes"])))
+        except (ValueError, TypeError):
+            defaults["night_check_minutes"] = 20
+        if defaults.get("night_corner") not in ("Nearest", "Bottom left", "Bottom right"):
+            defaults["night_corner"] = "Nearest"
         defaults["water_window_enabled"] = bool(defaults.get("water_window_enabled", False))
         for key, fallback in (("water_start", "09:00"), ("water_end", "21:00")):
             try:
@@ -1352,7 +1400,7 @@ class WaterPet:
                 canonical=ACTIVITY_ALIASES.get(key,key)
                 defaults["auto_activity"] = ACTIVITY_LABELS[canonical] if canonical in ROUTINE_ACTIVITIES else "Manual only"
                 break
-        allowed=("Manual only","Gentle routine","Selected routine","Meditate") + tuple(ACTIVITY_LABELS[key] for key in ROUTINE_ACTIVITIES)
+        allowed=("Manual only","Organic routine","Gentle routine","Selected routine","Meditate") + tuple(ACTIVITY_LABELS[key] for key in ROUTINE_ACTIVITIES)
         if defaults["auto_activity"] not in allowed:
             defaults["auto_activity"] = "Manual only"
         return defaults
@@ -1366,6 +1414,12 @@ class WaterPet:
             "hide_fullscreen": self.hide_fullscreen.get(),
             "cursor_games": self.cursor_mode.get() != "Off",
             "cursor_mode": self.cursor_mode.get(),
+            "organic_schema": 1,
+            "night_enabled": self.night_enabled.get(),
+            "night_start": self.night_start.get(),
+            "night_end": self.night_end.get(),
+            "night_check_minutes": self.night_check_minutes.get(),
+            "night_corner": self.night_corner.get(),
             "sleep_enabled": self.sleep_enabled.get(),
             "roam_rest_seconds": self.roam_rest_seconds.get(),
             "sleep_after_minutes": self.sleep_after_minutes.get(),
@@ -2337,6 +2391,8 @@ class WaterPet:
             self.root.after(ACTIVE_TICK_MILLISECONDS, self._tick)
             return
         now = datetime.now()
+        if getattr(self, "manual_motion_until", None) and now >= self.manual_motion_until:
+            self.manual_motion_until = None
         self._update_water_response(now)
         if now.date() != self.cache_date:
             self.cache_date = now.date()
@@ -2365,6 +2421,7 @@ class WaterPet:
             self.happy_until = None
             self.idle_until = now + timedelta(seconds=1)
 
+        self._update_night_behavior(now)
         if not self.active_alert_kind:
             self._update_inactivity_behavior(now)
         self._check_theme_activity(now)
@@ -2554,26 +2611,122 @@ class WaterPet:
                                  image=(self._styled_image(f"scene_{key}_{index}") if key in ("log","meditate","peekaboo","spooky") else self.scene_images[key][index]), tags=("scene_body", "scene_"+key))
 
     def _check_theme_activity(self, now: datetime) -> None:
-        if not hasattr(self, "theme_activity_enabled") or not self.theme_activity_enabled.get():
+        if getattr(self, "night_active", False) or not hasattr(self, "theme_activity_enabled") or not self.theme_activity_enabled.get():
             return
         if now < self.next_theme_activity:
             return
         if (self.prompt_visible or self.active_alert_kind or self.dragging or self.state != "normal"
-                or self.motion_mode != "idle" or self.idle_mood or self.chatter_until
-                or self._studio_is_open() or self.hungry):
+                or (self.motion_mode != "idle" and not (self.motion_mode == "walking" and not self.pending_edge_action and not self.manual_motion_until)) or self.idle_mood or self.chatter_until
+                or self._studio_is_open()):
             return
         key = self._current_theme()
-        self.next_theme_activity = now + timedelta(minutes=self.theme_activity_minutes.get() if hasattr(self,"theme_activity_minutes") else 20)
+        self.next_theme_activity = now + timedelta(minutes=random.uniform(.85,1.15)*(self.theme_activity_minutes.get() if hasattr(self,"theme_activity_minutes") else 20))
         if key != "classic":
             self._play_theme_scene(key)
             self._show_chatter(THEMES[key][4][0], seconds=4)
+
+    def _night_settings_changed(self) -> None:
+        try:
+            start = parse_water_clock(self.night_start.get())
+            end = parse_water_clock(self.night_end.get())
+            if start == end:
+                raise ValueError("Sleep and wake times must be different.")
+            self.night_start.set(start)
+            self.night_end.set(end)
+        except ValueError as error:
+            self.night_feedback.set(str(error))
+            return
+        self.night_feedback.set("Night hours saved.")
+        self._save_settings()
+
+    def _update_night_behavior(self, now: datetime) -> None:
+        if not hasattr(self, "night_enabled"):
+            return
+        try:
+            scheduled = self.night_enabled.get() and clock_in_window(now, self.night_start.get(), self.night_end.get())
+        except ValueError:
+            scheduled = False
+        manual = self.night_manual_until and now < self.night_manual_until
+        if not scheduled or manual:
+            if self.idle_mood in ("night_sleep", "night_check", "night_settle"):
+                self.idle_mood = ""
+                self.idle_mood_until = None
+                self.next_idle_activity = now + timedelta(seconds=activity_delay(self.activity_minutes.get(), self.personality.get()))
+            self.night_active = False
+            self.night_phase = ""
+            return
+        self.night_active = True
+        if (self.prompt_visible or self.active_alert_kind or self.dragging or self.state != "normal"
+                or self._studio_is_open() or self.chatter_until):
+            self.night_phase = ""
+            return
+        if self.idle_mood and self.idle_mood not in ("night_sleep", "night_check", "night_settle", "sleep", "yawn", "wave"):
+            self.night_active = False
+            self.night_phase = ""
+            return
+        if (self.motion_mode not in ("idle", "walking", "following") or getattr(self, "pending_edge_action", None)
+                or (getattr(self, "manual_motion_until", None) and now < self.manual_motion_until)):
+            self.night_active = False
+            self.night_phase = ""
+            return
+        expected_mood = {"settle": "night_settle", "sleep": "night_sleep", "check": "night_check"}.get(self.night_phase)
+        if expected_mood and self.idle_mood != expected_mood:
+            self.night_phase = ""
+        if not self.night_phase:
+            if hasattr(self, "desktop_effects"):
+                self.desktop_effects.stop()
+            self._resize_anchored(SMALL_WIDTH, SMALL_HEIGHT)
+            left, top, right, bottom = self._screen_bounds()
+            corner = self.night_corner.get()
+            target = left + 8 if corner == "Bottom left" or (corner == "Nearest" and self.pet_x < (left+right-SMALL_WIDTH)/2) else right-SMALL_WIDTH-8
+            self.night_target_x = max(left, min(target, right-SMALL_WIDTH))
+            self.night_target_y = max(top, bottom-SMALL_HEIGHT-8)
+            self.pending_edge_action = None
+            self.current_action = None
+            self.idle_mood = ""
+            self.idle_mood_until = None
+            self.night_phase = "approach"
+        if self.night_phase == "approach":
+            distance = self.night_target_x-self.pet_x
+            self.walk_direction = "right" if distance >= 0 else "left"
+            # The corner is approached horizontally; never animate a walk through open air.
+            step = min(abs(distance), (WALK_STRIDE_PIXELS*180/512)/(.5*self._walk_cycle_seconds())*(ACTIVE_TICK_MILLISECONDS/1000))
+            self.pet_x += step if distance >= 0 else -step
+            self.motion_mode = "walking"
+            self._move_root(round(self.pet_x), round(self.pet_y))
+            if abs(distance) <= step:
+                self.pet_y = self.night_target_y
+                self._move_root(round(self.pet_x), round(self.pet_y))
+                self.motion_mode = "idle"
+                self.night_phase = "settle"
+                self.idle_mood = "night_settle"
+                self.idle_mood_started_at = now
+                self.idle_mood_until = now + timedelta(seconds=3)
+            return
+        if self.night_phase == "settle" and now >= self.idle_mood_until:
+            self.night_phase = "sleep"
+            self.idle_mood = "night_sleep"
+            self.idle_mood_started_at = now
+            self.night_next_check = now + timedelta(minutes=random.uniform(.85,1.15)*self.night_check_minutes.get())
+        elif self.night_phase == "sleep" and now >= self.night_next_check:
+            self.night_phase = "check"
+            self.idle_mood = "night_check"
+            self.idle_mood_started_at = now
+            self.night_check_until = now + timedelta(seconds=4)
+        elif self.night_phase == "check" and now >= self.night_check_until:
+            self.night_phase = "sleep"
+            self.idle_mood = "night_sleep"
+            self.idle_mood_started_at = now
+            self.night_next_check = now + timedelta(minutes=random.uniform(.85,1.15)*self.night_check_minutes.get())
+        if self.night_phase in ("sleep", "check"):
+            self.idle_mood_until = now + timedelta(seconds=2)
 
     def _update_inactivity_behavior(self, now: datetime) -> None:
         if (now - self.last_system_idle_check).total_seconds() >= 1.0:
             self.last_system_idle_check = now
             self.system_idle_seconds_cache = self._system_idle_seconds()
         idle_seconds = self.system_idle_seconds_cache
-        if self._studio_is_open():
+        if self._studio_is_open() or getattr(self, "night_active", False):
             return
         if self.idle_mood and self.idle_mood not in ("yawn", "sleep", "wave"):
             return
@@ -2621,7 +2774,7 @@ class WaterPet:
         if self.motion_mode=="following":self.motion_mode="idle"
         self._save_settings()
         now = datetime.now()
-        self.next_idle_activity = now + timedelta(minutes=self.activity_minutes.get())
+        self.next_idle_activity = now + timedelta(seconds=activity_delay(self.activity_minutes.get(), self.personality.get()))
         self.idle_until = now + timedelta(seconds=self.roam_rest_seconds.get())
         self.next_hunger = now + timedelta(minutes=self.hunger_minutes.get())
         if not self.hunger_enabled.get():
@@ -2657,10 +2810,22 @@ class WaterPet:
             self.idle_until = now + timedelta(seconds=self.roam_rest_seconds.get())
             if not self.chatter_until and not self.prompt_visible and not self.active_alert_kind:
                 self._resize_anchored(SMALL_WIDTH,SMALL_HEIGHT)
-        if now < self.next_idle_activity or getattr(self,"hungry",False) or self._studio_is_open():
+        if getattr(self, "night_active", False):
+            return
+        if now < self.next_idle_activity or self._studio_is_open():
             return
         if (self.state != "normal" or self.prompt_visible or self.active_alert_kind or self.dragging
-                or self.idle_mood or (self.motion_mode != "idle" and not (self.motion_mode=="following" and getattr(self,"cursor_at_rest",False))) or self.chatter_until):
+                or self.idle_mood or (self.motion_mode != "idle" and not (self.motion_mode=="following" and getattr(self,"cursor_at_rest",False)) and not (self.motion_mode == "walking" and not self.pending_edge_action and (not getattr(self,"manual_motion_until",None) or now >= self.manual_motion_until))) or self.chatter_until):
+            return
+        if self.auto_activity.get() == "Organic routine":
+            if not hasattr(self, "organic_queue"):
+                self.organic_queue = OrganicQueue()
+            blocked = ("mirror", "boo") if not self.pranks_enabled.get() or now < self.next_prank else ()
+            key = self.organic_queue.choose(ROUTINE_ACTIVITIES, blocked)
+            if key:
+                self.last_routine_key = key
+                self._play_activity(key, automatic=True)
+                self.next_idle_activity = now + timedelta(seconds=activity_delay(self.activity_minutes.get(), self.personality.get()))
             return
         self.next_idle_activity = now + timedelta(minutes=self.activity_minutes.get())
         if self.auto_activity.get() in ("Gentle routine", "Selected routine"):
@@ -2691,7 +2856,7 @@ class WaterPet:
         mode=getattr(self,"cursor_session_kind","") or (self.cursor_mode.get() if hasattr(self,"cursor_mode") else "Avoid" if self.cursor_games.get() else "Off")
         if not hasattr(self,"cursor_mode") and not getattr(self,"cursor_session_kind","") and not self.roam_enabled.get():
             return
-        if mode=="Off" or self.active_alert_kind or self.prompt_visible or self.dragging or self.state!="normal" or self.idle_mood or getattr(self,"chatter_until",None) or self._studio_is_open():
+        if getattr(self,"night_active",False) or getattr(self,"pending_edge_action",None) or mode=="Off" or self.active_alert_kind or self.prompt_visible or self.dragging or self.state!="normal" or self.idle_mood or getattr(self,"chatter_until",None) or self._studio_is_open():
             return
         if mode=="Follow":
             if self.motion_mode not in ("idle","walking","following"):
@@ -2967,7 +3132,7 @@ class WaterPet:
             return False
 
     def _update_roaming(self, now: datetime) -> None:
-        if self.dragging or self.motion_mode == "following":
+        if self.dragging or self.motion_mode == "following" or getattr(self, "night_active", False):
             return
 
         if self.motion_mode == "falling":
@@ -3038,6 +3203,7 @@ class WaterPet:
                 )
             else:
                 self.motion_mode = "idle"
+                self.manual_motion_until = None
                 self.idle_until = now + timedelta(seconds=self.roam_rest_seconds.get())
         else:
             step_speed = self.walk_speed
@@ -3105,6 +3271,10 @@ class WaterPet:
         }
         self.walk_speed = random.uniform(*speed_ranges[self.personality.get()])
         self.motion_mode = "walking"
+        if hasattr(self,"auto_activity") and self.auto_activity.get() == "Organic routine" and random.random() < {"Calm": .04, "Balanced": .12, "Playful": .25}[self.personality.get()]:
+            self.motion_mode = "escaping"
+            self.walk_speed = 7.5
+            self.cursor_escape_until = datetime.now() + timedelta(seconds=random.uniform(3,7))
 
     def _update_falling(self, now: datetime) -> None:
         left, top, right, bottom = self._screen_bounds()
@@ -3491,6 +3661,16 @@ class WaterPet:
 
     def _draw_idle_mood(self) -> None:
         elapsed = (datetime.now()-self.idle_mood_started_at).total_seconds()
+        if self.idle_mood in ("night_sleep", "night_check", "night_settle"):
+            if self.idle_mood == "night_check":
+                # Hold the lying, half-open-eye pose, without progressing to
+                # the sitting/fully awake frames of the daytime wake sequence.
+                self._draw_pack_animation("wake_up", min(elapsed, .45))
+            elif self.idle_mood == "night_settle":
+                self._draw_pack_animation("yawn_stretch", elapsed)
+            else:
+                self._draw_pack_animation("sleep", elapsed)
+            return
         if self.idle_mood=="mirror_surprise":
             self._draw_mirror_routine(elapsed)
             return
@@ -4149,6 +4329,17 @@ class WaterPet:
         box.bind("<<ComboboxSelected>>", selected)
         self.theme_preview_button = ttk.Button(body, text="Preview celebration", command=lambda: self._launch_home_activity(self._preview_theme))
         self.theme_preview_button.pack(anchor="w", pady=6)
+        ttk.Checkbutton(behavior_frame, text="Night rest, even while I work", variable=self.night_enabled, command=self._night_settings_changed).pack(anchor="w", pady=3)
+        night_row = ttk.Frame(behavior_frame, style="Glass.TFrame")
+        night_row.pack(fill="x", pady=8)
+        for label, variable in (("Sleep at", self.night_start), ("Wake at", self.night_end)):
+            ttk.Label(night_row, text=label).pack(side="left", padx=(0, 6))
+            entry = ttk.Entry(night_row, textvariable=variable, width=7)
+            entry.pack(side="left", padx=(0, 12))
+            entry.bind("<FocusOut>", lambda _event: self._night_settings_changed())
+            entry.bind("<Return>", lambda _event: self._night_settings_changed())
+        ttk.Label(behavior_frame, text="Use HH:MM. Quiet check-ins return to sleep; personal and water reminders still take priority.", style="Sub.TLabel", wraplength=500).pack(anchor="w")
+        ttk.Label(behavior_frame, textvariable=self.night_feedback, style="Sub.TLabel", wraplength=500).pack(anchor="w")
         for label, variable, options in (("Season calendar", self.theme_hemisphere, ("Northern","Southern")),
                                          ("Thanksgiving", self.thanksgiving_region, ("US","Canada"))):
             row = ttk.Frame(body)
@@ -4443,13 +4634,15 @@ class WaterPet:
         ttk.Checkbutton(behavior_frame, text="Ask for bamboo when hungry", variable=self.hunger_enabled, command=self._behavior_settings_changed).pack(anchor="w",pady=3)
         ttk.Checkbutton(behavior_frame, text="Sleep when the computer is inactive", variable=self.sleep_enabled, command=self._behavior_settings_changed).pack(anchor="w", pady=3)
         for label, variable, options in (
+            ("Night corner", self.night_corner, ("Nearest", "Bottom left", "Bottom right")),
+            ("Night check-in (minutes)", self.night_check_minutes, (10,15,20,30,45,60)),
             ("Cursor behavior", self.cursor_mode, ("Off","Follow","Avoid")),
             ("Ask for bamboo every (minutes)", self.hunger_minutes, (15,30,60,90,120,180,240,360)),
             ("Walk frame duration (milliseconds)", self.walk_frame_ms, (100,140,180,220,260,300)),
             ("Rest between walks (seconds)", self.roam_rest_seconds, (30,60,90,180,300,600)),
             ("Yawn after inactivity (seconds)", self.yawn_after_seconds, (30,60,90,120)),
             ("Sleep after inactivity (minutes)", self.sleep_after_minutes, (2,3,5,10,30,60)),
-            ("Automatic activity", self.auto_activity, ("Gentle routine","Selected routine","Manual only") + tuple(ACTIVITY_LABELS[key] for key in ROUTINE_ACTIVITIES)),
+            ("Automatic activity", self.auto_activity, ("Organic routine","Gentle routine","Selected routine","Manual only") + tuple(ACTIVITY_LABELS[key] for key in ROUTINE_ACTIVITIES)),
             ("Activity interval (minutes)", self.activity_minutes, (1,3,5,10,15,30,60)),
         ):
             row = ttk.Frame(behavior_frame, style="Glass.TFrame")
@@ -4458,9 +4651,9 @@ class WaterPet:
             box = ttk.Combobox(row, textvariable=variable, values=options, state="readonly", width=16)
             box.pack(side="left")
             box.bind("<<ComboboxSelected>>", lambda _event: self._behavior_settings_changed())
-        ttk.Label(behavior_frame, text="Gentle routine cycles through quiet activities. Selected routine uses your choices below.\nExisting Manual only settings are preserved: select a routine to enable automatic play.", style="Sub.TLabel", wraplength=500).pack(anchor="w", pady=12)
+        ttk.Label(behavior_frame, text="Organic routine varies all everyday activities, with no repeats until the queue is visited.\nTiming varies with personality. Selected routine uses your choices below.", style="Sub.TLabel", wraplength=500).pack(anchor="w", pady=12)
         ttk.Checkbutton(behavior_frame,text="Allow automatic mirror surprises and gentle pranks",variable=self.pranks_enabled,command=self._behavior_settings_changed).pack(anchor="w",pady=5)
-        ttk.Label(behavior_frame,text="Choose them in Selected routine below. Pranks wait at least 15 minutes between automatic performances. Manual activity buttons always work.",style="Sub.TLabel",wraplength=500).pack(anchor="w",pady=5)
+        ttk.Label(behavior_frame,text="Organic routine includes these when enabled. Pranks wait at least 15 minutes between performances. Manual buttons always work.",style="Sub.TLabel",wraplength=500).pack(anchor="w",pady=5)
         routine_choices = ttk.Frame(behavior_frame,style="Glass.TFrame")
         routine_choices.pack(fill="x")
         for i,(key,enabled) in enumerate(self.routine_enabled.items()):

@@ -171,7 +171,7 @@ class SpriteCollectionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             pet=WaterPet.__new__(WaterPet);pet.pack_manifest=MANIFEST
             pet.settings_path=Path(directory)/'settings.json'
-            pet.settings_path.write_text(json.dumps({'auto_activity':'Rub ears','routine_activities':['ear_rub','wash_face','sleep','lazy_stretch','eat_bamboo']}))
+            pet.settings_path.write_text(json.dumps({'organic_schema':1,'auto_activity':'Rub ears','routine_activities':['ear_rub','wash_face','sleep','lazy_stretch','eat_bamboo']}))
             settings=pet._load_settings()
             self.assertEqual(settings['auto_activity'],'Grooming')
             self.assertEqual(settings['routine_activities'],['groom','wind_down'])

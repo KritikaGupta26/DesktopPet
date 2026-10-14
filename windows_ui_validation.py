@@ -72,6 +72,7 @@ def run_validation(pet_type, output_path: Path) -> None:
             app.sound_enabled.set(False)
             app.roam_enabled.set(False)
             app.sleep_enabled.set(False)
+            app.night_enabled.set(False)
             app.movement_enabled.set(False)
             app.next_idle_activity = datetime.now() + timedelta(hours=1)
             app.next_reminder = datetime.now() + timedelta(hours=1)
@@ -85,6 +86,61 @@ def run_validation(pet_type, output_path: Path) -> None:
             report["tray_icon_registered"] = app.tray.icon_added
             check("Tray message loop initialized", bool(app.tray.hwnd))
             snapshot("idle")
+
+            # Exercise the actual organic dispatcher while ordinary roaming
+            # is in progress, rather than only calling manual buttons.
+            from organic_behavior import OrganicQueue
+            import random
+            app.auto_activity.set("Organic routine")
+            app.pranks_enabled.set(True)
+            app.organic_queue = OrganicQueue(random.Random(37))
+            organic_seen = set()
+            for index in range(len(app.routine_enabled)):
+                clear_action()
+                app.motion_mode = "walking"
+                app.manual_motion_until = None
+                app.next_idle_activity = datetime.now()-timedelta(seconds=1)
+                app.next_prank = datetime.now()-timedelta(seconds=1)
+                app._update_idle_mood(datetime.now())
+                organic_seen.add(app.last_routine_key)
+                check(f"Organic action started from roaming: {app.last_routine_key}",bool(app.idle_mood or app.pending_edge_action))
+            check("Organic queue reaches every everyday activity",organic_seen==set(app.routine_enabled))
+            clear_action()
+            app.next_idle_activity = datetime.now()+timedelta(hours=1)
+            app.night_enabled.set(True)
+            # Include the runner's current local time so live GUI timer ticks
+            # cannot cancel a synthetic overnight scenario during snapshots.
+            clock = datetime.now()
+            app.night_start.set((clock-timedelta(hours=1)).strftime("%H:%M"))
+            app.night_end.set((clock+timedelta(hours=3)).strftime("%H:%M"))
+            app.night_corner.set("Bottom right")
+            app.night_phase = ""
+            app.night_manual_until = None
+            left,top,right,bottom = app._screen_bounds()
+            app._move_root(right-188,bottom-192)
+            app._update_night_behavior(clock)
+            check("Night reaches selected corner",app.night_phase=="settle")
+            app._update_night_behavior(clock+timedelta(seconds=4))
+            check("Night sleeps while computer is active",app.idle_mood=="night_sleep")
+            app.idle_mood_started_at=datetime.now()
+            app._draw()
+            snapshot("night_corner_sleep")
+            app._update_night_behavior(app.night_next_check)
+            check("Night performs brief check-in",app.idle_mood=="night_check")
+            app.idle_mood_started_at=datetime.now()-timedelta(seconds=1)
+            app._draw()
+            snapshot("night_quiet_check_in")
+            app._update_night_behavior(app.night_check_until+timedelta(seconds=1))
+            check("Night returns to sleep",app.idle_mood=="night_sleep")
+            app.show_prompt()
+            app._update_night_behavior(clock+timedelta(minutes=30))
+            check("Water reminder remains visible in night mode",app.prompt_visible)
+            clear_action()
+            app.night_enabled.set(False)
+            app.night_active=False
+            app.night_phase=""
+            app.auto_activity.set("Manual only")
+            app._move_root(300,300)
 
             # Inspect the *immediate* scene, without calling _draw or update:
             # old builds exposed a misplaced cached image until the next tick.

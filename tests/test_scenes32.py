@@ -65,7 +65,8 @@ class SceneTests(unittest.TestCase):
         p.idle_mood='';p.chatter_until=None;p.hungry=False;p._studio_is_open=Mock(return_value=False)
         p._current_theme=Mock(return_value='spooky');p._check_theme_activity(now)
         p._play_theme_scene.assert_called_once_with('spooky')
-        self.assertEqual(p.next_theme_activity,now+timedelta(minutes=35))
+        self.assertGreaterEqual(p.next_theme_activity,now+timedelta(minutes=35*.85))
+        self.assertLessEqual(p.next_theme_activity,now+timedelta(minutes=35*1.15))
 
     def test_walk_has_eight_unique_poses_without_detached_islands(self):
         # A flood fill catches the stray triangle which bounding boxes missed.

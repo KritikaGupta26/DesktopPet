@@ -1,3 +1,9 @@
+# v37 continuation requirements
+
+The v37 implementation supersedes conflicting defaults below: Organic routine enables all 21 everyday actions, uses a shuffled fair queue and varied personality-adjusted timing, and reserves due turns during ordinary roaming. Include Somersault, Mirror and Boo; respect the prank cooldown, foreground reminders and manual actions. All valid pre-v37 activity modes upgrade once to Organic, with settings schema 1 preserving subsequent choices. Keep food/reminders/pointer settings on their own controls rather than recording fictional activity.
+
+Night rest uses local 22:00–07:00 defaults and configurable clocks, corner and 10–60 minute check-ins. Keyboard use does not wake scheduled sleep. Approach the corner horizontally, settle at the bottom, sleep, check briefly and resleep. Reminders remain available. Manual actions have a temporary override and finish before rest resumes. Headgear uses local head geometry and reviewed pose orientation; source interior linings belong behind the panda. Retain ghost coverage, foreground props, all data and all existing features. Build, verify and deliver an actual new Windows installer, not a relabelled v36 binary.
+
 # Water Panda v36: complete replication and continuation prompt
 
 Copy the instruction below into a coding agent with the full DesktopPet repository and original assets available. A prompt alone cannot recreate identical generated artwork; source sheets and exported assets are part of the specification. Continue the existing repository rather than starting an unrelated pet.

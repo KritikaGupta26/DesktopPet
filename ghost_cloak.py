@@ -3,6 +3,53 @@ import math
 from PIL import Image, ImageChops, ImageDraw, ImageOps, ImageFilter
 
 
+def resting_sheet(image, cloth, head, torso):
+    """Drape a continuous hood/blanket over a horizontal resting body.
+
+    Rotating the standing five-band mesh made its hem become a vertical,
+    accordion-like edge. Keep gravity vertical and broaden the lower folds
+    instead, using the same shaded cloth texture as the standing costume.
+    """
+    hl, ht, hr, hb = head
+    tl, tt, tr, tb = torso
+    bounds = image.getchannel('A').getbbox()
+    hx = (hl+hr)/2
+    ground = min(image.height-3, bounds[3]+2)
+    top = max(3, min(ht-15, bounds[1]-3))
+    left = max(3, min(bounds[0]-4, hl-12))
+    right = min(image.width-3, max(bounds[2]+4, tr+5))
+    # The standing face opening cannot become an extra hole in a blanket.
+    # Close internal transparent regions with a shaded fabric strip; the
+    # actual resting face is restored once, after the drape is fitted.
+    cloth=cloth.copy()
+    alpha=cloth.getchannel('A')
+    outside=alpha.point(lambda a:255 if a<128 else 0)
+    border=[(x,0) for x in range(cloth.width)]+[(x,cloth.height-1) for x in range(cloth.width)]
+    border += [(0,y) for y in range(cloth.height)]+[(cloth.width-1,y) for y in range(cloth.height)]
+    for point in border:
+        if outside.getpixel(point)==255:
+            ImageDraw.floodfill(outside,point,128)
+    holes=outside.point(lambda a:255 if a==255 else 0)
+    fabric=cloth.crop((round(cloth.width*.25),0,round(cloth.width*.35),cloth.height)).resize(cloth.size,Image.Resampling.BICUBIC)
+    cloth.paste(fabric,(0,0),holes)
+    rows = [(0, top, hx-65, hx+65),
+            (.20, top+(ground-top)*.25, hx-65, min(right,hx+65)),
+            (.45, top+(ground-top)*.55, left, right),
+            (.72, top+(ground-top)*.80, left, right),
+            (1, ground, left+2, right-2)]
+    mesh=[]
+    for (sy0,y0,l0,r0),(sy1,y1,l1,r1) in zip(rows,rows[1:]):
+        y0,y1=round(y0),round(y1)
+        if y1<=y0:continue
+        w0,w1=r0-l0,r1-l1
+        mesh.append(((0,y0,image.width,y1),
+                     (-l0/w0*cloth.width,sy0*cloth.height,
+                      -l1/w1*cloth.width,sy1*cloth.height,
+                      (image.width-l1)/w1*cloth.width,sy1*cloth.height,
+                      (image.width-l0)/w0*cloth.width,sy0*cloth.height)))
+    return cloth.transform(image.size,Image.Transform.MESH,mesh,Image.Resampling.BICUBIC)
+
+
 def dress_ghost(image, cloth, geometry, key):
     head, torso, profile, left = geometry
     hl, ht, hr, hb = head
@@ -39,7 +86,7 @@ def dress_ghost(image, cloth, geometry, key):
     if left:
         cloth = ImageOps.mirror(cloth)
     face_anchor = (.28 if left else .72) if profile else .5
-    upper_width = min(260,head_width*(2.50 if profile else 2.40))
+    upper_width = min(260,head_width*(2.10 if profile else 2.40))
     hem_width = min(158,max(head_width*1.55,(tr-tl)*1.60))
     # Continuous horizontal bands share boundaries. There is no detached
     # hood/bib seam; long folds survive the pose-dependent drape.
@@ -48,6 +95,10 @@ def dress_ghost(image, cloth, geometry, key):
             (.40,neck_y,body_x,.5,upper_width*.90),
             (.68,mid_y,body_x,.5,max(hem_width,upper_width*.85)),
             (1,bottom_y,body_x,.5,hem_width)]
+    if profile:
+        # The cutout already contains the profile silhouette. Changing the
+        # horizontal source anchor at the neck introduced a visible zigzag.
+        rows=[(sy,y,x,face_anchor,width) for sy,y,x,anchor,width in rows]
     mesh=[]
     for a,b in zip(rows,rows[1:]):
         sy0,y0,x0,anchor0,w0=a;sy1,y1,x1,anchor1,w1=b
@@ -62,7 +113,24 @@ def dress_ghost(image, cloth, geometry, key):
     if angle:
         layer=layer.rotate(angle,Image.Resampling.BICUBIC,center=(cx,cy))
     x0,y0=round(cx-hx),round(cy-hy)
+    # Fit the complete garment while it is still on the oversized canvas.
+    # Moving pixels after cropping cannot recover a severed hem or hood.
+    full_bounds=layer.getchannel('A').point(lambda a:255 if a>=128 else 0).getbbox()
+    if full_bounds:
+        bl,bt,br,bb=full_bounds
+        scale=min(1,(image.width-6)/(br-bl),(image.height-6)/(bb-bt))
+        nl,nr=cx+(bl-cx)*scale,cx+(br-cx)*scale
+        nt,nb=cy+(bt-cy)*scale,cy+(bb-cy)*scale
+        shift_x=max(x0+3-nl,min(0,x0+image.width-3-nr))
+        shift_y=max(y0+3-nt,min(0,y0+image.height-3-nb))
+        if scale<1 or shift_x or shift_y:
+            layer=layer.transform(canvas_size,Image.Transform.AFFINE,
+                                  (1/scale,0,cx-(cx+shift_x)/scale,
+                                   0,1/scale,cy-(cy+shift_y)/scale),
+                                  Image.Resampling.BICUBIC)
     layer=layer.crop((x0,y0,x0+image.width,y0+image.height))
+    if key.startswith(('pack_sleep_', 'pack_snore_sleep_')):
+        layer=resting_sheet(image,cloth,head,torso)
     # The full original body must never be composited underneath the sheet:
     # that is what exposed the black arms, feet, and straight neck band in v35.
     # Retain just the original face and the meaningful foreground prop.

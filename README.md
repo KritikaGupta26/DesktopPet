@@ -1,3 +1,19 @@
+# Water Panda v38.0.0
+
+Keep the existing cute panda: its large warm eyes, cream tuft, small body and original core artwork. This update includes the preceding shared-size and costume corrections without using the rejected adult panda redesign.
+
+Add sixteen matching action poses and ten finite performances: kung fu practice, secret snack, noodle break, bamboo staff practice, wobbly balance, butterfly curiosity, shadow inspection, scroll doodling, sideways tumble and wobbly heroic landing. Each performance has setup, action and recovery, appears in Activities and Behaviour, and is interrupted by reminders. These are keyframe sequences; this release does not claim a fully rigged 3D character or newly drawn inbetween frames for every action.
+
+Organic mode now respects the activity checkboxes, shuffles enabled activities fairly and retains prank cooldowns. The old full-default activity pool gains the new performances once; later disabled choices and Manual only remain saved. A pending hunger request prevents automatic snack performances. Sideways tumble uses the actual side-roll art, separately from the somersault.
+
+Active redraws use a 40 ms interval (previously 80 ms). Fractional desktop coordinates survive rounding for the native window, and walk/run travel, legacy offsets, falling and particle timing are adjusted to retain their intended speed. Existing water amounts, snooze, decline, reminder history, night rest and theme effects remain available. The new props have explicit foreground masks so costumes do not cover bowls, scrolls, dumplings or staffs.
+
+Build on Windows with `Build_Windows_v38.ps1`, or use the Windows Actions workflow. Installer version is 38.0.0. Install only after a successful Windows build and packaged UI validation.
+
+Offline checks: `python -m unittest discover -s tests -q`. Runtime-rendered review: `python tools/review_character38.py`. New art source and review images are in `artwork/v38/`. Read `RELEASE_v38.md` for current validation and limitations.
+
+## Previous release history
+
 # Water Panda v37.0.0
 
 This update enables a complete Organic routine on the first upgrade. All 21 everyday activities get a turn in a shuffled queue, including Somersault, Mirror surprise and Boo. Timing varies around the chosen interval and with personality; pranks have a 15-minute cooldown. Ordinary roaming cannot starve routines. Short spontaneous runs belong to locomotion, and edge activities approach an edge first. Water, movement and hunger keep their dedicated schedules and do not create random water-history records.

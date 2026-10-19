@@ -12,9 +12,13 @@ WaterPet=runpy.run_path(str(ROOT/'Start_Water_Puppy.pyw'))['WaterPet']
 
 class SpriteCollectionTests(unittest.TestCase):
     def test_every_sheet_and_pose_is_accounted_for(self):
-        self.assertEqual(len({m['sheet'] for m in MANIFEST.values()}),17)
-        self.assertEqual(len(MANIFEST),47)
-        self.assertEqual(sum(m['frames'] for m in MANIFEST.values()),240)
+        legacy={key:meta for key,meta in MANIFEST.items()
+                if meta.get('generated_source') != 'artwork/v38/cute_extensions.png'}
+        extensions={key:meta for key,meta in MANIFEST.items() if key not in legacy}
+        self.assertEqual(len({m['sheet'] for m in legacy.values()}),17)
+        self.assertEqual(len(legacy),47)
+        self.assertEqual(sum(m['frames'] for m in legacy.values()),240)
+        self.assertEqual(sum(m['frames'] for m in extensions.values()),16)
 
     def test_every_frame_has_padding_and_transparency(self):
         for key,meta in MANIFEST.items():
@@ -150,7 +154,8 @@ class SpriteCollectionTests(unittest.TestCase):
         pose=module['wind_down_pose']
         for elapsed,key in ((0,'yawn_stretch'),(3,'lazy_stretch'),(6,'sleep'),(24,'wake_up'),(28,'wake_up')):
             self.assertEqual(pose(elapsed)[0],key)
-        self.assertNotIn('side_roll',module['ACTIVITY_LABELS'])
+        self.assertIn('side_roll',module['ACTIVITY_LABELS'])
+        self.assertNotIn('side_roll',module['ACTIVITY_ALIASES'])
         for key in ('sleep','lazy_stretch','yawn_stretch','snore_sleep','wake_up'):
             self.assertEqual(module['ACTIVITY_ALIASES'][key],'wind_down')
             self.assertNotIn(key,module['ACTIVITY_LABELS'])

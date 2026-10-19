@@ -105,6 +105,19 @@ def run_validation(pet_type, output_path: Path) -> None:
                 organic_seen.add(app.last_routine_key)
                 check(f"Organic action started from roaming: {app.last_routine_key}",bool(app.idle_mood or app.pending_edge_action))
             check("Organic queue reaches every everyday activity",organic_seen==set(app.routine_enabled))
+            # Exercise the new complete performances through the same public
+            # dispatcher as the activity buttons, then render their endings.
+            from character_routines import STORIES, story_duration
+            for key in STORIES:
+                clear_action()
+                app._play_activity(key)
+                check(f"Character performance launches: {key}",app.idle_mood=="story:"+key)
+                for fraction in (.15,.60,.95):
+                    app.idle_mood_started_at=datetime.now()-timedelta(seconds=story_duration(key)*fraction)
+                    app._draw();app.root.update_idletasks()
+                    check(f"Character performance renders: {key}:{fraction}",
+                          any(app.canvas.type(item)=="image" for item in app.canvas.find_all()))
+                snapshot("character_"+key)
             clear_action()
             app.next_idle_activity = datetime.now()+timedelta(hours=1)
             app.night_enabled.set(True)

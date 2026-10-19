@@ -48,7 +48,9 @@ def headgear_geometry(head, torso, cap_size, theme, key):
     angle = math.degrees(math.atan2(tx-cx, ty-cy)) if sideways or inverted else max(-16, min(16, math.degrees(math.atan2(tx-cx, max(1,ty-cy)))))
     # These sleep drawings roll the torso onto its side while keeping the
     # face almost upright. Using the body axis would put a hat on its cheek.
-    if key.startswith(("pack_sleep_", "pack_snore_sleep_")) or key in ("pack_wake_up_0", "pack_wake_up_1"):
+    if key.startswith("pack_snore_sleep_"):
+        angle = -36
+    elif key.startswith("pack_sleep_") or key in ("pack_wake_up_0", "pack_wake_up_1"):
         angle = -12
     radians = math.radians(angle)
     cross = abs(math.cos(radians))*(hr-hl)+abs(math.sin(radians))*(hb-ht)
@@ -145,6 +147,24 @@ def landmarks(image, key):
     if key.startswith("pack_sleep_"):
         head=(44,107,135,162)
         torso=(121,120,158,153)
+    # A visible cream patch is not a body boundary. Crossed paws, a bamboo
+    # stalk or a near leg can split that patch into tiny disconnected islands.
+    # Fit to the anatomical torso, then retain foreground limbs separately.
+    if key.startswith(("pack_walk_", "pack_run_", "pack_bored_shuffle_")):
+        torso=(int((head[0]+head[2])/2-30),head[3]+5,
+               int((head[0]+head[2])/2+30),min(158,opaque[3]-16))
+    elif key.startswith(("pack_walk_left_", "pack_run_left_", "pack_bored_shuffle_left_")):
+        torso=(int((head[0]+head[2])/2-30),head[3]+5,
+               int((head[0]+head[2])/2+30),min(158,opaque[3]-16))
+    if key.startswith(("pack_eat_bamboo_", "pack_sit_down_", "pack_belly_scratch_",
+                       "pack_noodles_", "pack_doodle_", "pack_belly_rub_")):
+        torso=(head[0]+17,head[3]+4,head[2]-17,opaque[3]-6)
+    if key.startswith("pack_staff_turn_"):
+        # The pale staff motion arc is not part of the belly. Detecting it
+        # as torso fabric painted a detached sleeve over empty space.
+        width=head[2]-head[0]
+        torso=(head[0]+round(width*.23),head[3]+3,
+               head[2]-round(width*.23),opaque[3]-8)
     return head,torso,profile,key.startswith(("pack_walk_left", "pack_run_left", "pack_bored_shuffle_left"))
 
 
@@ -153,6 +173,7 @@ class Wardrobe:
         self.assets=assets
         self.parts={}
         self.geometry={}
+        self.prop_masks={}
         self.cache=OrderedDict()
 
     def part(self, theme, name):
@@ -172,18 +193,30 @@ class Wardrobe:
             return image
         head,torso,profile,left=geometry
         if theme == "spooky":
-            return dress_ghost(image, self.part(theme, "full_profile" if profile else "full_front"), geometry, key)
+            out=dress_ghost(image, self.part(theme, "full_profile" if profile else "full_front"), geometry, key)
+            if key in self.prop_masks:
+                out.paste(image,(0,0),ImageChops.multiply(self.prop_masks[key].point(lambda a:255 if a>=128 else 0),image.getchannel('A')))
+                out.putalpha(out.getchannel('A').point(lambda a:255 if a>=128 else 0))
+            return out
         out=image.copy()
         l,t,r,b=torso
         hl,ht,hr,hb=head
-        name="profile" if profile else "front"
+        lying=key.startswith(("pack_sleep_","pack_snore_sleep_")) or key in ("pack_sploot_2","pack_sploot_3","pack_wake_up_0","pack_wake_up_1")
+        name="profile" if profile or lying else "front"
         cloth=self.part(theme,name)
         if cloth is None:
             raise ValueError(f"Missing persistent outfit: {theme}/{name}")
         scarf=theme in ("autumn","thanksgiving","christmas","valentine","birthday","shiva","spring","summer","winter")
-        lying=key.startswith(("pack_sleep_","pack_snore_sleep_")) or key in ("pack_sploot_2","pack_sploot_3","pack_wake_up_0","pack_wake_up_1")
         inverted=key in ("pack_forward_roll_2","pack_forward_roll_3","pack_forward_roll_4","pack_forward_roll_6","pack_sploot_0","pack_sploot_1")
-        if lying or inverted:
+        if lying and scarf:
+            # A scarf wraps the neck next to the resting cheek; it must not
+            # turn into a stretched rectangular patch across the back.
+            width=max(12,round((hr-hl)*.22))
+            height=max(18,round((hb-ht)*.52))
+            box=(hr-12,ht+round((hb-ht)*.35),hr-12+width,
+                 ht+round((hb-ht)*.35)+height)
+            cloth=cloth.rotate(78,expand=True)
+        elif lying or inverted:
             cloth=cloth.rotate(90 if lying else 180,expand=True)
             box=(l-3,t-3,r+4,b+4)
         elif scarf:
@@ -214,22 +247,37 @@ class Wardrobe:
             protected.append(255 if alpha>=128 and (dark or prop) else 0)
             props.append(255 if alpha>=128 and prop else 0)
         protect.putdata(protected)
-        if key.startswith("pack_water_offer_"):
-            index=int(key.rsplit("_",1)[1])
-            glass={2:(117,100,137,129),3:(116,92,142,132),
-                   4:(95,96,122,137),5:(87,96,121,138),
-                   6:(76,96,115,141),7:(76,96,115,143)}.get(index)
-            if glass:
+        seated = key.startswith(("pack_eat_bamboo_", "pack_belly_scratch_")) or key in ("pack_sit_down_2", "pack_sit_down_3")
+        if seated:
+            # Pale paw pads are neither dark fur nor a saturated prop. Keep
+            # the entire foreground feet, including their highlighted pads.
+            feet=ImageDraw.Draw(protect)
+            ground=image.getchannel("A").getbbox()[3]
+            feet.ellipse((hl-17,ground-34,l+8,ground+2),fill=255)
+            feet.ellipse((r-8,ground-34,hr+17,ground+2),fill=255)
+        glass=None
+        if key.startswith(("pack_water_offer_", "pack_alternate_offer_", "pack_drink_water_")):
+            # Locate water in the fitted image. Old pixel coordinates become
+            # wrong as soon as the whole sequence is scaled or repositioned.
+            water=Image.new("L",image.size)
+            water.putdata([255 if a>=128 and blue>105 and blue>red*1.10 and blue>green*.95 else 0
+                           for red,green,blue,a in image.getdata()])
+            bounds=water.getbbox()
+            if bounds:
+                gl,gt,gr,gb=bounds
+                glass=(max(0,gl-4),max(0,gt-12),min(image.width-1,gr+4),min(image.height-1,gb+3))
                 ImageDraw.Draw(protect).rectangle(glass,fill=255)
         if not lying and not inverted:
             # The central collar sits over the dark shoulder band; preserve
             # crossed foreground paws elsewhere.
             collar=ImageDraw.Draw(protect)
-            collar.rectangle((l+3,max(0,hb-6),r-3,min(image.height-1,hb+8)), fill=0)
+            collar.rectangle((l+3,max(0,hb-3),r-3,min(image.height-1,hb+3)), fill=0)
         prop_mask=Image.new("L",image.size)
         prop_mask.putdata(props)
         protect=ImageChops.lighter(protect,prop_mask)
-        if key.startswith("pack_water_offer_") and glass:
+        if key in self.prop_masks:
+            protect=ImageChops.lighter(protect,self.prop_masks[key])
+        if glass:
             ImageDraw.Draw(protect).rectangle(glass,fill=255)
         mask=ImageChops.subtract(mask,protect)
         face_mask=Image.new("L",image.size)
@@ -265,5 +313,7 @@ class Wardrobe:
             if not inverted:
                 cap_layer.putalpha(ImageChops.subtract(cap_layer.getchannel("A"),face))
             out = Image.alpha_composite(out,cap_layer)
+        if key in self.prop_masks:
+            out.paste(image,(0,0),ImageChops.multiply(self.prop_masks[key].point(lambda a:255 if a>=128 else 0),image.getchannel('A')))
         out.putalpha(out.getchannel("A").point(lambda a:255 if a>=128 else 0))
         return out

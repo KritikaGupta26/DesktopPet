@@ -29,8 +29,13 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(convert(0), 0)
         self.assertEqual(convert(255), 255)
 
-    def test_version_is_37(self):
-        self.assertIn("APP_VERSION = 37", self.source)
+    def test_version_matches_installer(self):
+        version = next(node.value.value for node in self.tree.body
+                       if isinstance(node, ast.Assign)
+                       and any(isinstance(target, ast.Name) and target.id == 'APP_VERSION'
+                               for target in node.targets))
+        self.assertIn(f'MyAppVersion "{version}.0.0"',
+                      (ROOT/'installer/WaterPanda.iss').read_text())
 
     def test_panda_face_icon_exists(self):
         icon = ASSETS / "panda.ico"

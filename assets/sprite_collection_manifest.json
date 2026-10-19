@@ -2080,5 +2080,164 @@
     ],
     "shared_scale": 1.0040160642570282,
     "mirrored_frame_indices": []
+  },
+  "noodles": {
+    "sheet": "artwork/v38/cute_extensions.png",
+    "frames": 2,
+    "seconds_per_frame": 1.1,
+    "mode": "loop",
+    "label": "Noodles",
+    "edge_only": false,
+    "generated_source": "artwork/v38/cute_extensions.png",
+    "source_cells": [
+      0,
+      1
+    ]
+  },
+  "dumpling_balance": {
+    "sheet": "artwork/v38/cute_extensions.png",
+    "frames": 1,
+    "seconds_per_frame": 1.1,
+    "mode": "loop",
+    "label": "Dumpling Balance",
+    "edge_only": false,
+    "generated_source": "artwork/v38/cute_extensions.png",
+    "source_cells": [
+      2
+    ]
+  },
+  "dumpling_catch": {
+    "sheet": "artwork/v38/cute_extensions.png",
+    "frames": 1,
+    "seconds_per_frame": 1.1,
+    "mode": "loop",
+    "label": "Dumpling Catch",
+    "edge_only": false,
+    "generated_source": "artwork/v38/cute_extensions.png",
+    "source_cells": [
+      3
+    ]
+  },
+  "belly_rub": {
+    "sheet": "artwork/v38/cute_extensions.png",
+    "frames": 1,
+    "seconds_per_frame": 1.1,
+    "mode": "loop",
+    "label": "Belly Rub",
+    "edge_only": false,
+    "generated_source": "artwork/v38/cute_extensions.png",
+    "source_cells": [
+      4
+    ]
+  },
+  "doodle": {
+    "sheet": "artwork/v38/cute_extensions.png",
+    "frames": 2,
+    "seconds_per_frame": 1.1,
+    "mode": "loop",
+    "label": "Doodle",
+    "edge_only": false,
+    "generated_source": "artwork/v38/cute_extensions.png",
+    "source_cells": [
+      5,
+      6
+    ]
+  },
+  "sneak": {
+    "sheet": "artwork/v38/cute_extensions.png",
+    "frames": 1,
+    "seconds_per_frame": 1.1,
+    "mode": "loop",
+    "label": "Sneak",
+    "edge_only": false,
+    "generated_source": "artwork/v38/cute_extensions.png",
+    "source_cells": [
+      7
+    ]
+  },
+  "staff_ready": {
+    "sheet": "artwork/v38/cute_extensions.png",
+    "frames": 1,
+    "seconds_per_frame": 1.1,
+    "mode": "loop",
+    "label": "Staff Ready",
+    "edge_only": false,
+    "generated_source": "artwork/v38/cute_extensions.png",
+    "source_cells": [
+      8
+    ]
+  },
+  "staff_turn": {
+    "sheet": "artwork/v38/cute_extensions.png",
+    "frames": 1,
+    "seconds_per_frame": 1.1,
+    "mode": "loop",
+    "label": "Staff Turn",
+    "edge_only": false,
+    "generated_source": "artwork/v38/cute_extensions.png",
+    "source_cells": [
+      9
+    ]
+  },
+  "butterfly": {
+    "sheet": "artwork/v38/cute_extensions.png",
+    "frames": 2,
+    "seconds_per_frame": 1.1,
+    "mode": "loop",
+    "label": "Butterfly",
+    "edge_only": false,
+    "generated_source": "artwork/v38/cute_extensions.png",
+    "source_cells": [
+      10,
+      11
+    ]
+  },
+  "shadow_look": {
+    "sheet": "artwork/v38/cute_extensions.png",
+    "frames": 1,
+    "seconds_per_frame": 1.1,
+    "mode": "loop",
+    "label": "Shadow Look",
+    "edge_only": false,
+    "generated_source": "artwork/v38/cute_extensions.png",
+    "source_cells": [
+      12
+    ]
+  },
+  "startled": {
+    "sheet": "artwork/v38/cute_extensions.png",
+    "frames": 1,
+    "seconds_per_frame": 1.1,
+    "mode": "loop",
+    "label": "Startled",
+    "edge_only": false,
+    "generated_source": "artwork/v38/cute_extensions.png",
+    "source_cells": [
+      13
+    ]
+  },
+  "hero_landing": {
+    "sheet": "artwork/v38/cute_extensions.png",
+    "frames": 1,
+    "seconds_per_frame": 1.1,
+    "mode": "loop",
+    "label": "Hero Landing",
+    "edge_only": false,
+    "generated_source": "artwork/v38/cute_extensions.png",
+    "source_cells": [
+      14
+    ]
+  },
+  "bashful": {
+    "sheet": "artwork/v38/cute_extensions.png",
+    "frames": 1,
+    "seconds_per_frame": 1.1,
+    "mode": "loop",
+    "label": "Bashful",
+    "edge_only": false,
+    "generated_source": "artwork/v38/cute_extensions.png",
+    "source_cells": [
+      15
+    ]
   }
 }

@@ -30,7 +30,9 @@ from scene_playback import scene_pose, scene_duration
 from home_layout import HomePage, bind_page_wheel
 from locomotion import escape_target, run_step
 from wardrobe import Wardrobe
+from pose_appearance import fit_sequence
 from organic_behavior import OrganicQueue, clock_in_window, activity_delay
+from character_routines import STORIES, story_duration, story_pose, routine_pool
 from desktop_effects import DesktopEffects
 from playful_activities import compose_mirror, mirror_pose, MIRROR_DURATION, BOO_DURATION, PRANK_COOLDOWN_MINUTES, boo_phase
 from collections import OrderedDict
@@ -47,6 +49,7 @@ ACTIVITY_LABELS = {
     "peekaboo":"Peekaboo", "clap":"Clap", "blow_kiss":"Blow a kiss",
     "hiccup":"Hiccup", "victory":"Celebrate", "mirror":"Mirror surprise", "boo":"Boo prank",
 }
+ACTIVITY_LABELS.update({key: label for key, (label, _) in STORIES.items()})
 THEME_EFFECT_LABELS = {"diwali": "Festival fireworks", "new_year": "New Year fireworks",
                        "holi": "Throw Holi colours", "birthday": "Birthday fireworks"}
 
@@ -62,13 +65,14 @@ def theme_activity_options(theme, manifest, effects_enabled=True):
 
 ACTIVITY_ALIASES = {
     "ear_rub":"groom", "wash_face":"groom", "belly_scratch":"groom",
-    "yawn_stretch":"wind_down", "lazy_stretch":"wind_down", "sleep":"wind_down", "side_roll":"forward_roll", "eat_bamboo":"feed", "wiggle":"dance", "greeting":"wave", "snore_sleep":"wind_down",
+    "yawn_stretch":"wind_down", "lazy_stretch":"wind_down", "sleep":"wind_down", "eat_bamboo":"feed", "wiggle":"dance", "greeting":"wave", "snore_sleep":"wind_down",
     "sit_on_log":"log", "balance_on_log":"log", "bored_shuffle":"log", "sit_down":"sploot",
     "wake_up":"wind_down", "carry_bamboo":"feed", "water_offer":"water", "alternate_offer":"water",
     "drink_water":"water", "alternate_hoop":"movement", "hula_hoop":"movement",
      "happy_idle":"wave", "sad":"bow",
 }
 ROUTINE_ACTIVITIES = ("groom", "wind_down", "meditate", "log", "dance", "kung_fu", "peekaboo", "bamboo_hang", "jump", "wave", "sploot", "petting", "bow", "clap", "blow_kiss", "sneeze", "hiccup", "victory", "mirror", "boo", "forward_roll")
+ROUTINE_ACTIVITIES += tuple(STORIES)
 GENTLE_ACTIVITIES = ROUTINE_ACTIVITIES[:2]
 GROOM_SEQUENCE = (("wash_face", 3.0), ("ear_rub", 3.0), ("belly_scratch", 3.0))
 WIND_DOWN_SEQUENCE = (("yawn_stretch", 3.0), ("lazy_stretch", 3.0), ("sleep", 18.0), ("wake_up", 4.0))
@@ -174,7 +178,7 @@ def windows_menu_active(thread_id: int | None = None) -> bool:
 
 
 APP_NAME = "WaterPuppy"
-APP_VERSION = 37
+APP_VERSION = 38
 REMINDER_MINUTES = 30
 WATER_DECLINE_SECONDS = 8
 WALK_FRAME_ORDER = tuple(range(8))
@@ -186,7 +190,7 @@ PET_CENTER_Y = 94
 PET_GROUND_Y = 169
 PROMPT_WIDTH = 360
 PROMPT_HEIGHT = 324
-ACTIVE_TICK_MILLISECONDS = 80
+ACTIVE_TICK_MILLISECONDS = 40
 IDLE_TICK_MILLISECONDS = 250
 HIDDEN_TICK_MILLISECONDS = 1000
 
@@ -882,6 +886,7 @@ class WaterPet:
         self.state = "normal"
         self.water_prompt_text = random.choice(WATER_PROMPTS)
         self.frame = 0
+        self.animation_epoch = time.monotonic()
         self.prompt_visible = False
         self.water_prompt_deferred = False
         self.happy_until: datetime | None = None
@@ -1058,27 +1063,33 @@ class WaterPet:
             self.image_pil[f"roll_{frame}"] = canvas.copy()
         self.pack_manifest = json.loads((assets / "sprite_collection_manifest.json").read_text(encoding="utf-8"))
         for key, metadata in self.pack_manifest.items():
-            row_scale = 1.0
-            if key in ("happy_idle", "cursor_follow", "petting", "sad"):
-                heights = []
+            # The integrated artwork already shares a head scale and floor.
+            # Enlarging only four upright rows made the panda change size
+            # whenever it sat down, walked, or went to sleep.
+            variants = (key, key + "_left") if key in ("walk", "run", "bored_shuffle") else (key,)
+            for variant in variants:
+                sources=[]
+                names=[]
                 for i in range(metadata["frames"]):
-                    with Image.open(assets / f"pack_{key}_{i}.png") as opened:
-                        bbox = opened.getchannel("A").point(lambda alpha: 255 if alpha >= 128 else 0).getbbox()
-                        if bbox:
-                            heights.append(bbox[3]-bbox[1])
-                if heights:
-                    row_scale = 450 / max(heights)
-            for i in range(metadata["frames"]):
-                variants = (key, key + "_left") if key in ("walk", "run", "bored_shuffle") else (key,)
-                for variant in variants:
                     with Image.open(assets / f"pack_{variant}_{i}.png") as opened:
-                        sprite = opened.convert("RGBA")
-                    if row_scale != 1.0:
-                        sprite = normalize_pose_sprite(sprite, row_scale)
-                    sprite = sprite.resize((180,180), Image.Resampling.LANCZOS)
-                    sprite.putalpha(sprite.getchannel("A").point(lambda a: 255 if a >= 128 else 0))
-                    loaded["panda"][f"pack_{variant}_{i}"] = ImageTk.PhotoImage(sprite)
-                    self.image_pil[f"pack_{variant}_{i}"] = sprite.copy()
+                        sources.append(opened.convert("RGBA"))
+                    names.append(f"pack_{variant}_{i}")
+                for name,(sprite,geometry) in zip(names,fit_sequence(sources,names)):
+                    loaded["panda"][name] = ImageTk.PhotoImage(sprite)
+                    self.image_pil[name] = sprite.copy()
+                    self.wardrobe.geometry[name] = geometry
+                    prop_path=assets/(name.replace('pack_','prop_',1)+'.png')
+                    if prop_path.exists():
+                        with Image.open(prop_path) as opened:
+                            source_mask=opened.convert('L')
+                        source=sources[names.index(name)]
+                        old_bounds=source.getchannel('A').point(lambda a:255 if a>=128 else 0).getbbox()
+                        new_bounds=sprite.getchannel('A').getbbox()
+                        mask=Image.new('L',sprite.size)
+                        if old_bounds and new_bounds:
+                            region=source_mask.crop(old_bounds).resize((new_bounds[2]-new_bounds[0],new_bounds[3]-new_bounds[1]),Image.Resampling.LANCZOS)
+                            mask.paste(region,new_bounds[:2])
+                        self.wardrobe.prop_masks[name]=mask
         for index in range(8):
             with Image.open(assets / f"pack_mirror_{index}.png") as opened:
                 sprite=opened.convert("RGBA")
@@ -1212,6 +1223,10 @@ class WaterPet:
             self.prank_caption_stage=-1
             self._resize_anchored(360 if key=="mirror" else SMALL_WIDTH,SMALL_HEIGHT)
             return
+        if key in STORIES:
+            self._close_chatter_card()
+            self._play_test_animation("story:" + key, story_duration(key))
+            return
         if key == "wind_down":self._play_test_animation("wind_down",sum(duration for _,duration in WIND_DOWN_SEQUENCE))
         elif key == "groom":self._play_test_animation("groom",sum(duration for _,duration in GROOM_SEQUENCE))
         elif key == "feed":self.feed_panda()
@@ -1256,6 +1271,7 @@ class WaterPet:
             "theme_effects_enabled": True,
             "pranks_enabled": True,
             "organic_schema": 1,
+            "character_schema": 1,
             "night_enabled": True,
             "night_start": "22:00",
             "night_end": "07:00",
@@ -1388,11 +1404,19 @@ class WaterPet:
             defaults["hunger_minutes"] = 120
         selected = defaults.get("routine_activities",list(GENTLE_ACTIVITIES))
         defaults["routine_activities"] = list(dict.fromkeys(ACTIVITY_ALIASES.get(key,key) for key in selected if isinstance(key,str) and ACTIVITY_ALIASES.get(key,key) in ROUTINE_ACTIVITIES)) if isinstance(selected,list) else list(GENTLE_ACTIVITIES)
+        if ('data' in locals() and isinstance(data, dict)
+                and data.get("character_schema") != 1
+                and defaults["auto_activity"] == "Organic routine"
+                and set(ROUTINE_ACTIVITIES).difference(STORIES).issubset(defaults["routine_activities"])):
+            # Extend the old complete-default pool exactly once. A later
+            # unchecked story or Manual-only selection remains the user's choice.
+            defaults["routine_activities"] += [key for key in STORIES if key not in defaults["routine_activities"]]
+        defaults["character_schema"] = 1
         if defaults.get("cursor_mode") not in ("Off","Follow","Avoid"):
             defaults["cursor_mode"] = "Off"
         old = str(defaults["auto_activity"])
         defaults["auto_activity"] = old
-        old_labels={"Rub ears":"groom", "Wash face":"groom", "Belly scratch":"groom", "Stretch":"wind_down", "Sleep":"wind_down", "Yawn and stretch":"wind_down", "Side roll":"forward_roll", "Play on log":"log"}
+        old_labels={"Rub ears":"groom", "Wash face":"groom", "Belly scratch":"groom", "Stretch":"wind_down", "Sleep":"wind_down", "Yawn and stretch":"wind_down", "Side roll":"side_roll", "Play on log":"log"}
         if old in old_labels:
             defaults["auto_activity"] = ACTIVITY_LABELS[old_labels[old]]
         for key,metadata in self.pack_manifest.items():
@@ -1415,6 +1439,7 @@ class WaterPet:
             "cursor_games": self.cursor_mode.get() != "Off",
             "cursor_mode": self.cursor_mode.get(),
             "organic_schema": 1,
+            "character_schema": 1,
             "night_enabled": self.night_enabled.get(),
             "night_start": self.night_start.get(),
             "night_end": self.night_end.get(),
@@ -1702,7 +1727,7 @@ class WaterPet:
         self.pet_y = float(y)
         self.drag_samples.append((datetime.now(), int(x), int(y)))
         self.drag_samples = self.drag_samples[-6:]
-        self._move_root(round(self.pet_x), round(self.pet_y))
+        self._move_root(self.pet_x, self.pet_y)
 
     def _end_drag(self, _event: tk.Event) -> None:
         if not self.dragging:
@@ -1825,7 +1850,7 @@ class WaterPet:
         except (AttributeError, OSError, ctypes.ArgumentError):
             return 0.0
 
-    def _move_root(self, x: int, y: int) -> None:
+    def _move_root(self, x: float, y: float) -> None:
         left, top, right, bottom = self._screen_bounds()
         expanded = self.height > SMALL_HEIGHT
         wide_scene = self.width > SMALL_WIDTH and not expanded
@@ -2033,7 +2058,7 @@ class WaterPet:
             if "personal" in self.active_alert_kind:
                 image_key = "watch"
             else:
-                image_key = f"hula_{1 + ((self.frame // 2) % 2)}"
+                image_key = f"hula_{1 + (int(self.frame // 2) % 2)}"
             self.alert_pet_label.configure(image=self._image(image_key))
         if self.alert_icon_label is not None and self.alert_icon_label.winfo_exists():
             label = (
@@ -2487,7 +2512,9 @@ class WaterPet:
             self.last_fullscreen_check = now
             self._update_fullscreen_visibility()
 
-        self.frame += 1
+        # Legacy small offsets use a fixed 80 ms clock, independent of the
+        # faster redraw rate. Doubling redraws must not double animation speed.
+        self.frame = (time.monotonic() - self.animation_epoch) / .08
         if not self.was_hidden_for_fullscreen:
             self._draw()
         self.root.after(self._next_tick_delay(), self._tick)
@@ -2693,10 +2720,10 @@ class WaterPet:
             step = min(abs(distance), (WALK_STRIDE_PIXELS*180/512)/(.5*self._walk_cycle_seconds())*(ACTIVE_TICK_MILLISECONDS/1000))
             self.pet_x += step if distance >= 0 else -step
             self.motion_mode = "walking"
-            self._move_root(round(self.pet_x), round(self.pet_y))
+            self._move_root(self.pet_x, self.pet_y)
             if abs(distance) <= step:
                 self.pet_y = self.night_target_y
-                self._move_root(round(self.pet_x), round(self.pet_y))
+                self._move_root(self.pet_x, self.pet_y)
                 self.motion_mode = "idle"
                 self.night_phase = "settle"
                 self.idle_mood = "night_settle"
@@ -2821,7 +2848,10 @@ class WaterPet:
             if not hasattr(self, "organic_queue"):
                 self.organic_queue = OrganicQueue()
             blocked = ("mirror", "boo") if not self.pranks_enabled.get() or now < self.next_prank else ()
-            key = self.organic_queue.choose(ROUTINE_ACTIVITIES, blocked)
+            enabled = getattr(self, "routine_enabled", None)
+            pool = routine_pool({key for key, value in enabled.items() if value.get()},
+                                ROUTINE_ACTIVITIES, getattr(self, "hungry", False)) if enabled is not None else ROUTINE_ACTIVITIES
+            key = self.organic_queue.choose(pool, blocked)
             if key:
                 self.last_routine_key = key
                 self._play_activity(key, automatic=True)
@@ -2876,7 +2906,7 @@ class WaterPet:
             step = min(remaining, (WALK_STRIDE_PIXELS*180/512)/(0.5*self._walk_cycle_seconds())*(ACTIVE_TICK_MILLISECONDS/1000))
             self.walk_direction = "right" if tx >= self.pet_x else "left"
             self.pet_x += step if tx >= self.pet_x else -step
-            self._move_root(round(self.pet_x), round(self.pet_y))
+            self._move_root(self.pet_x, self.pet_y)
             return
         if (
             now < self.next_cursor_reaction
@@ -3025,11 +3055,12 @@ class WaterPet:
 
     def _update_particles(self) -> None:
         alive: list[dict[str, float | str]] = []
+        factor = ACTIVE_TICK_MILLISECONDS / 80
         for particle in self.particles:
-            particle["x"] = float(particle["x"]) + float(particle["vx"])
-            particle["y"] = float(particle["y"]) + float(particle["vy"])
-            particle["life"] = float(particle["life"]) - 1
-            particle["vy"] = float(particle["vy"]) + 0.025
+            particle["x"] = float(particle["x"]) + float(particle["vx"]) * factor
+            particle["y"] = float(particle["y"]) + float(particle["vy"]) * factor
+            particle["life"] = float(particle["life"]) - factor
+            particle["vy"] = float(particle["vy"]) + 0.025 * factor
             if float(particle["life"]) > 0:
                 alive.append(particle)
         self.particles = alive
@@ -3206,7 +3237,7 @@ class WaterPet:
                 self.manual_motion_until = None
                 self.idle_until = now + timedelta(seconds=self.roam_rest_seconds.get())
         else:
-            step_speed = self.walk_speed
+            step_speed = self.walk_speed * ACTIVE_TICK_MILLISECONDS / 80
             if self.motion_mode == "walking":
                 step_speed = min(self.walk_speed, max(1.15, distance * 0.07))
             if self.motion_mode == "walking":
@@ -3214,7 +3245,7 @@ class WaterPet:
                 cycle_seconds=self._walk_cycle_seconds()
                 step_speed=(WALK_STRIDE_PIXELS*180/512)/(0.5*cycle_seconds)*(ACTIVE_TICK_MILLISECONDS/1000)
                 if self.pending_edge_action == "bored_edge":
-                    step_speed=1.1
+                    step_speed=1.1 * ACTIVE_TICK_MILLISECONDS / 80
                 step_speed=min(distance,step_speed)
             if self.motion_mode == "escaping":
                 cycle = self.pack_manifest["run"]["frames"] * .14
@@ -3222,7 +3253,7 @@ class WaterPet:
             self.pet_x += (dx / distance) * step_speed
             self.pet_y += (dy / distance) * step_speed
 
-        self._move_root(round(self.pet_x), round(self.pet_y))
+        self._move_root(self.pet_x, self.pet_y)
 
     def _choose_edge_destination(self) -> None:
         left, top, right, bottom = self._screen_bounds()
@@ -3278,10 +3309,11 @@ class WaterPet:
 
     def _update_falling(self, now: datetime) -> None:
         left, top, right, bottom = self._screen_bounds()
-        self.velocity_y += 0.72
-        self.velocity_x *= 0.985
-        next_x = self.pet_x + self.velocity_x
-        next_y = self.pet_y + self.velocity_y
+        factor = ACTIVE_TICK_MILLISECONDS / 80
+        self.velocity_y += 0.72 * factor
+        self.velocity_x *= 0.985 ** factor
+        next_x = self.pet_x + self.velocity_x * factor
+        next_y = self.pet_y + self.velocity_y * factor
         if next_y < top:
             next_y = float(top)
             self.velocity_y = abs(self.velocity_y) * 0.68
@@ -3331,7 +3363,7 @@ class WaterPet:
         else:
             self.pet_y = next_y
         self.pet_x = next_x
-        self._move_root(round(self.pet_x), round(self.pet_y))
+        self._move_root(self.pet_x, self.pet_y)
 
     def _visible_window_ledges(self) -> list[tuple[int, int, int]]:
         if os.name != "nt":
@@ -3627,7 +3659,7 @@ class WaterPet:
 
         self._draw_ground_shadow()
         idle_image = self.state
-        if self.state == "normal" and self.frame % 95 in range(0, 5):
+        if self.state == "normal" and self.frame % 95 < 5:
             idle_image = "blink"
         self.canvas.create_image(
             SMALL_WIDTH // 2,
@@ -3661,6 +3693,12 @@ class WaterPet:
 
     def _draw_idle_mood(self) -> None:
         elapsed = (datetime.now()-self.idle_mood_started_at).total_seconds()
+        if self.idle_mood.startswith("story:"):
+            pose, local_time = story_pose(self.idle_mood[6:], elapsed)
+            if self.idle_mood == "story:shadow_game":
+                self.canvas.create_oval(30,164,160,178,fill="#8c8991",outline="")
+            self._draw_pack_animation(pose, local_time)
+            return
         if self.idle_mood in ("night_sleep", "night_check", "night_settle"):
             if self.idle_mood == "night_check":
                 # Hold the lying, half-open-eye pose, without progressing to
@@ -4651,7 +4689,7 @@ class WaterPet:
             box = ttk.Combobox(row, textvariable=variable, values=options, state="readonly", width=16)
             box.pack(side="left")
             box.bind("<<ComboboxSelected>>", lambda _event: self._behavior_settings_changed())
-        ttk.Label(behavior_frame, text="Organic routine varies all everyday activities, with no repeats until the queue is visited.\nTiming varies with personality. Selected routine uses your choices below.", style="Sub.TLabel", wraplength=500).pack(anchor="w", pady=12)
+        ttk.Label(behavior_frame, text="Organic routine shuffles your checked activities without immediate repeats.\nTiming varies with personality. Selected routine plays the same choices in order.", style="Sub.TLabel", wraplength=500).pack(anchor="w", pady=12)
         ttk.Checkbutton(behavior_frame,text="Allow automatic mirror surprises and gentle pranks",variable=self.pranks_enabled,command=self._behavior_settings_changed).pack(anchor="w",pady=5)
         ttk.Label(behavior_frame,text="Organic routine includes these when enabled. Pranks wait at least 15 minutes between performances. Manual buttons always work.",style="Sub.TLabel",wraplength=500).pack(anchor="w",pady=5)
         routine_choices = ttk.Frame(behavior_frame,style="Glass.TFrame")

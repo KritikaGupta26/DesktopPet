@@ -3,7 +3,7 @@ name: Build Windows installer
 on:
   workflow_dispatch:
   push:
-    branches: [main, "codex/v37-organic-night-wardrobe"]
+    branches: [main, "codex/v37-organic-night-wardrobe", "codex/v38-appearance-review"]
     tags: ["v*"]
 
 permissions:
@@ -49,9 +49,9 @@ jobs:
         run: |
           $outputPath = Join-Path $PWD "windows-ui-evidence"
           $process = Start-Process -FilePath "dist\WaterPanda\WaterPanda.exe" -ArgumentList "--verify-ui", $outputPath -PassThru
-          if (-not $process.WaitForExit(180000)) {
+          if (-not $process.WaitForExit(300000)) {
             Stop-Process -Id $process.Id -Force
-            throw "Packaged Windows UI validation timed out after 180 seconds"
+            throw "Packaged Windows UI validation timed out after 300 seconds"
           }
           Get-Content "$outputPath\report.json"
           if ($process.ExitCode -ne 0) { throw "Packaged Windows UI validation failed" }

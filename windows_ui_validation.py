@@ -69,6 +69,24 @@ def run_validation(pet_type, output_path: Path) -> None:
         with tempfile.TemporaryDirectory(prefix="water-panda-ui-", ignore_cleanup_errors=True) as data_dir:
             os.environ["WATER_PANDA_DATA_DIR"] = data_dir
             app = pet_type()
+            report["startup_state"] = {
+                "canvas_width": app.canvas.winfo_width(),
+                "requested_width": app.width,
+                "idle_mood": app.idle_mood,
+                "chatter": app.chatter_text,
+                "system_idle_seconds": app.system_idle_seconds_cache,
+            }
+            # This script acts as an active user. The runner can have been
+            # idle for minutes while installing/building, which otherwise
+            # opens a yawn cloud during the first root.update() and changes
+            # the canvas from 180 to 360 before the baseline assertion.
+            # Test the same fixed baseline without weakening its size check.
+            app._system_idle_seconds = lambda: 0.0
+            app.system_idle_seconds_cache = 0.0
+            app.last_system_idle_check = datetime.now()
+            app.user_was_inactive = False
+            left, top, _, _ = app._screen_bounds()
+            ctypes.windll.user32.SetCursorPos(left+5, top+5)
             app.sound_enabled.set(False)
             app.roam_enabled.set(False)
             app.sleep_enabled.set(False)
@@ -81,6 +99,12 @@ def run_validation(pet_type, output_path: Path) -> None:
             clear_action()
             app._draw()
             app.root.update()
+            report["baseline_state"] = {
+                "canvas_width": app.canvas.winfo_width(),
+                "requested_width": app.width,
+                "idle_mood": app.idle_mood,
+                "chatter": app.chatter_text,
+            }
             check("Panda widget initialized", app.canvas.winfo_width() == 180)
             report["tray_error"] = app.tray.error
             report["tray_icon_registered"] = app.tray.icon_added
